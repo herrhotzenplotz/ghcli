@@ -29,6 +29,9 @@
 
 #include <gcli/diffutil.h>
 
+#include <assert.h>
+#include <string.h>
+
 int
 gcli_diff_parser_from_buffer(char *buf, size_t buf_size,
                              char const *filename, gcli_diff_parser *out)
@@ -58,6 +61,7 @@ gcli_diff_parser_from_file(FILE *f, char const *filename,
 		return -1;
 
 	buf = malloc(len + 1);
+	buf[len] = '\0';
 	fread(buf, len, 1, f);
 
 	return gcli_diff_parser_from_buffer(buf, len, filename, out);
@@ -75,8 +79,31 @@ gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 int
 gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out)
 {
-	(void) parser;
-	(void) out;
+	assert(out->prelude == NULL);
+	char *prelude_begin = parser->hd;
+
+	for (;;) {
+		char *const sol = parser->hd;
+		if (*sol == '\0')
+			break;
+
+		char *eol = strchr(sol, '\n');
+		if (eol == NULL)
+			eol = parser->buf + parser->buf_size - 1;
+
+		size_t const line_len = eol - sol;
+
+		if (line_len > 5 && strncmp(sol, "diff ", 5) == 0)
+			break;
+
+		parser->hd = eol + 1;
+		parser->col = 1;
+		parser->row += 1;
+	}
+
+	size_t const prelude_len = parser->hd - prelude_begin;
+	out->prelude = calloc(prelude_len + 1, 1);
+	memcpy(out->prelude, prelude_begin, prelude_len);
 
 	return 0;
 }
