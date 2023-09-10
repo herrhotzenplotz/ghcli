@@ -30,10 +30,52 @@
 #include <gcli/diffutil.h>
 
 int
-gcli_parse_diff(char const *buf, size_t buf_size, gcli_diff *out)
+gcli_diff_parser_from_buffer(char *buf, size_t buf_size,
+                             char const *filename, gcli_diff_parser *out)
 {
-	(void) buf;
-	(void) buf_size;
+	out->buf = out->hd = buf;
+	out->buf_size = buf_size;
+	out->filename = filename;
+	out->col = out->row = 1;
+
+	return 0;
+}
+
+int
+gcli_diff_parser_from_file(FILE *f, char const *filename,
+                           gcli_diff_parser *out)
+{
+	long len = 0;
+	char *buf;
+
+	if (fseek(f, 0, SEEK_END) < 0)
+		return -1;
+
+	if ((len = ftell(f)) < 0)
+		return -1;
+
+	if (fseek(f, 0, SEEK_SET) < 0)
+		return -1;
+
+	buf = malloc(len + 1);
+	fread(buf, len, 1, f);
+
+	return gcli_diff_parser_from_buffer(buf, len, filename, out);
+}
+
+int
+gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
+{
+	(void) parser;
+	(void) out;
+
+	return -1;
+}
+
+int
+gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out)
+{
+	(void) parser;
 	(void) out;
 
 	return -1;

@@ -30,6 +30,7 @@
 #ifndef GCLI_DIFFUTIL_H
 #define GCLI_DIFFUTIL_H
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/queue.h>
 
@@ -47,7 +48,21 @@ struct gcli_diff {
 	TAILQ_HEAD(, gcli_diff_hunk) hunks;
 };
 
-int gcli_parse_diff(char const *buf, size_t buf_size, gcli_diff *out);
+typedef struct gcli_diff_parser gcli_diff_parser;
+struct gcli_diff_parser {
+	char *buf, *hd;
+	size_t buf_size;
+	char const *filename;
+	int col, row;
+};
+
+int gcli_diff_parser_from_buffer(char *buf, size_t buf_size,
+                                 char const *filename,
+                                 gcli_diff_parser *out);
+int gcli_diff_parser_from_file(FILE *f, char const *filename,
+                               gcli_diff_parser *out);
+int gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out);
+int gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out);
 void gcli_free_diff(gcli_diff *diff);
 
 #endif /* GCLI_DIFFUTIL_H */
