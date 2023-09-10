@@ -76,6 +76,31 @@ gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 	return -1;
 }
 
+struct token {
+	char *start;
+	char *end;
+};
+
+static inline int
+token_len(struct token const *const t)
+{
+	return t->end - t->start;
+}
+
+static int
+nextline(gcli_diff_parser *parser, struct token *out)
+{
+	out->start = parser->hd;
+	if (*out->start == '\0')
+		return -1;
+
+	out->end = strchr(out->start, '\n');
+	if (out->end == NULL)
+		out->end = parser->buf + parser->buf_size - 1;
+
+	return 0;
+}
+
 int
 gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out)
 {
@@ -83,20 +108,16 @@ gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out)
 	char *prelude_begin = parser->hd;
 
 	for (;;) {
-		char *const sol = parser->hd;
-		if (*sol == '\0')
+		struct token line = {0};
+		if (nextline(parser, &line) < 0)
 			break;
 
-		char *eol = strchr(sol, '\n');
-		if (eol == NULL)
-			eol = parser->buf + parser->buf_size - 1;
+		size_t const line_len = token_len(&line);
 
-		size_t const line_len = eol - sol;
-
-		if (line_len > 5 && strncmp(sol, "diff ", 5) == 0)
+		if (line_len > 5 && strncmp(line.start, "diff ", 5) == 0)
 			break;
 
-		parser->hd = eol + 1;
+		parser->hd = line.end + 1;
 		parser->col = 1;
 		parser->row += 1;
 	}
@@ -104,6 +125,159 @@ gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out)
 	size_t const prelude_len = parser->hd - prelude_begin;
 	out->prelude = calloc(prelude_len + 1, 1);
 	memcpy(out->prelude, prelude_begin, prelude_len);
+
+	return 0;
+}
+
+static int
+readfilename(struct token *line, char **filename)
+{
+	struct token fname = {0};
+	fname.start = fname.end = line->start;
+	int escapes = 0;
+	char *outbuf;
+
+	for (;;) {
+		fname.end = strchr(fname.end, ' ');
+		if (fname.end > line->end) {
+			fname.end = line->end;
+			break;
+		}
+
+		if (!fname.end || *(fname.end - 1) != '\\')
+			break;
+
+		fname.end += 1; /* skip over space */
+		escapes++;
+	}
+
+	if (fname.end == NULL)
+		fname.end = line->end;
+
+	outbuf = *filename = calloc(token_len(&fname) - escapes + 1, 1);
+	for (;;) {
+		char *chunk_end = strchr(fname.start, ' ');
+		if (chunk_end > fname.end)
+			chunk_end = fname.end;
+
+		strncat(outbuf, fname.start, chunk_end - fname.start);
+		fname.start = chunk_end + 1;
+
+		if (fname.start >= fname.end)
+			break;
+	}
+
+	line->start = fname.start;
+
+	return 0;
+}
+
+static int
+parse_hunk_diff_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
+{
+	char const hunk_marker[] = "diff --git ";
+	struct token line = {0};
+
+	if (nextline(parser, &line) < 0)
+		return -1;
+
+	size_t const line_len = token_len(&line);
+
+	if (line_len < 5)
+		return -1;
+
+	if (strncmp(line.start, hunk_marker, sizeof(hunk_marker) - 1))
+		return -1;
+
+	line.start += sizeof(hunk_marker) - 1;
+
+	if (line.start[0] != 'a' || line.start[1] != '/')
+		return -1;
+
+	/* @@@ bounds check! */
+	line.start += 2;
+	if (readfilename(&line, &out->file_a) < 0)
+		return -1;
+
+	if (line.start[0] != 'b' || line.start[1] != '/')
+		return -1;
+
+	line.start += 2;
+	if (readfilename(&line, &out->file_b) < 0)
+		return -1;
+
+	if (line.start < line.end)
+		return -1;
+
+	parser->hd = line.end;
+	if (*parser->hd++ != '\n')
+		return -1;
+
+	return 0;
+}
+
+static int
+parse_hunk_index_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
+{
+	struct token line = {0};
+	char index_marker[] = "index ";
+	char *tl;
+
+	if (nextline(parser, &line) < 0)
+		return -1;
+
+	size_t const line_len = token_len(&line);
+
+	if (line_len < sizeof(index_marker))
+		return -1;
+
+	if (strncmp(line.start, index_marker, sizeof(index_marker) - 1))
+		return -1;
+
+	line.start += sizeof(index_marker) - 1;
+
+	tl = strchr(line.start, '.');
+	if (tl == NULL)
+		return -1;
+
+	out->hash_a = calloc(tl - line.start + 1, 1);
+	strncat(out->hash_a, line.start, tl - line.start);
+
+	line.start = tl;
+	if (line.start[0] != '.' || line.start[1] != '.')
+		return -1;
+
+	line.start += 2;
+
+	tl = strchr(line.start, ' ');
+	if (tl == NULL)
+		return -1;
+
+	out->hash_b = calloc(tl - line.start + 1, 1);
+	strncat(out->hash_b, line.start, tl - line.start);
+
+	line.start = tl;
+	if (*line.start++ != ' ')
+		return -1;
+
+	out->file_mode = calloc(token_len(&line) + 1, 1);
+	strncat(out->file_mode, line.start, token_len(&line));
+
+	parser->hd = line.end;
+	if (*parser->hd++ != '\n')
+		return -1;
+
+	return 0;
+}
+
+int
+gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out)
+{
+	if (parse_hunk_diff_line(parser, out) < 0)
+		return -1;
+
+	if (parse_hunk_index_line(parser, out) < 0)
+		return -1;
 
 	return 0;
 }

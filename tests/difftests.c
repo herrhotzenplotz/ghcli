@@ -99,10 +99,56 @@ ATF_TC_BODY(empty_patch_should_not_fail, tc)
 	ATF_CHECK_STREQ(diff.prelude, "");
 }
 
+ATF_TC_WITHOUT_HEAD(empty_hunk_should_not_fault);
+ATF_TC_BODY(empty_hunk_should_not_fault, tc)
+{
+	gcli_diff_hunk hunk = {0};
+	gcli_diff_parser parser = {0};
+
+	char input[] = "";
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "testinput", &parser) == 0);
+
+	/* Expect this to error out because there is no diff --git marker */
+	ATF_REQUIRE(gcli_diff_parse_hunk(&parser, &hunk) < 0);
+}
+
+ATF_TC_WITHOUT_HEAD(parse_simple_diff_hunk);
+ATF_TC_BODY(parse_simple_diff_hunk, tc)
+{
+	gcli_diff_hunk diff_hunk = {0};
+	gcli_diff_parser parser = {0};
+
+	char zeros[] =
+		"diff --git a/README b/README\n"
+		"index 8befdf0..d193b83 100644\n"
+		"--- a/README\n"
+		"+++ b/README\n"
+		"@@ -3,3 +3,5 @@ This is just a placeholder\n"
+		" Test test test\n"
+		" \n"
+		" foo\n"
+		"+\n"
+		"+Hello World\n";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(zeros, sizeof zeros, "zeros", &parser) == 0);
+	ATF_REQUIRE(gcli_diff_parse_hunk(&parser, &diff_hunk) == 0);
+
+	ATF_CHECK_STREQ(diff_hunk.file_a, "README");
+	ATF_CHECK_STREQ(diff_hunk.file_b, "README");
+
+	ATF_CHECK_STREQ(diff_hunk.hash_a, "8befdf0");
+	ATF_CHECK_STREQ(diff_hunk.hash_b, "d193b83");
+	ATF_CHECK_STREQ(diff_hunk.file_mode, "100644");
+
+	ATF_CHECK(parser.hd[0] == '-');
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_diff_cleans_up_properly);
 	ATF_TP_ADD_TC(tp, patch_prelude);
 	ATF_TP_ADD_TC(tp, empty_patch_should_not_fail);
+	ATF_TP_ADD_TC(tp, parse_simple_diff_hunk);
+	ATF_TP_ADD_TC(tp, empty_hunk_should_not_fault);
 	return atf_no_error();
 }

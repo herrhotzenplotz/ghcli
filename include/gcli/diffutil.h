@@ -38,6 +38,10 @@ typedef struct gcli_diff_hunk gcli_diff_hunk;
 struct gcli_diff_hunk {
 	TAILQ_ENTRY(gcli_diff_hunk) next;    /* Tailq ntex pointer */
 
+	char *file_a, *file_b;
+	char *hash_a, *hash_b;
+	char *file_mode;
+
 	char *text;             /* Body text */
 };
 
@@ -62,6 +66,7 @@ int gcli_diff_parser_from_buffer(char *buf, size_t buf_size,
 int gcli_diff_parser_from_file(FILE *f, char const *filename,
                                gcli_diff_parser *out);
 int gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out);
+int gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out);
 int gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out);
 void gcli_free_diff(gcli_diff *diff);
 
