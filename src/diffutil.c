@@ -270,6 +270,42 @@ parse_hunk_index_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
 	return 0;
 }
 
+/* Parse the additions- or removals file name */
+static int
+parse_hunk_a_or_r_file(gcli_diff_parser *parser, char c, char **out)
+{
+	struct token line = {0};
+	char prefix[] = "--- x/";
+
+	switch (c) {
+	case 'a':
+		strncpy(prefix, "--- a/", sizeof(prefix));
+		break;
+	case 'b':
+		strncpy(prefix, "+++ b/", sizeof(prefix));
+		break;
+	default:
+		assert(0 && "bad diff file name");
+	}
+
+	if (nextline(parser, &line) < 0)
+		return -1;
+
+	if (token_len(&line) < (int)sizeof(prefix))
+		return -1;
+
+	if (strncmp(line.start, prefix, sizeof(prefix) - 1))
+		return -1;
+
+	line.start += sizeof(prefix) - 1;
+	*out = calloc(token_len(&line) + 1, 1);
+	strncat(*out, line.start, token_len(&line));
+
+	parser->hd = line.end + 1;
+
+	return 0;
+}
+
 int
 gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out)
 {
@@ -277,6 +313,12 @@ gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out)
 		return -1;
 
 	if (parse_hunk_index_line(parser, out) < 0)
+		return -1;
+
+	if (parse_hunk_a_or_r_file(parser, 'a', &out->r_file) < 0)
+		return -1;
+
+	if (parse_hunk_a_or_r_file(parser, 'b', &out->a_file) < 0)
 		return -1;
 
 	return 0;

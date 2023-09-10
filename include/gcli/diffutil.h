@@ -42,7 +42,8 @@ struct gcli_diff_hunk {
 	char *hash_a, *hash_b;
 	char *file_mode;
 
-	char *text;             /* Body text */
+	char *r_file, *a_file;   /* file with removals and additions */
+	char *text;              /* Body text */
 };
 
 typedef struct gcli_diff gcli_diff;

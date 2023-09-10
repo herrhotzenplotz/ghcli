@@ -140,7 +140,10 @@ ATF_TC_BODY(parse_simple_diff_hunk, tc)
 	ATF_CHECK_STREQ(diff_hunk.hash_b, "d193b83");
 	ATF_CHECK_STREQ(diff_hunk.file_mode, "100644");
 
-	ATF_CHECK(parser.hd[0] == '-');
+	ATF_CHECK_STREQ(diff_hunk.r_file, "README");
+	ATF_CHECK_STREQ(diff_hunk.a_file, "README");
+
+	ATF_CHECK(parser.hd[0] == '@');
 }
 
 ATF_TP_ADD_TCS(tp)
