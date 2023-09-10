@@ -85,9 +85,24 @@ ATF_TC_BODY(patch_prelude, tc)
 	ATF_CHECK_STREQ(diff.prelude, expected_prelude);
 }
 
+ATF_TC_WITHOUT_HEAD(empty_patch_should_not_fail);
+ATF_TC_BODY(empty_patch_should_not_fail, tc)
+{
+	gcli_diff diff = {0};
+	gcli_diff_parser parser = {0};
+
+	char zeros[] = "";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(zeros, sizeof zeros, "zeros", &parser) == 0);
+	ATF_REQUIRE(gcli_diff_parse_prelude(&parser, &diff) == 0);
+	ATF_REQUIRE(diff.prelude != NULL);
+	ATF_CHECK_STREQ(diff.prelude, "");
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_diff_cleans_up_properly);
 	ATF_TP_ADD_TC(tp, patch_prelude);
+	ATF_TP_ADD_TC(tp, empty_patch_should_not_fail);
 	return atf_no_error();
 }
