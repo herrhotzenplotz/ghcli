@@ -68,6 +68,21 @@ ATF_TC_BODY(patch_prelude, tc)
 	FILE *inf = open_sample("01_diff_prelude.patch");
 	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
 	ATF_REQUIRE(gcli_diff_parse_prelude(&parser, &diff) == 0);
+
+	char const expected_prelude[] =
+		"From 47b40f51cae6cec9a3132f888fd66c21ecb687fa Mon Sep 17 00:00:00 2001\n"
+		"From: Nico Sonack <nsonack@outlook.com>\n"
+		"Date: Sun, 10 Oct 2021 12:23:11 +0200\n"
+		"Subject: [PATCH] Start submission implementation\n"
+		"\n"
+		"---\n"
+		" include/ghcli/pulls.h |  1 +\n"
+		" src/ghcli.c           | 55 +++++++++++++++++++++++++++++++++++++++++++\n"
+		" src/pulls.c           |  9 +++++++\n"
+		" 3 files changed, 65 insertions(+)\n"
+		"\n";
+	ATF_REQUIRE(diff.prelude != NULL);
+	ATF_CHECK_STREQ(diff.prelude, expected_prelude);
 }
 
 ATF_TP_ADD_TCS(tp)

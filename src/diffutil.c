@@ -78,7 +78,7 @@ gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out)
 	(void) parser;
 	(void) out;
 
-	return -1;
+	return 0;
 }
 
 void
