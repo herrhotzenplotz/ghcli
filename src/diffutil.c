@@ -173,6 +173,35 @@ readfilename(struct token *line, char **filename)
 }
 
 static int
+parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_chunk *out)
+{
+	struct token line = {0};
+
+	if (parser->hd[0] != '@')
+		return -1;
+
+	if (nextline(parser, &line) < 0)
+		return -1;
+
+	if (sscanf(line.start, "@@ -%d,%d +%d,%d @@",
+	           &out->range_r_start, &out->range_r_end,
+	           &out->range_a_start, &out->range_a_end) != 4)
+		return -1;
+
+	line.start = strstr(line.start, " @@ ");
+	if (line.start == NULL)
+		return -1;
+
+	line.start += 4; /* skip over the 'space @@ space' */
+	out->context_info = calloc(token_len(&line) + 1, 1);
+	strncat(out->context_info, line.start, token_len(&line));
+
+	parser->hd = line.end + 1;
+
+	return 0;
+}
+
+static int
 parse_hunk_diff_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
 {
 	char const hunk_marker[] = "diff --git ";
@@ -270,6 +299,41 @@ parse_hunk_index_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
 	return 0;
 }
 
+static int
+read_chunk_body(gcli_diff_parser *parser, gcli_diff_chunk *chunk)
+{
+	struct token buf = {0};
+	size_t buf_len;
+
+	buf.start = parser->hd;
+	buf.end = parser->hd;
+
+	for (;;) {
+		struct token line = {0};
+
+		if (parser->hd[0] == '\0')
+			break;
+
+		if (nextline(parser, &line) < 0)
+			return -1;
+
+		if (strncmp(line.start, "diff", 4) == 0)
+			break;
+
+		if (strncmp(line.start, "@@", 2) == 0)
+			break;
+
+		buf.end = line.end + 1;
+		parser->hd = line.end + 1;
+	}
+
+	buf_len = token_len(&buf);
+	chunk->body = calloc(buf_len + 1, 1);
+	strncpy(chunk->body, buf.start, buf_len);
+
+	return 0;
+}
+
 /* Parse the additions- or removals file name */
 static int
 parse_hunk_a_or_r_file(gcli_diff_parser *parser, char c, char **out)
@@ -320,6 +384,22 @@ gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out)
 
 	if (parse_hunk_a_or_r_file(parser, 'b', &out->a_file) < 0)
 		return -1;
+
+	TAILQ_INIT(&out->chunks);
+	while (parser->hd[0] != '\0') {
+		gcli_diff_chunk *chunk = calloc(sizeof(*chunk), 1);
+		if (parse_hunk_range_info(parser, chunk) < 0) {
+			free(chunk);
+			return -1;
+		}
+
+		if (read_chunk_body(parser, chunk) < 0) {
+			free(chunk);
+			return -1;
+		}
+
+		TAILQ_INSERT_TAIL(&out->chunks, chunk, next);
+	}
 
 	return 0;
 }

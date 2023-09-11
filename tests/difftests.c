@@ -117,6 +117,7 @@ ATF_TC_BODY(parse_simple_diff_hunk, tc)
 {
 	gcli_diff_hunk diff_hunk = {0};
 	gcli_diff_parser parser = {0};
+	gcli_diff_chunk *chunk = NULL;
 
 	char zeros[] =
 		"diff --git a/README b/README\n"
@@ -143,7 +144,28 @@ ATF_TC_BODY(parse_simple_diff_hunk, tc)
 	ATF_CHECK_STREQ(diff_hunk.r_file, "README");
 	ATF_CHECK_STREQ(diff_hunk.a_file, "README");
 
-	ATF_CHECK(parser.hd[0] == '@');
+	/* Complete parse */
+	ATF_CHECK(parser.hd[0] == '\0');
+
+	/* Check chunks */
+	chunk = TAILQ_FIRST(&diff_hunk.chunks);
+	ATF_REQUIRE(chunk != NULL);
+
+	ATF_CHECK(chunk->range_a_start == 3);
+	ATF_CHECK(chunk->range_a_end == 5);
+	ATF_CHECK(chunk->range_r_start == 3);
+	ATF_CHECK(chunk->range_r_end == 3);
+	ATF_CHECK_STREQ(chunk->context_info, "This is just a placeholder");
+	ATF_CHECK_STREQ(chunk->body,
+	                " Test test test\n"
+	                " \n"
+	                " foo\n"
+	                "+\n"
+	                "+Hello World\n");
+
+	/* This is the end of the list of chunks */
+	chunk = TAILQ_NEXT(chunk, next);
+	ATF_CHECK(chunk == NULL);
 }
 
 ATF_TP_ADD_TCS(tp)

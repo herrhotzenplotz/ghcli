@@ -34,6 +34,15 @@
 #include <stdlib.h>
 #include <sys/queue.h>
 
+typedef struct gcli_diff_chunk gcli_diff_chunk;
+struct gcli_diff_chunk {
+	TAILQ_ENTRY(gcli_diff_chunk) next;
+
+	int range_a_start, range_a_end, range_r_start, range_r_end;
+	char *context_info;
+	char *body;
+};
+
 typedef struct gcli_diff_hunk gcli_diff_hunk;
 struct gcli_diff_hunk {
 	TAILQ_ENTRY(gcli_diff_hunk) next;    /* Tailq ntex pointer */
@@ -43,7 +52,8 @@ struct gcli_diff_hunk {
 	char *file_mode;
 
 	char *r_file, *a_file;   /* file with removals and additions */
-	char *text;              /* Body text */
+
+	TAILQ_HEAD(, gcli_diff_chunk) chunks;
 };
 
 typedef struct gcli_diff gcli_diff;
