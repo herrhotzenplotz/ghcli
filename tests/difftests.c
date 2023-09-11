@@ -168,6 +168,85 @@ ATF_TC_BODY(parse_simple_diff_hunk, tc)
 	ATF_CHECK(chunk == NULL);
 }
 
+ATF_TC_WITHOUT_HEAD(hunk_with_two_chunks);
+ATF_TC_BODY(hunk_with_two_chunks, tp)
+{
+	gcli_diff_parser parser = {0};
+	gcli_diff_hunk hunk = {0};
+	char input[] =
+		"diff --git a/README b/README\n"
+		"index d193b83..21af54a 100644\n"
+		"--- a/README\n"
+		"+++ b/README\n"
+		"@@ -1,3 +1,5 @@\n"
+		"+Hunk 1\n"
+		"+\n"
+		" This is just a placeholder\n"
+		" \n"
+		" Test test test\n"
+		"@@ -5,3 +7,5 @@ Test test test\n"
+		" fooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooobar\n"
+		" \n"
+		" Hello World\n"
+		"+\n"
+		"+Hunk 2\n"
+		" \n";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "<input>", &parser) == 0);
+	ATF_REQUIRE(gcli_diff_parse_hunk(&parser, &hunk) == 0);
+
+	ATF_CHECK_STREQ(hunk.file_a, "README");
+	ATF_CHECK_STREQ(hunk.file_b, "README");
+	ATF_CHECK_STREQ(hunk.hash_a, "d193b83");
+	ATF_CHECK_STREQ(hunk.hash_b, "21af54a");
+
+	ATF_CHECK_STREQ(hunk.file_mode, "100644");
+
+	ATF_CHECK_STREQ(hunk.r_file, "README");
+	ATF_CHECK_STREQ(hunk.a_file, "README");
+
+	gcli_diff_chunk *c = NULL;
+
+	/* First chunk of this hunk */
+	c = TAILQ_FIRST(&hunk.chunks);
+	ATF_REQUIRE(c != NULL);
+
+	ATF_CHECK(c->range_r_start == 1);
+	ATF_CHECK(c->range_r_end == 3);
+	ATF_CHECK(c->range_a_start == 1);
+	ATF_CHECK(c->range_a_end == 5);
+
+	ATF_CHECK_STREQ(c->context_info, "");
+	ATF_CHECK_STREQ(c->body,
+	                "+Hunk 1\n"
+	                "+\n"
+	                " This is just a placeholder\n"
+	                " \n"
+	                " Test test test\n");
+
+	/* Second chunk */
+	c = TAILQ_NEXT(c, next);
+	ATF_REQUIRE(c != NULL);
+
+	ATF_CHECK(c->range_r_start == 5);
+	ATF_CHECK(c->range_r_end == 3);
+	ATF_CHECK(c->range_a_start == 7);
+	ATF_CHECK(c->range_a_end == 5);
+
+	ATF_CHECK_STREQ(c->context_info, "Test test test");
+	ATF_CHECK_STREQ(c->body,
+	                " fooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooobar\n"
+	                " \n"
+	                " Hello World\n"
+	                "+\n"
+	                "+Hunk 2\n"
+	                " \n");
+
+	/* This must be the end of the chunks */
+	c = TAILQ_NEXT(c, next);
+	ATF_CHECK(c == NULL);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_diff_cleans_up_properly);
@@ -175,5 +254,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, empty_patch_should_not_fail);
 	ATF_TP_ADD_TC(tp, parse_simple_diff_hunk);
 	ATF_TP_ADD_TC(tp, empty_hunk_should_not_fault);
+	ATF_TP_ADD_TC(tp, hunk_with_two_chunks);
+
 	return atf_no_error();
 }

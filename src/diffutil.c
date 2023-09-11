@@ -188,11 +188,16 @@ parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_chunk *out)
 	           &out->range_a_start, &out->range_a_end) != 4)
 		return -1;
 
-	line.start = strstr(line.start, " @@ ");
+	line.start = strstr(line.start, " @@");
 	if (line.start == NULL)
 		return -1;
 
-	line.start += 4; /* skip over the 'space @@ space' */
+	/* Skip over the 'space @@', when the context is empty there
+	 * is no trailing space */
+	line.start += 3;
+	if (line.start[0] == ' ')
+		line.start += 1;
+
 	out->context_info = calloc(token_len(&line) + 1, 1);
 	strncat(out->context_info, line.start, token_len(&line));
 
