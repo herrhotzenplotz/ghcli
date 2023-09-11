@@ -33,7 +33,7 @@
 #include <string.h>
 
 int
-gcli_diff_parser_from_buffer(char *buf, size_t buf_size,
+gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
                              char const *filename, gcli_diff_parser *out)
 {
 	out->buf = out->hd = buf;
@@ -77,8 +77,8 @@ gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 }
 
 struct token {
-	char *start;
-	char *end;
+	char const *start;
+	char const *end;
 };
 
 static inline int
@@ -105,7 +105,7 @@ int
 gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out)
 {
 	assert(out->prelude == NULL);
-	char *prelude_begin = parser->hd;
+	char const *prelude_begin = parser->hd;
 
 	for (;;) {
 		struct token line = {0};
@@ -156,7 +156,7 @@ readfilename(struct token *line, char **filename)
 
 	outbuf = *filename = calloc(token_len(&fname) - escapes + 1, 1);
 	for (;;) {
-		char *chunk_end = strchr(fname.start, ' ');
+		char const *chunk_end = strchr(fname.start, ' ');
 		if (chunk_end > fname.end)
 			chunk_end = fname.end;
 

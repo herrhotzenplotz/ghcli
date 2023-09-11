@@ -65,13 +65,13 @@ struct gcli_diff {
 
 typedef struct gcli_diff_parser gcli_diff_parser;
 struct gcli_diff_parser {
-	char *buf, *hd;
+	char const *buf, *hd;
 	size_t buf_size;
 	char const *filename;
 	int col, row;
 };
 
-int gcli_diff_parser_from_buffer(char *buf, size_t buf_size,
+int gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
                                  char const *filename,
                                  gcli_diff_parser *out);
 int gcli_diff_parser_from_file(FILE *f, char const *filename,
