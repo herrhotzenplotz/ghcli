@@ -70,10 +70,24 @@ gcli_diff_parser_from_file(FILE *f, char const *filename,
 int
 gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 {
-	(void) parser;
-	(void) out;
+	if (gcli_diff_parse_prelude(parser, out) < 0)
+		return -1;
 
-	return -1;
+	TAILQ_INIT(&out->hunks);
+
+	/* TODO cleanup */
+	while (parser->hd[0] == 'd') {
+		gcli_diff_hunk *h = calloc(sizeof(*h), 1);
+		if (gcli_diff_parse_hunk(parser, h) < 0)
+			return -1;
+
+		TAILQ_INSERT_TAIL(&out->hunks, h, next);
+	}
+
+	if (parser->hd[0] != '\0')
+		return -1;
+
+	return 0;
 }
 
 struct token {
@@ -173,6 +187,35 @@ readfilename(struct token *line, char **filename)
 }
 
 static int
+read_number(struct token *t, int base, int *out)
+{
+	char *endptr = NULL;
+
+	*out = strtol(t->start, &endptr, base);
+	if (endptr == t->start)
+		return -1;
+
+	t->start = endptr;
+	return 0;
+}
+
+static int
+expect_prefix(struct token *t, char const *const prefix)
+{
+	size_t const prefix_len = strlen(prefix);
+
+	if (token_len(t) < (int)prefix_len)
+		return -1;
+
+	if (strncmp(t->start, prefix, prefix_len))
+		return -1;
+
+	t->start += prefix_len;
+
+	return 0;
+}
+
+static int
 parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_chunk *out)
 {
 	struct token line = {0};
@@ -183,20 +226,43 @@ parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_chunk *out)
 	if (nextline(parser, &line) < 0)
 		return -1;
 
-	if (sscanf(line.start, "@@ -%d,%d +%d,%d @@",
-	           &out->range_r_start, &out->range_r_end,
-	           &out->range_a_start, &out->range_a_end) != 4)
+	if (expect_prefix(&line, "@@ -") < 0)
 		return -1;
 
-	line.start = strstr(line.start, " @@");
-	if (line.start == NULL)
+	if (read_number(&line, 10, &out->range_r_start) < 0)
 		return -1;
 
-	/* Skip over the 'space @@', when the context is empty there
-	 * is no trailing space */
-	line.start += 3;
-	if (line.start[0] == ' ')
+	char const delim_r = *line.start++;
+	if (delim_r == ',') {
+		if (read_number(&line, 10, &out->range_r_end) < 0)
+			return -1;
+	} else if (delim_r != ' ') {
+		return -1;
+	}
+
+	if (expect_prefix(&line, " +") < 0)
+		return -1;
+
+	if (read_number(&line, 10, &out->range_a_start) < 0)
+		return -1;
+
+	char const delim_a = *line.start;
+	if (delim_a == ',') {
 		line.start += 1;
+		if (read_number(&line, 10, &out->range_a_end) < 0)
+			return -1;
+	} else if (delim_a != ' ') {
+		return -1;
+	}
+
+	if (expect_prefix(&line, " @@") < 0)
+		return -1;
+
+	/* in case of range context info there must be a space */
+	if (token_len(&line)) {
+		if (*line.start++ != ' ')
+			return -1;
+	}
 
 	out->context_info = calloc(token_len(&line) + 1, 1);
 	strncat(out->context_info, line.start, token_len(&line));
@@ -254,28 +320,20 @@ static int
 parse_hunk_index_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
 {
 	struct token line = {0};
-	char index_marker[] = "index ";
-	char *tl;
+	char const *tl;
 
 	if (nextline(parser, &line) < 0)
 		return -1;
 
-	size_t const line_len = token_len(&line);
-
-	if (line_len < sizeof(index_marker))
+	if (expect_prefix(&line, "index ") < 0)
 		return -1;
-
-	if (strncmp(line.start, index_marker, sizeof(index_marker) - 1))
-		return -1;
-
-	line.start += sizeof(index_marker) - 1;
 
 	tl = strchr(line.start, '.');
 	if (tl == NULL)
 		return -1;
 
 	out->hash_a = calloc(tl - line.start + 1, 1);
-	strncat(out->hash_a, line.start, tl - line.start);
+	memcpy(out->hash_a, line.start, tl - line.start);
 
 	line.start = tl;
 	if (line.start[0] != '.' || line.start[1] != '.')
@@ -287,19 +345,29 @@ parse_hunk_index_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
 	if (tl == NULL)
 		return -1;
 
+	if (tl > line.end)
+		tl = line.end;
+
 	out->hash_b = calloc(tl - line.start + 1, 1);
-	strncat(out->hash_b, line.start, tl - line.start);
+	memcpy(out->hash_b, line.start, tl - line.start);
 
 	line.start = tl;
-	if (*line.start++ != ' ')
-		return -1;
+	if (line.start[0] == ' ') {
+		line.start += 1;
 
-	out->file_mode = calloc(token_len(&line) + 1, 1);
-	strncat(out->file_mode, line.start, token_len(&line));
+		size_t const fmode_len = token_len(&line);
+		out->file_mode = calloc(fmode_len + 1, 1);
+		memcpy(out->file_mode, line.start, fmode_len);
 
-	parser->hd = line.end;
-	if (*parser->hd++ != '\n')
-		return -1;
+		parser->hd = line.start + fmode_len;
+		if (*parser->hd++ != '\n')
+			return -1;
+	} else {
+		if (line.start[0] != '\n')
+			return -1;
+
+		parser->hd = line.start + 1;
+	}
 
 	return 0;
 }
@@ -344,31 +412,57 @@ static int
 parse_hunk_a_or_r_file(gcli_diff_parser *parser, char c, char **out)
 {
 	struct token line = {0};
-	char prefix[] = "--- x/";
-
-	switch (c) {
-	case 'a':
-		strncpy(prefix, "--- a/", sizeof(prefix));
-		break;
-	case 'b':
-		strncpy(prefix, "+++ b/", sizeof(prefix));
-		break;
-	default:
-		assert(0 && "bad diff file name");
-	}
+	size_t linelen;
 
 	if (nextline(parser, &line) < 0)
 		return -1;
 
-	if (token_len(&line) < (int)sizeof(prefix))
+	if (expect_prefix(&line, "--- ") == 0) {
+		if (token_len(&line) >= 2 && line.start[0] == c &&
+		    line.start[1] == '/') {
+			line.start += 2;
+		} else if (line.start[0] != '/') {
+			return -1;
+		}
+	} else if (expect_prefix(&line, "+++ ") == 0) {
+		if (token_len(&line) >= 2 && line.start[0] != c &&
+		    line.start[1] != '/') {
+			return -1;
+		}
+
+		line.start += 2;
+	} else {
+		return -1;
+	}
+
+	linelen = token_len(&line);
+	*out = calloc(linelen + 1, 1);
+	memcpy(*out, line.start, linelen);
+
+	parser->hd = line.end + 1;
+
+	return 0;
+}
+
+static int
+try_parse_new_file_mode(gcli_diff_parser *parser,
+                        gcli_diff_hunk *out)
+{
+	struct token line = {0};
+	char const fmode_prefix[] = "new file mode ";
+
+	if (nextline(parser, &line) < 0)
 		return -1;
 
-	if (strncmp(line.start, prefix, sizeof(prefix) - 1))
+	/* Don't fail this, might be the index line */
+	if (expect_prefix(&line, fmode_prefix) < 0)
+		return 0;
+
+	if (read_number(&line, 8, &out->new_file_mode) < 0)
 		return -1;
 
-	line.start += sizeof(prefix) - 1;
-	*out = calloc(token_len(&line) + 1, 1);
-	strncat(*out, line.start, token_len(&line));
+	if (token_len(&line))
+		return -1;
 
 	parser->hd = line.end + 1;
 
@@ -381,6 +475,9 @@ gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out)
 	if (parse_hunk_diff_line(parser, out) < 0)
 		return -1;
 
+	if (try_parse_new_file_mode(parser, out) < 0)
+		return -1;
+
 	if (parse_hunk_index_line(parser, out) < 0)
 		return -1;
 
@@ -391,7 +488,7 @@ gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out)
 		return -1;
 
 	TAILQ_INIT(&out->chunks);
-	while (parser->hd[0] != '\0') {
+	while (parser->hd[0] == '@') {
 		gcli_diff_chunk *chunk = calloc(sizeof(*chunk), 1);
 		if (parse_hunk_range_info(parser, chunk) < 0) {
 			free(chunk);

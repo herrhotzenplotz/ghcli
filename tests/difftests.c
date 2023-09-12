@@ -247,6 +247,85 @@ ATF_TC_BODY(hunk_with_two_chunks, tp)
 	ATF_CHECK(c == NULL);
 }
 
+ATF_TC_WITHOUT_HEAD(two_hunks_with_one_chunk_each);
+ATF_TC_BODY(two_hunks_with_one_chunk_each, tc)
+{
+	char const diff_data[] =
+		"diff --git a/README b/README\n"
+		"index d193b83..ad32368 100644\n"
+		"--- a/README\n"
+		"+++ b/README\n"
+		"@@ -1,3 +1,5 @@\n"
+		"+Hunk 1\n"
+		"+\n"
+		" This is just a placeholder\n"
+		" \n"
+		" Test test test\n"
+		"diff --git a/foo.json b/foo.json\n"
+		"new file mode 100644\n"
+		"index 0000000..3be9217\n"
+		"--- /dev/null\n"
+		"+++ b/foo.json\n"
+		"@@ -0,0 +1 @@\n"
+		"+wat\n";
+	gcli_diff diff = {0};
+	gcli_diff_parser parser = {0};
+	gcli_diff_hunk *hunk;
+	gcli_diff_chunk *chunk;
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(diff_data, sizeof(diff_data), "diff_data", &parser) == 0);
+	ATF_REQUIRE(gcli_parse_diff(&parser, &diff) == 0);
+
+	hunk = TAILQ_FIRST(&diff.hunks);
+	ATF_REQUIRE(hunk != NULL);
+	ATF_CHECK_STREQ(hunk->file_a, "README");
+	ATF_CHECK_STREQ(hunk->file_b, "README");
+	ATF_CHECK_STREQ(hunk->hash_a, "d193b83");
+	ATF_CHECK_STREQ(hunk->hash_b, "ad32368");
+	ATF_CHECK_STREQ(hunk->file_mode, "100644");
+	ATF_CHECK_STREQ(hunk->r_file, "README");
+	ATF_CHECK_STREQ(hunk->a_file, "README");
+	ATF_CHECK(hunk->new_file_mode == 0);
+
+	chunk = TAILQ_FIRST(&hunk->chunks);
+	ATF_REQUIRE(chunk != NULL);
+	ATF_CHECK_STREQ(chunk->context_info, "");
+	ATF_CHECK(chunk->range_r_start == 1);
+	ATF_CHECK(chunk->range_r_end == 3);
+	ATF_CHECK(chunk->range_a_start == 1);
+	ATF_CHECK(chunk->range_a_end == 5);
+
+	ATF_CHECK_STREQ(chunk->body,
+	                "+Hunk 1\n"
+	                "+\n"
+	                " This is just a placeholder\n"
+	                " \n"
+	                " Test test test\n");
+
+	chunk = TAILQ_NEXT(chunk, next);
+	ATF_CHECK(chunk == NULL); /* last one in this list */
+
+	/* Second hunk */
+	hunk = TAILQ_NEXT(hunk, next);
+	ATF_REQUIRE(hunk != NULL);
+
+	ATF_CHECK_STREQ(hunk->file_a, "foo.json");
+	ATF_CHECK_STREQ(hunk->file_b, "foo.json");
+	ATF_CHECK_STREQ(hunk->hash_a, "0000000");
+	ATF_CHECK_STREQ(hunk->hash_b, "3be9217");
+	ATF_CHECK_STREQ(hunk->r_file, "/dev/null");
+	ATF_CHECK_STREQ(hunk->a_file, "foo.json");
+	ATF_CHECK(hunk->new_file_mode == 0100644);
+
+	chunk = TAILQ_FIRST(&hunk->chunks);
+	ATF_REQUIRE(chunk != NULL);
+	ATF_CHECK(chunk->range_r_start == 0);
+	ATF_CHECK(chunk->range_r_end == 0);
+	ATF_CHECK(chunk->range_a_start == 1);
+	ATF_CHECK(chunk->range_a_end == 0);
+	ATF_CHECK_STREQ(chunk->body, "+wat\n");
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_diff_cleans_up_properly);
@@ -255,6 +334,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, parse_simple_diff_hunk);
 	ATF_TP_ADD_TC(tp, empty_hunk_should_not_fault);
 	ATF_TP_ADD_TC(tp, hunk_with_two_chunks);
+	ATF_TP_ADD_TC(tp, two_hunks_with_one_chunk_each);
 
 	return atf_no_error();
 }

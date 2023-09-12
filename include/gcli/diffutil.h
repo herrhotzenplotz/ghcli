@@ -50,6 +50,7 @@ struct gcli_diff_hunk {
 	char *file_a, *file_b;
 	char *hash_a, *hash_b;
 	char *file_mode;
+	int new_file_mode;
 
 	char *r_file, *a_file;   /* file with removals and additions */
 
