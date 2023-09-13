@@ -35,18 +35,18 @@
 #include <stdlib.h>
 #include <sys/queue.h>
 
-typedef struct gcli_diff_chunk gcli_diff_chunk;
-struct gcli_diff_chunk {
-	TAILQ_ENTRY(gcli_diff_chunk) next;
+typedef struct gcli_diff_hunk gcli_diff_hunk;
+struct gcli_diff_hunk {
+	TAILQ_ENTRY(gcli_diff_hunk) next;
 
 	int range_a_start, range_a_end, range_r_start, range_r_end;
 	char *context_info;
 	char *body;
 };
 
-typedef struct gcli_diff_hunk gcli_diff_hunk;
-struct gcli_diff_hunk {
-	TAILQ_ENTRY(gcli_diff_hunk) next;    /* Tailq ntex pointer */
+typedef struct gcli_diff gcli_diff;
+struct gcli_diff {
+	TAILQ_ENTRY(gcli_diff) next;    /* Tailq ntex pointer */
 
 	char *file_a, *file_b;
 	char *hash_a, *hash_b;
@@ -55,14 +55,14 @@ struct gcli_diff_hunk {
 
 	char *r_file, *a_file;   /* file with removals and additions */
 
-	TAILQ_HEAD(, gcli_diff_chunk) chunks;
+	TAILQ_HEAD(, gcli_diff_hunk) hunks;
 };
 
-typedef struct gcli_diff gcli_diff;
-struct gcli_diff {
+typedef struct gcli_patch gcli_patch;
+struct gcli_patch {
 	char *prelude;             /* Text leading up to the first diff */
 
-	TAILQ_HEAD(, gcli_diff_hunk) hunks;
+	TAILQ_HEAD(, gcli_diff) diffs;
 };
 
 typedef struct gcli_diff_parser gcli_diff_parser;
@@ -83,12 +83,12 @@ int gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
                                  gcli_diff_parser *out);
 int gcli_diff_parser_from_file(FILE *f, char const *filename,
                                gcli_diff_parser *out);
+int gcli_parse_patch(gcli_diff_parser *parser, gcli_patch *out);
 int gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out);
-int gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out);
-int gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out);
+int gcli_patch_parse_prelude(gcli_diff_parser *parser, gcli_patch *out);
 void gcli_free_diff(gcli_diff *diff);
 void gcli_free_diff_hunk(gcli_diff_hunk *hunk);
-void gcli_free_diff_chunk(gcli_diff_chunk *chunk);
+void gcli_free_patch(gcli_patch *patch);
 void gcli_free_diff_parser(gcli_diff_parser *parser);
 
 #endif /* GCLI_DIFFUTIL_H */

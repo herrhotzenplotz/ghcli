@@ -70,20 +70,20 @@ gcli_diff_parser_from_file(FILE *f, char const *filename,
 }
 
 int
-gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
+gcli_parse_patch(gcli_diff_parser *parser, gcli_patch *out)
 {
-	if (gcli_diff_parse_prelude(parser, out) < 0)
+	if (gcli_patch_parse_prelude(parser, out) < 0)
 		return -1;
 
-	TAILQ_INIT(&out->hunks);
+	TAILQ_INIT(&out->diffs);
 
 	/* TODO cleanup */
 	while (parser->hd[0] == 'd') {
-		gcli_diff_hunk *h = calloc(sizeof(*h), 1);
-		if (gcli_diff_parse_hunk(parser, h) < 0)
+		gcli_diff *d = calloc(sizeof(*d), 1);
+		if (gcli_parse_diff(parser, d) < 0)
 			return -1;
 
-		TAILQ_INSERT_TAIL(&out->hunks, h, next);
+		TAILQ_INSERT_TAIL(&out->diffs, d, next);
 	}
 
 	if (parser->hd[0] != '\0')
@@ -118,7 +118,7 @@ nextline(gcli_diff_parser *parser, struct token *out)
 }
 
 int
-gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out)
+gcli_patch_parse_prelude(gcli_diff_parser *parser, gcli_patch *out)
 {
 	assert(out->prelude == NULL);
 	char const *prelude_begin = parser->hd;
@@ -218,7 +218,7 @@ expect_prefix(struct token *t, char const *const prefix)
 }
 
 static int
-parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_chunk *out)
+parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_hunk *out)
 {
 	struct token line = {0};
 
@@ -275,7 +275,7 @@ parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_chunk *out)
 }
 
 static int
-parse_hunk_diff_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
+parse_diff_header(gcli_diff_parser *parser, gcli_diff *out)
 {
 	char const hunk_marker[] = "diff --git ";
 	struct token line = {0};
@@ -319,7 +319,7 @@ parse_hunk_diff_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
 }
 
 static int
-parse_hunk_index_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
+parse_diff_index_line(gcli_diff_parser *parser, gcli_diff *out)
 {
 	struct token line = {0};
 	char const *tl;
@@ -375,7 +375,7 @@ parse_hunk_index_line(gcli_diff_parser *parser, gcli_diff_hunk *out)
 }
 
 static int
-read_chunk_body(gcli_diff_parser *parser, gcli_diff_chunk *chunk)
+read_hunk_body(gcli_diff_parser *parser, gcli_diff_hunk *hunk)
 {
 	struct token buf = {0};
 	size_t buf_len;
@@ -403,8 +403,8 @@ read_chunk_body(gcli_diff_parser *parser, gcli_diff_chunk *chunk)
 	}
 
 	buf_len = token_len(&buf);
-	chunk->body = calloc(buf_len + 1, 1);
-	strncpy(chunk->body, buf.start, buf_len);
+	hunk->body = calloc(buf_len + 1, 1);
+	strncpy(hunk->body, buf.start, buf_len);
 
 	return 0;
 }
@@ -447,8 +447,7 @@ parse_hunk_a_or_r_file(gcli_diff_parser *parser, char c, char **out)
 }
 
 static int
-try_parse_new_file_mode(gcli_diff_parser *parser,
-                        gcli_diff_hunk *out)
+try_parse_new_file_mode(gcli_diff_parser *parser, gcli_diff *out)
 {
 	struct token line = {0};
 	char const fmode_prefix[] = "new file mode ";
@@ -472,15 +471,15 @@ try_parse_new_file_mode(gcli_diff_parser *parser,
 }
 
 int
-gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out)
+gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 {
-	if (parse_hunk_diff_line(parser, out) < 0)
+	if (parse_diff_header(parser, out) < 0)
 		return -1;
 
 	if (try_parse_new_file_mode(parser, out) < 0)
 		return -1;
 
-	if (parse_hunk_index_line(parser, out) < 0)
+	if (parse_diff_index_line(parser, out) < 0)
 		return -1;
 
 	if (parse_hunk_a_or_r_file(parser, 'a', &out->r_file) < 0)
@@ -489,86 +488,85 @@ gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out)
 	if (parse_hunk_a_or_r_file(parser, 'b', &out->a_file) < 0)
 		return -1;
 
-	TAILQ_INIT(&out->chunks);
+	TAILQ_INIT(&out->hunks);
 	while (parser->hd[0] == '@') {
-		gcli_diff_chunk *chunk = calloc(sizeof(*chunk), 1);
-		if (parse_hunk_range_info(parser, chunk) < 0) {
-			free(chunk);
+		gcli_diff_hunk *hunk = calloc(sizeof(*hunk), 1);
+		if (parse_hunk_range_info(parser, hunk) < 0) {
+			free(hunk);
 			return -1;
 		}
 
-		if (read_chunk_body(parser, chunk) < 0) {
-			free(chunk);
+		if (read_hunk_body(parser, hunk) < 0) {
+			free(hunk);
 			return -1;
 		}
 
-		TAILQ_INSERT_TAIL(&out->chunks, chunk, next);
+		TAILQ_INSERT_TAIL(&out->hunks, hunk, next);
 	}
 
 	return 0;
 }
 
 void
-gcli_free_diff_chunk(gcli_diff_chunk *chunk)
-{
-	free(chunk->context_info);
-	chunk->context_info = NULL;
-
-	free(chunk->body);
-	chunk->body = NULL;
-}
-
-void
 gcli_free_diff_hunk(gcli_diff_hunk *hunk)
 {
-	gcli_diff_chunk *d;
+	free(hunk->context_info);
+	hunk->context_info = NULL;
 
-	free(hunk->file_a);
-	hunk->file_a = NULL;
-
-	free(hunk->file_b);
-	hunk->file_b = NULL;
-
-	free(hunk->hash_a);
-	hunk->hash_a = NULL;
-
-	free(hunk->hash_b);
-	hunk->hash_b = NULL;
-
-	free(hunk->file_mode);
-	hunk->file_mode = NULL;
-
-	free(hunk->r_file);
-	hunk->r_file = NULL;
-
-	free(hunk->a_file);
-	hunk->a_file = NULL;
-
-	d = TAILQ_FIRST(&hunk->chunks);
-	while (d) {
-		gcli_diff_chunk *n = TAILQ_NEXT(d, next);
-		gcli_free_diff_chunk(d);
-		free(d);
-		d = n;
-	}
-	TAILQ_INIT(&hunk->chunks);
+	free(hunk->body);
+	hunk->body = NULL;
 }
 
 void
 gcli_free_diff(gcli_diff *diff)
 {
-	gcli_diff_hunk *h, *n;
-	free(diff->prelude);
-	diff->prelude = NULL;
+	free(diff->file_a);
+	diff->file_a = NULL;
 
-	h = TAILQ_FIRST(&diff->hunks);
+	free(diff->file_b);
+	diff->file_b = NULL;
+
+	free(diff->hash_a);
+	diff->hash_a = NULL;
+
+	free(diff->hash_b);
+	diff->hash_b = NULL;
+
+	free(diff->file_mode);
+	diff->file_mode = NULL;
+
+	free(diff->r_file);
+	diff->r_file = NULL;
+
+	free(diff->a_file);
+	diff->a_file = NULL;
+
+	gcli_diff_hunk *h = TAILQ_FIRST(&diff->hunks);
 	while (h) {
-		n = TAILQ_NEXT(h, next);
+		gcli_diff_hunk *n = TAILQ_NEXT(h, next);
 		gcli_free_diff_hunk(h);
 		free(h);
 		h = n;
 	}
 	TAILQ_INIT(&diff->hunks);
+}
+
+void
+gcli_free_patch(gcli_patch *patch)
+{
+	gcli_diff *d, *n;
+
+	free(patch->prelude);
+	patch->prelude = NULL;
+
+	d = TAILQ_FIRST(&patch->diffs);
+	while (d) {
+		n = TAILQ_NEXT(d, next);
+		gcli_free_diff(d);
+		free(d);
+		d = n;
+	}
+	TAILQ_INIT(&patch->diffs);
 }
 
 void

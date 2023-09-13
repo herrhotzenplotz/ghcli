@@ -47,27 +47,27 @@ open_sample(char const *const name)
 	return r;
 }
 
-ATF_TC_WITHOUT_HEAD(free_diff_cleans_up_properly);
-ATF_TC_BODY(free_diff_cleans_up_properly, tc)
+ATF_TC_WITHOUT_HEAD(free_patch_cleans_up_properly);
+ATF_TC_BODY(free_patch_cleans_up_properly, tc)
 {
-	gcli_diff diff = {0};
+	gcli_patch patch = {0};
 
-	gcli_free_diff(&diff);
+	gcli_free_patch(&patch);
 
-	ATF_CHECK(diff.prelude == NULL);
-	ATF_CHECK(TAILQ_EMPTY(&diff.hunks));
+	ATF_CHECK(patch.prelude == NULL);
+	ATF_CHECK(TAILQ_EMPTY(&patch.diffs));
 }
 
 ATF_TC_WITHOUT_HEAD(patch_prelude);
 ATF_TC_BODY(patch_prelude, tc)
 {
-	gcli_diff diff = {0};
+	gcli_patch patch = {0};
 	gcli_diff_parser parser = {0};
 	char const *const fname = "01_diff_prelude.patch";
 
 	FILE *inf = open_sample("01_diff_prelude.patch");
 	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
-	ATF_REQUIRE(gcli_diff_parse_prelude(&parser, &diff) == 0);
+	ATF_REQUIRE(gcli_patch_parse_prelude(&parser, &patch) == 0);
 
 	char const expected_prelude[] =
 		"From 47b40f51cae6cec9a3132f888fd66c21ecb687fa Mon Sep 17 00:00:00 2001\n"
@@ -81,10 +81,10 @@ ATF_TC_BODY(patch_prelude, tc)
 		" src/pulls.c           |  9 +++++++\n"
 		" 3 files changed, 65 insertions(+)\n"
 		"\n";
-	ATF_REQUIRE(diff.prelude != NULL);
-	ATF_CHECK_STREQ(diff.prelude, expected_prelude);
+	ATF_REQUIRE(patch.prelude != NULL);
+	ATF_CHECK_STREQ(patch.prelude, expected_prelude);
 
-	free(diff.prelude);
+	free(patch.prelude);
 
 	gcli_free_diff_parser(&parser);
 }
@@ -92,15 +92,15 @@ ATF_TC_BODY(patch_prelude, tc)
 ATF_TC_WITHOUT_HEAD(empty_patch_should_not_fail);
 ATF_TC_BODY(empty_patch_should_not_fail, tc)
 {
-	gcli_diff diff = {0};
+	gcli_patch patch = {0};
 	gcli_diff_parser parser = {0};
 
 	char zeros[] = "";
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(zeros, sizeof zeros, "zeros", &parser) == 0);
-	ATF_REQUIRE(gcli_diff_parse_prelude(&parser, &diff) == 0);
-	ATF_REQUIRE(diff.prelude != NULL);
-	ATF_CHECK_STREQ(diff.prelude, "");
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+	ATF_REQUIRE(patch.prelude != NULL);
+	ATF_CHECK_STREQ(patch.prelude, "");
 
 	gcli_free_diff_parser(&parser);
 }
@@ -108,24 +108,24 @@ ATF_TC_BODY(empty_patch_should_not_fail, tc)
 ATF_TC_WITHOUT_HEAD(empty_hunk_should_not_fault);
 ATF_TC_BODY(empty_hunk_should_not_fault, tc)
 {
-	gcli_diff_hunk hunk = {0};
+	gcli_diff diff = {0};
 	gcli_diff_parser parser = {0};
 
 	char input[] = "";
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "testinput", &parser) == 0);
 
 	/* Expect this to error out because there is no diff --git marker */
-	ATF_REQUIRE(gcli_diff_parse_hunk(&parser, &hunk) < 0);
+	ATF_REQUIRE(gcli_parse_diff(&parser, &diff) < 0);
 
 	gcli_free_diff_parser(&parser);
 }
 
-ATF_TC_WITHOUT_HEAD(parse_simple_diff_hunk);
-ATF_TC_BODY(parse_simple_diff_hunk, tc)
+ATF_TC_WITHOUT_HEAD(parse_simple_diff);
+ATF_TC_BODY(parse_simple_diff, tc)
 {
-	gcli_diff_hunk diff_hunk = {0};
+	gcli_diff diff = {0};
 	gcli_diff_parser parser = {0};
-	gcli_diff_chunk *chunk = NULL;
+	gcli_diff_hunk *hunk = NULL;
 
 	char zeros[] =
 		"diff --git a/README b/README\n"
@@ -140,50 +140,50 @@ ATF_TC_BODY(parse_simple_diff_hunk, tc)
 		"+Hello World\n";
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(zeros, sizeof zeros, "zeros", &parser) == 0);
-	ATF_REQUIRE(gcli_diff_parse_hunk(&parser, &diff_hunk) == 0);
+	ATF_REQUIRE(gcli_parse_diff(&parser, &diff) == 0);
 
-	ATF_CHECK_STREQ(diff_hunk.file_a, "README");
-	ATF_CHECK_STREQ(diff_hunk.file_b, "README");
+	ATF_CHECK_STREQ(diff.file_a, "README");
+	ATF_CHECK_STREQ(diff.file_b, "README");
 
-	ATF_CHECK_STREQ(diff_hunk.hash_a, "8befdf0");
-	ATF_CHECK_STREQ(diff_hunk.hash_b, "d193b83");
-	ATF_CHECK_STREQ(diff_hunk.file_mode, "100644");
+	ATF_CHECK_STREQ(diff.hash_a, "8befdf0");
+	ATF_CHECK_STREQ(diff.hash_b, "d193b83");
+	ATF_CHECK_STREQ(diff.file_mode, "100644");
 
-	ATF_CHECK_STREQ(diff_hunk.r_file, "README");
-	ATF_CHECK_STREQ(diff_hunk.a_file, "README");
+	ATF_CHECK_STREQ(diff.r_file, "README");
+	ATF_CHECK_STREQ(diff.a_file, "README");
 
 	/* Complete parse */
 	ATF_CHECK(parser.hd[0] == '\0');
 
-	/* Check chunks */
-	chunk = TAILQ_FIRST(&diff_hunk.chunks);
-	ATF_REQUIRE(chunk != NULL);
+	/* Check hunks */
+	hunk = TAILQ_FIRST(&diff.hunks);
+	ATF_REQUIRE(hunk != NULL);
 
-	ATF_CHECK(chunk->range_a_start == 3);
-	ATF_CHECK(chunk->range_a_end == 5);
-	ATF_CHECK(chunk->range_r_start == 3);
-	ATF_CHECK(chunk->range_r_end == 3);
-	ATF_CHECK_STREQ(chunk->context_info, "This is just a placeholder");
-	ATF_CHECK_STREQ(chunk->body,
+	ATF_CHECK(hunk->range_a_start == 3);
+	ATF_CHECK(hunk->range_a_end == 5);
+	ATF_CHECK(hunk->range_r_start == 3);
+	ATF_CHECK(hunk->range_r_end == 3);
+	ATF_CHECK_STREQ(hunk->context_info, "This is just a placeholder");
+	ATF_CHECK_STREQ(hunk->body,
 	                " Test test test\n"
 	                " \n"
 	                " foo\n"
 	                "+\n"
 	                "+Hello World\n");
 
-	/* This is the end of the list of chunks */
-	chunk = TAILQ_NEXT(chunk, next);
-	ATF_CHECK(chunk == NULL);
+	/* This is the end of the list of hunks */
+	hunk = TAILQ_NEXT(hunk, next);
+	ATF_CHECK(hunk == NULL);
 
-	gcli_free_diff_hunk(&diff_hunk);
+	gcli_free_diff(&diff);
 	gcli_free_diff_parser(&parser);
 }
 
-ATF_TC_WITHOUT_HEAD(hunk_with_two_chunks);
-ATF_TC_BODY(hunk_with_two_chunks, tp)
+ATF_TC_WITHOUT_HEAD(diff_with_two_hunks);
+ATF_TC_BODY(diff_with_two_hunks, tp)
 {
 	gcli_diff_parser parser = {0};
-	gcli_diff_hunk hunk = {0};
+	gcli_diff diff = {0};
 	char input[] =
 		"diff --git a/README b/README\n"
 		"index d193b83..21af54a 100644\n"
@@ -204,48 +204,48 @@ ATF_TC_BODY(hunk_with_two_chunks, tp)
 		" \n";
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "<input>", &parser) == 0);
-	ATF_REQUIRE(gcli_diff_parse_hunk(&parser, &hunk) == 0);
+	ATF_REQUIRE(gcli_parse_diff(&parser, &diff) == 0);
 
-	ATF_CHECK_STREQ(hunk.file_a, "README");
-	ATF_CHECK_STREQ(hunk.file_b, "README");
-	ATF_CHECK_STREQ(hunk.hash_a, "d193b83");
-	ATF_CHECK_STREQ(hunk.hash_b, "21af54a");
+	ATF_CHECK_STREQ(diff.file_a, "README");
+	ATF_CHECK_STREQ(diff.file_b, "README");
+	ATF_CHECK_STREQ(diff.hash_a, "d193b83");
+	ATF_CHECK_STREQ(diff.hash_b, "21af54a");
 
-	ATF_CHECK_STREQ(hunk.file_mode, "100644");
+	ATF_CHECK_STREQ(diff.file_mode, "100644");
 
-	ATF_CHECK_STREQ(hunk.r_file, "README");
-	ATF_CHECK_STREQ(hunk.a_file, "README");
+	ATF_CHECK_STREQ(diff.r_file, "README");
+	ATF_CHECK_STREQ(diff.a_file, "README");
 
-	gcli_diff_chunk *c = NULL;
+	gcli_diff_hunk *h = NULL;
 
-	/* First chunk of this hunk */
-	c = TAILQ_FIRST(&hunk.chunks);
-	ATF_REQUIRE(c != NULL);
+	/* First hunk of this diff */
+	h = TAILQ_FIRST(&diff.hunks);
+	ATF_REQUIRE(h != NULL);
 
-	ATF_CHECK(c->range_r_start == 1);
-	ATF_CHECK(c->range_r_end == 3);
-	ATF_CHECK(c->range_a_start == 1);
-	ATF_CHECK(c->range_a_end == 5);
+	ATF_CHECK(h->range_r_start == 1);
+	ATF_CHECK(h->range_r_end == 3);
+	ATF_CHECK(h->range_a_start == 1);
+	ATF_CHECK(h->range_a_end == 5);
 
-	ATF_CHECK_STREQ(c->context_info, "");
-	ATF_CHECK_STREQ(c->body,
+	ATF_CHECK_STREQ(h->context_info, "");
+	ATF_CHECK_STREQ(h->body,
 	                "+Hunk 1\n"
 	                "+\n"
 	                " This is just a placeholder\n"
 	                " \n"
 	                " Test test test\n");
 
-	/* Second chunk */
-	c = TAILQ_NEXT(c, next);
-	ATF_REQUIRE(c != NULL);
+	/* Second hunk */
+	h = TAILQ_NEXT(h, next);
+	ATF_REQUIRE(h != NULL);
 
-	ATF_CHECK(c->range_r_start == 5);
-	ATF_CHECK(c->range_r_end == 3);
-	ATF_CHECK(c->range_a_start == 7);
-	ATF_CHECK(c->range_a_end == 5);
+	ATF_CHECK(h->range_r_start == 5);
+	ATF_CHECK(h->range_r_end == 3);
+	ATF_CHECK(h->range_a_start == 7);
+	ATF_CHECK(h->range_a_end == 5);
 
-	ATF_CHECK_STREQ(c->context_info, "Test test test");
-	ATF_CHECK_STREQ(c->body,
+	ATF_CHECK_STREQ(h->context_info, "Test test test");
+	ATF_CHECK_STREQ(h->body,
 	                " fooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooobar\n"
 	                " \n"
 	                " Hello World\n"
@@ -253,16 +253,16 @@ ATF_TC_BODY(hunk_with_two_chunks, tp)
 	                "+Hunk 2\n"
 	                " \n");
 
-	/* This must be the end of the chunks */
-	c = TAILQ_NEXT(c, next);
-	ATF_CHECK(c == NULL);
+	/* This must be the end of the hunks */
+	h = TAILQ_NEXT(h, next);
+	ATF_CHECK(h == NULL);
 
-	gcli_free_diff_hunk(&hunk);
+	gcli_free_diff(&diff);
 	gcli_free_diff_parser(&parser);
 }
 
-ATF_TC_WITHOUT_HEAD(two_hunks_with_one_chunk_each);
-ATF_TC_BODY(two_hunks_with_one_chunk_each, tc)
+ATF_TC_WITHOUT_HEAD(two_diffs_with_one_hunk_each);
+ATF_TC_BODY(two_diffs_with_one_hunk_each, tc)
 {
 	char const diff_data[] =
 		"diff --git a/README b/README\n"
@@ -282,76 +282,96 @@ ATF_TC_BODY(two_hunks_with_one_chunk_each, tc)
 		"+++ b/foo.json\n"
 		"@@ -0,0 +1 @@\n"
 		"+wat\n";
-	gcli_diff diff = {0};
+	gcli_patch patch = {0};
 	gcli_diff_parser parser = {0};
+	gcli_diff *diff;
 	gcli_diff_hunk *hunk;
-	gcli_diff_chunk *chunk;
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(diff_data, sizeof(diff_data), "diff_data", &parser) == 0);
-	ATF_REQUIRE(gcli_parse_diff(&parser, &diff) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
 
-	hunk = TAILQ_FIRST(&diff.hunks);
+	diff = TAILQ_FIRST(&patch.diffs);
+	ATF_REQUIRE(diff != NULL);
+	ATF_CHECK_STREQ(diff->file_a, "README");
+	ATF_CHECK_STREQ(diff->file_b, "README");
+	ATF_CHECK_STREQ(diff->hash_a, "d193b83");
+	ATF_CHECK_STREQ(diff->hash_b, "ad32368");
+	ATF_CHECK_STREQ(diff->file_mode, "100644");
+	ATF_CHECK_STREQ(diff->r_file, "README");
+	ATF_CHECK_STREQ(diff->a_file, "README");
+	ATF_CHECK(diff->new_file_mode == 0);
+
+	hunk = TAILQ_FIRST(&diff->hunks);
 	ATF_REQUIRE(hunk != NULL);
-	ATF_CHECK_STREQ(hunk->file_a, "README");
-	ATF_CHECK_STREQ(hunk->file_b, "README");
-	ATF_CHECK_STREQ(hunk->hash_a, "d193b83");
-	ATF_CHECK_STREQ(hunk->hash_b, "ad32368");
-	ATF_CHECK_STREQ(hunk->file_mode, "100644");
-	ATF_CHECK_STREQ(hunk->r_file, "README");
-	ATF_CHECK_STREQ(hunk->a_file, "README");
-	ATF_CHECK(hunk->new_file_mode == 0);
+	ATF_CHECK_STREQ(hunk->context_info, "");
+	ATF_CHECK(hunk->range_r_start == 1);
+	ATF_CHECK(hunk->range_r_end == 3);
+	ATF_CHECK(hunk->range_a_start == 1);
+	ATF_CHECK(hunk->range_a_end == 5);
 
-	chunk = TAILQ_FIRST(&hunk->chunks);
-	ATF_REQUIRE(chunk != NULL);
-	ATF_CHECK_STREQ(chunk->context_info, "");
-	ATF_CHECK(chunk->range_r_start == 1);
-	ATF_CHECK(chunk->range_r_end == 3);
-	ATF_CHECK(chunk->range_a_start == 1);
-	ATF_CHECK(chunk->range_a_end == 5);
-
-	ATF_CHECK_STREQ(chunk->body,
+	ATF_CHECK_STREQ(hunk->body,
 	                "+Hunk 1\n"
 	                "+\n"
 	                " This is just a placeholder\n"
 	                " \n"
 	                " Test test test\n");
 
-	chunk = TAILQ_NEXT(chunk, next);
-	ATF_CHECK(chunk == NULL); /* last one in this list */
-
-	/* Second hunk */
 	hunk = TAILQ_NEXT(hunk, next);
+	ATF_CHECK(hunk == NULL); /* last one in this list */
+
+	/* Second diff */
+	diff = TAILQ_NEXT(diff, next);
+	ATF_REQUIRE(diff != NULL);
+
+	ATF_CHECK_STREQ(diff->file_a, "foo.json");
+	ATF_CHECK_STREQ(diff->file_b, "foo.json");
+	ATF_CHECK_STREQ(diff->hash_a, "0000000");
+	ATF_CHECK_STREQ(diff->hash_b, "3be9217");
+	ATF_CHECK_STREQ(diff->r_file, "/dev/null");
+	ATF_CHECK_STREQ(diff->a_file, "foo.json");
+	ATF_CHECK(diff->new_file_mode == 0100644);
+
+	hunk = TAILQ_FIRST(&diff->hunks);
 	ATF_REQUIRE(hunk != NULL);
+	ATF_CHECK(hunk->range_r_start == 0);
+	ATF_CHECK(hunk->range_r_end == 0);
+	ATF_CHECK(hunk->range_a_start == 1);
+	ATF_CHECK(hunk->range_a_end == 0);
+	ATF_CHECK_STREQ(hunk->body, "+wat\n");
 
-	ATF_CHECK_STREQ(hunk->file_a, "foo.json");
-	ATF_CHECK_STREQ(hunk->file_b, "foo.json");
-	ATF_CHECK_STREQ(hunk->hash_a, "0000000");
-	ATF_CHECK_STREQ(hunk->hash_b, "3be9217");
-	ATF_CHECK_STREQ(hunk->r_file, "/dev/null");
-	ATF_CHECK_STREQ(hunk->a_file, "foo.json");
-	ATF_CHECK(hunk->new_file_mode == 0100644);
+	/* This must be the last hunk in the diff */
+	hunk = TAILQ_NEXT(hunk, next);
+	ATF_CHECK(hunk == NULL);
 
-	chunk = TAILQ_FIRST(&hunk->chunks);
-	ATF_REQUIRE(chunk != NULL);
-	ATF_CHECK(chunk->range_r_start == 0);
-	ATF_CHECK(chunk->range_r_end == 0);
-	ATF_CHECK(chunk->range_a_start == 1);
-	ATF_CHECK(chunk->range_a_end == 0);
-	ATF_CHECK_STREQ(chunk->body, "+wat\n");
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&parser);
+}
 
-	gcli_free_diff(&diff);
+ATF_TC_WITHOUT_HEAD(full_patch);
+ATF_TC_BODY(full_patch, tc)
+{
+	gcli_patch patch = {0};
+	gcli_diff_parser parser = {0};
+	char const *const fname = "01_diff_prelude.patch";
+
+	FILE *inf = open_sample("01_diff_prelude.patch");
+	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	gcli_free_patch(&patch);
 	gcli_free_diff_parser(&parser);
 }
 
 ATF_TP_ADD_TCS(tp)
 {
-	ATF_TP_ADD_TC(tp, free_diff_cleans_up_properly);
+	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
 	ATF_TP_ADD_TC(tp, patch_prelude);
 	ATF_TP_ADD_TC(tp, empty_patch_should_not_fail);
-	ATF_TP_ADD_TC(tp, parse_simple_diff_hunk);
+	ATF_TP_ADD_TC(tp, parse_simple_diff);
 	ATF_TP_ADD_TC(tp, empty_hunk_should_not_fault);
-	ATF_TP_ADD_TC(tp, hunk_with_two_chunks);
-	ATF_TP_ADD_TC(tp, two_hunks_with_one_chunk_each);
+	ATF_TP_ADD_TC(tp, diff_with_two_hunks);
+	ATF_TP_ADD_TC(tp, two_diffs_with_one_hunk_each);
+	ATF_TP_ADD_TC(tp, full_patch);
 
 	return atf_no_error();
 }
