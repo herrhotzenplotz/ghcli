@@ -64,6 +64,8 @@ gcli_diff_parser_from_file(FILE *f, char const *filename,
 	buf[len] = '\0';
 	fread(buf, len, 1, f);
 
+	out->buf_needs_free = true;
+
 	return gcli_diff_parser_from_buffer(buf, len, filename, out);
 }
 
@@ -507,7 +509,73 @@ gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out)
 }
 
 void
+gcli_free_diff_chunk(gcli_diff_chunk *chunk)
+{
+	free(chunk->context_info);
+	chunk->context_info = NULL;
+
+	free(chunk->body);
+	chunk->body = NULL;
+}
+
+void
+gcli_free_diff_hunk(gcli_diff_hunk *hunk)
+{
+	gcli_diff_chunk *d;
+
+	free(hunk->file_a);
+	hunk->file_a = NULL;
+
+	free(hunk->file_b);
+	hunk->file_b = NULL;
+
+	free(hunk->hash_a);
+	hunk->hash_a = NULL;
+
+	free(hunk->hash_b);
+	hunk->hash_b = NULL;
+
+	free(hunk->file_mode);
+	hunk->file_mode = NULL;
+
+	free(hunk->r_file);
+	hunk->r_file = NULL;
+
+	free(hunk->a_file);
+	hunk->a_file = NULL;
+
+	d = TAILQ_FIRST(&hunk->chunks);
+	while (d) {
+		gcli_diff_chunk *n = TAILQ_NEXT(d, next);
+		gcli_free_diff_chunk(d);
+		free(d);
+		d = n;
+	}
+	TAILQ_INIT(&hunk->chunks);
+}
+
+void
 gcli_free_diff(gcli_diff *diff)
 {
-	(void) diff;
+	gcli_diff_hunk *h, *n;
+	free(diff->prelude);
+	diff->prelude = NULL;
+
+	h = TAILQ_FIRST(&diff->hunks);
+	while (h) {
+		n = TAILQ_NEXT(h, next);
+		gcli_free_diff_hunk(h);
+		free(h);
+		h = n;
+	}
+	TAILQ_INIT(&diff->hunks);
+}
+
+void
+gcli_free_diff_parser(gcli_diff_parser *parser)
+{
+	if (parser->buf_needs_free)
+		free((char *)parser->buf);
+
+	memset(parser, 0, sizeof(*parser));
 }

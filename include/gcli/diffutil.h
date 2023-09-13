@@ -30,6 +30,7 @@
 #ifndef GCLI_DIFFUTIL_H
 #define GCLI_DIFFUTIL_H
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/queue.h>
@@ -70,6 +71,11 @@ struct gcli_diff_parser {
 	size_t buf_size;
 	char const *filename;
 	int col, row;
+
+	/* The parser was initialised with gcli_diff_parser_from_file
+	 * which allocates on the heap. We need to free this when
+	 * asked to clean up the parser. */
+	bool buf_needs_free;
 };
 
 int gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
@@ -81,5 +87,8 @@ int gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out);
 int gcli_diff_parse_hunk(gcli_diff_parser *parser, gcli_diff_hunk *out);
 int gcli_diff_parse_prelude(gcli_diff_parser *parser, gcli_diff *out);
 void gcli_free_diff(gcli_diff *diff);
+void gcli_free_diff_hunk(gcli_diff_hunk *hunk);
+void gcli_free_diff_chunk(gcli_diff_chunk *chunk);
+void gcli_free_diff_parser(gcli_diff_parser *parser);
 
 #endif /* GCLI_DIFFUTIL_H */

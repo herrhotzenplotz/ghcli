@@ -83,6 +83,10 @@ ATF_TC_BODY(patch_prelude, tc)
 		"\n";
 	ATF_REQUIRE(diff.prelude != NULL);
 	ATF_CHECK_STREQ(diff.prelude, expected_prelude);
+
+	free(diff.prelude);
+
+	gcli_free_diff_parser(&parser);
 }
 
 ATF_TC_WITHOUT_HEAD(empty_patch_should_not_fail);
@@ -97,6 +101,8 @@ ATF_TC_BODY(empty_patch_should_not_fail, tc)
 	ATF_REQUIRE(gcli_diff_parse_prelude(&parser, &diff) == 0);
 	ATF_REQUIRE(diff.prelude != NULL);
 	ATF_CHECK_STREQ(diff.prelude, "");
+
+	gcli_free_diff_parser(&parser);
 }
 
 ATF_TC_WITHOUT_HEAD(empty_hunk_should_not_fault);
@@ -110,6 +116,8 @@ ATF_TC_BODY(empty_hunk_should_not_fault, tc)
 
 	/* Expect this to error out because there is no diff --git marker */
 	ATF_REQUIRE(gcli_diff_parse_hunk(&parser, &hunk) < 0);
+
+	gcli_free_diff_parser(&parser);
 }
 
 ATF_TC_WITHOUT_HEAD(parse_simple_diff_hunk);
@@ -166,6 +174,9 @@ ATF_TC_BODY(parse_simple_diff_hunk, tc)
 	/* This is the end of the list of chunks */
 	chunk = TAILQ_NEXT(chunk, next);
 	ATF_CHECK(chunk == NULL);
+
+	gcli_free_diff_hunk(&diff_hunk);
+	gcli_free_diff_parser(&parser);
 }
 
 ATF_TC_WITHOUT_HEAD(hunk_with_two_chunks);
@@ -245,6 +256,9 @@ ATF_TC_BODY(hunk_with_two_chunks, tp)
 	/* This must be the end of the chunks */
 	c = TAILQ_NEXT(c, next);
 	ATF_CHECK(c == NULL);
+
+	gcli_free_diff_hunk(&hunk);
+	gcli_free_diff_parser(&parser);
 }
 
 ATF_TC_WITHOUT_HEAD(two_hunks_with_one_chunk_each);
@@ -324,6 +338,9 @@ ATF_TC_BODY(two_hunks_with_one_chunk_each, tc)
 	ATF_CHECK(chunk->range_a_start == 1);
 	ATF_CHECK(chunk->range_a_end == 0);
 	ATF_CHECK_STREQ(chunk->body, "+wat\n");
+
+	gcli_free_diff(&diff);
+	gcli_free_diff_parser(&parser);
 }
 
 ATF_TP_ADD_TCS(tp)
