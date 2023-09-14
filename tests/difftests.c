@@ -457,6 +457,77 @@ ATF_TC_BODY(diff_with_two_hunks_and_comments, tc)
 	gcli_free_diff_parser(&parser);
 }
 
+ATF_TC_WITHOUT_HEAD(patch_with_two_diffs_and_comments);
+ATF_TC_BODY(patch_with_two_diffs_and_comments, tc)
+{
+	struct gcli_patch patch = {0};
+	struct gcli_diff_parser parser = {0};
+	struct gcli_diff_comments comments = {0};
+
+	char const input[] =
+		"diff --git a/bar b/bar\n"
+		"index 6c31faf..84b646b 100644\n"
+		"--- a/bar\n"
+		"+++ b/bar\n"
+		"@@ -20,5 +20,5 @@ line 4\n"
+		" \n"
+		" \n"
+		" \n"
+		"I do not like this change.\n"
+		"-line 5\n"
+		"+line 69\n"
+		" line 6\n"
+		"diff --git a/foo b/foo\n"
+		"index 9c2a709..d719e9c 100644\n"
+		"--- a/foo\n"
+		"+++ b/foo\n"
+		"@@ -2,3 +2,12 @@ line 1\n"
+		" line 2\n"
+		" line 3\n"
+		" line 4\n"
+		"+\n"
+		"+\n"
+		"+\n"
+		"+\n"
+		"+\n"
+		"This is horrible\n"
+		"Get some help!\n"
+		"+\n"
+		"+\n"
+		"+\n"
+		"+This is a random line.\n";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof(input), "input", &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
+
+	{
+		struct gcli_diff_comment *c = NULL;
+
+		/* First comment */
+		c = TAILQ_FIRST(&comments);
+		ATF_REQUIRE(c != NULL);
+
+		ATF_CHECK_STREQ(c->filename, "bar");
+		ATF_CHECK_STREQ(c->comment, "I do not like this change.\n");
+		ATF_CHECK(c->row == 23);
+		ATF_CHECK(c->diff_line_offset == 4);
+
+		/* Second comment */
+		c = TAILQ_NEXT(c, next);
+		ATF_REQUIRE(c != NULL);
+
+		ATF_CHECK_STREQ(c->filename, "foo");
+		ATF_CHECK_STREQ(c->comment, "This is horrible\nGet some help!\n");
+		ATF_CHECK(c->row == 10);
+		ATF_CHECK(c->diff_line_offset == 9);
+
+		/* End */
+		c = TAILQ_NEXT(c, next);
+		ATF_CHECK(c == NULL);
+	}
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -469,6 +540,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, full_patch);
 	ATF_TP_ADD_TC(tp, simple_patch_with_comments);
 	ATF_TP_ADD_TC(tp, diff_with_two_hunks_and_comments);
+	ATF_TP_ADD_TC(tp, patch_with_two_diffs_and_comments);
 
 	return atf_no_error();
 }
