@@ -42,6 +42,8 @@ struct gcli_diff_hunk {
 	int range_a_start, range_a_end, range_r_start, range_r_end;
 	char *context_info;
 	char *body;
+
+	int diff_line_offset;           /* line offset of this hunk inside the diff */
 };
 
 typedef struct gcli_diff gcli_diff;
@@ -72,6 +74,8 @@ struct gcli_diff_parser {
 	char const *filename;
 	int col, row;
 
+	int diff_line_offset;
+
 	/* The parser was initialised with gcli_diff_parser_from_file
 	 * which allocates on the heap. We need to free this when
 	 * asked to clean up the parser. */
@@ -84,6 +88,8 @@ struct gcli_diff_comment {
 
 	char *filename;
 	int row;
+	int diff_line_offset;
+
 	char *comment;
 };
 

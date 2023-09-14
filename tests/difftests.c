@@ -163,6 +163,7 @@ ATF_TC_BODY(parse_simple_diff, tc)
 	ATF_CHECK(hunk->range_a_end == 5);
 	ATF_CHECK(hunk->range_r_start == 3);
 	ATF_CHECK(hunk->range_r_end == 3);
+	ATF_CHECK(hunk->diff_line_offset == 1);
 	ATF_CHECK_STREQ(hunk->context_info, "This is just a placeholder");
 	ATF_CHECK_STREQ(hunk->body,
 	                " Test test test\n"
@@ -226,6 +227,7 @@ ATF_TC_BODY(diff_with_two_hunks, tp)
 	ATF_CHECK(h->range_r_end == 3);
 	ATF_CHECK(h->range_a_start == 1);
 	ATF_CHECK(h->range_a_end == 5);
+	ATF_CHECK(h->diff_line_offset == 1);
 
 	ATF_CHECK_STREQ(h->context_info, "");
 	ATF_CHECK_STREQ(h->body,
@@ -243,6 +245,7 @@ ATF_TC_BODY(diff_with_two_hunks, tp)
 	ATF_CHECK(h->range_r_end == 3);
 	ATF_CHECK(h->range_a_start == 7);
 	ATF_CHECK(h->range_a_end == 5);
+	ATF_CHECK(h->diff_line_offset == 7);
 
 	ATF_CHECK_STREQ(h->context_info, "Test test test");
 	ATF_CHECK_STREQ(h->body,
@@ -308,6 +311,7 @@ ATF_TC_BODY(two_diffs_with_one_hunk_each, tc)
 	ATF_CHECK(hunk->range_r_end == 3);
 	ATF_CHECK(hunk->range_a_start == 1);
 	ATF_CHECK(hunk->range_a_end == 5);
+	ATF_CHECK(hunk->diff_line_offset == 1);
 
 	ATF_CHECK_STREQ(hunk->body,
 	                "+Hunk 1\n"
@@ -337,6 +341,7 @@ ATF_TC_BODY(two_diffs_with_one_hunk_each, tc)
 	ATF_CHECK(hunk->range_r_end == 0);
 	ATF_CHECK(hunk->range_a_start == 1);
 	ATF_CHECK(hunk->range_a_end == 0);
+	ATF_CHECK(hunk->diff_line_offset == 1);
 	ATF_CHECK_STREQ(hunk->body, "+wat\n");
 
 	/* This must be the last hunk in the diff */
@@ -382,6 +387,7 @@ ATF_TC_BODY(simple_patch_with_comments, tc)
 
 		ATF_CHECK_STREQ(comment->filename, "include/ghcli/pulls.h");
 		ATF_CHECK(comment->row == 60);
+		ATF_CHECK(comment->diff_line_offset == 4);
 		ATF_CHECK_STREQ(comment->comment, "\nThis is a comment on line 60.\n");
 
 		comment = TAILQ_NEXT(comment, next);
