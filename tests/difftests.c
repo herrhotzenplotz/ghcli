@@ -398,6 +398,65 @@ ATF_TC_BODY(simple_patch_with_comments, tc)
 	gcli_free_diff_parser(&parser);
 }
 
+ATF_TC_WITHOUT_HEAD(diff_with_two_hunks_and_comments);
+ATF_TC_BODY(diff_with_two_hunks_and_comments, tc)
+{
+	struct gcli_patch patch = {0};
+	struct gcli_diff_parser parser = {0};
+	struct gcli_diff_comments comments = {0};
+
+	char const input[] =
+		"diff --git a/README b/README\n"
+		"index d193b83..ad32368 100644\n"
+		"--- a/README\n"
+		"+++ b/README\n"
+		"@@ -1,5 +1,6 @@\n"
+		" line 1\n"
+		" line 2\n"
+		"+new line here\n"
+		"This is the first comment\n"
+		" line 3\n"
+		" \n"
+		" \n"
+		"@@ -18,4 +19,5 @@\n"
+		" \n"
+		" line 19\n"
+		" line 20\n"
+		"This is the other comment\n"
+		"+another addition right here\n"
+		" line 21\n";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof(input), "input", &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
+
+	{
+		struct gcli_diff_comment *comment;
+
+		comment = TAILQ_FIRST(&comments);
+		ATF_REQUIRE(comment != NULL);
+
+		ATF_CHECK_STREQ(comment->filename, "README");
+		ATF_CHECK_STREQ(comment->comment, "This is the first comment\n");
+		ATF_CHECK(comment->row == 4);
+		ATF_CHECK(comment->diff_line_offset == 4);
+
+		comment = TAILQ_NEXT(comment, next);
+		ATF_REQUIRE(comment != NULL);
+
+		ATF_CHECK_STREQ(comment->filename, "README");
+		ATF_CHECK_STREQ(comment->comment, "This is the other comment\n");
+		ATF_CHECK(comment->row == 22);
+		ATF_CHECK(comment->diff_line_offset == 11);
+
+		comment = TAILQ_NEXT(comment, next);
+		ATF_REQUIRE(comment == NULL);
+	}
+
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&parser);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -409,6 +468,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, two_diffs_with_one_hunk_each);
 	ATF_TP_ADD_TC(tp, full_patch);
 	ATF_TP_ADD_TC(tp, simple_patch_with_comments);
+	ATF_TP_ADD_TC(tp, diff_with_two_hunks_and_comments);
 
 	return atf_no_error();
 }

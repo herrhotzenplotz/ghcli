@@ -114,8 +114,6 @@ nextline(gcli_diff_parser *parser, struct token *out)
 	if (out->end == NULL)
 		out->end = parser->buf + parser->buf_size - 1;
 
-	parser->diff_line_offset += 1;
-
 	return 0;
 }
 
@@ -272,6 +270,7 @@ parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_hunk *out)
 	strncat(out->context_info, line.start, token_len(&line));
 
 	parser->hd = line.end + 1;
+	parser->diff_line_offset += 1;
 
 	return 0;
 }
@@ -385,6 +384,8 @@ read_hunk_body(gcli_diff_parser *parser, gcli_diff_hunk *hunk)
 	buf.start = parser->hd;
 	buf.end = parser->hd;
 
+	hunk->diff_line_offset = parser->diff_line_offset;
+
 	for (;;) {
 		struct token line = {0};
 
@@ -399,6 +400,14 @@ read_hunk_body(gcli_diff_parser *parser, gcli_diff_hunk *hunk)
 
 		if (strncmp(line.start, "@@", 2) == 0)
 			break;
+
+		/* If it is a comment, don't count this line into
+		 * the absolute diff offset of the hunk */
+		if (line.start[0] == ' ' || line.start[0] == '+' ||
+		    line.start[0] == '-')
+		{
+			parser->diff_line_offset += 1;
+		}
 
 		buf.end = line.end + 1;
 		parser->hd = line.end + 1;
@@ -490,11 +499,11 @@ gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 	if (parse_hunk_a_or_r_file(parser, 'b', &out->a_file) < 0)
 		return -1;
 
-	parser->diff_line_offset = 1;
+	parser->diff_line_offset = 0;
 	TAILQ_INIT(&out->hunks);
 	while (parser->hd[0] == '@') {
 		gcli_diff_hunk *hunk = calloc(sizeof(*hunk), 1);
-		hunk->diff_line_offset = parser->diff_line_offset;
+
 		if (parse_hunk_range_info(parser, hunk) < 0) {
 			free(hunk);
 			return -1;
@@ -590,12 +599,14 @@ struct comment_read_ctx {
 	gcli_diff_hunk const *hunk;
 	gcli_diff_comments *comments;
 	char const *front;
-	int patched_line_offset;
+	int patched_line_offset;       /* Offset of the comment in the final patched file */
+	int diff_line_offset;          /* Offset of the comment within the current diff */
 };
 
 static gcli_diff_comment *
 make_comment(struct comment_read_ctx *ctx, char const *text,
-             size_t text_len, int line_number)
+             size_t text_len, int line_number,
+             int diff_line_offset)
 {
 	gcli_diff_comment *comment = calloc(sizeof(*comment), 1);
 	comment->filename = strdup(ctx->diff->file_b);
@@ -604,6 +615,7 @@ make_comment(struct comment_read_ctx *ctx, char const *text,
 	memcpy(comment->comment, text, text_len);
 
 	comment->row = line_number;
+	comment->diff_line_offset = diff_line_offset;
 
 	return comment;
 }
@@ -613,6 +625,7 @@ read_comment(struct comment_read_ctx *ctx)
 {
 	char const *start = ctx->front;
 	int const line = ctx->patched_line_offset;
+	int const diff_line_offset = ctx->diff_line_offset;
 	size_t comment_len = 0;
 	gcli_diff_comment *cmt;
 
@@ -625,6 +638,7 @@ read_comment(struct comment_read_ctx *ctx)
 		if (ctx->front == NULL)
 			break;
 
+		ctx->diff_line_offset += 1;
 		ctx->front += 1;
 	}
 
@@ -633,7 +647,8 @@ read_comment(struct comment_read_ctx *ctx)
 	else
 		comment_len = strlen(start);
 
-	cmt = make_comment(ctx, start, comment_len, line);
+	cmt = make_comment(ctx, start, comment_len,
+	                   line, diff_line_offset);
 	TAILQ_INSERT_TAIL(ctx->comments, cmt, next);
 }
 
@@ -647,6 +662,7 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		.comments = out,
 		.front = hunk->body,
 		.patched_line_offset = hunk->range_a_start,
+		.diff_line_offset = hunk->diff_line_offset,
 	};
 
 	for (;;) {
@@ -656,6 +672,7 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		case ' ':
 		case '+':
 			ctx.patched_line_offset += 1;
+			ctx.diff_line_offset += 1;
 			break;
 		case '-':
 			break;
