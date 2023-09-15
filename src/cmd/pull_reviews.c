@@ -34,9 +34,10 @@
 #include <getopt.h>
 #include <unistd.h>
 
-#include <gcli/pulls.h>
 #include <gcli/cmd/cmd.h>
 #include <gcli/cmd/editor.h>
+#include <gcli/diffutil.h>
+#include <gcli/pulls.h>
 
 static void
 usage(void)
@@ -120,8 +121,32 @@ fetch_diff(struct review_ctx *ctx)
 }
 
 static void
+extract_diff_comments(struct review_ctx *ctx, gcli_diff_comments *out)
+{
+	FILE *f = fopen(ctx->diff_path, "r");
+	struct gcli_diff_parser p = {0};
+	gcli_patch patch = {0};
+
+	if (gcli_diff_parser_from_file(f, ctx->diff_path, &p) < 0)
+		err(1, "error: failed to open diff");
+
+	if (gcli_parse_patch(&p, &patch) < 0)
+		errx(1, "error: failed to parse patch");
+
+	if (gcli_patch_get_comments(&patch, out) < 0)
+		errx(1, "error: failed to get comments");
+
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&p);
+	fclose(f);
+}
+
+static void
 edit_diff(char const *owner, char const *repo, gcli_id pull_id)
 {
+	gcli_diff_comments comments = {0};
+	gcli_diff_comment *comment;
+
 	struct review_ctx ctx = {
 		.owner = owner,
 		.repo = repo,
@@ -138,6 +163,12 @@ edit_diff(char const *owner, char const *repo, gcli_id pull_id)
 	}
 
 	gcli_editor_open_file(g_clictx, ctx.diff_path);
+	extract_diff_comments(&ctx, &comments);
+
+	printf("\nThese are your comments:\n");
+	TAILQ_FOREACH(comment, &comments, next) {
+		printf("%s:%d: %s", comment->filename, comment->row, comment->comment);
+	}
 
 	free(ctx.diff_path);
 }
