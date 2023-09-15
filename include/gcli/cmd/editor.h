@@ -41,4 +41,6 @@ char *gcli_editor_get_user_message(
 	void (*initializer)(struct gcli_ctx *, FILE *, void *),
 	void *user_data);
 
+int gcli_editor_open_file(struct gcli_ctx *ctx, char const *const path);
+
 #endif /* GCLI_CMD_EDITOR_H */
