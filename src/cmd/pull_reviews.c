@@ -32,7 +32,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <unistd.h>
 
+#include <gcli/pulls.h>
 #include <gcli/cmd/cmd.h>
 
 static void
@@ -45,6 +47,96 @@ usage(void)
 	fprintf(stderr, "   -i id            Operate on the given PR id\n");
 	fprintf(stderr, "\n");
 	version();
+}
+
+static char *
+get_review_file_cache_dir(void)
+{
+	/* FIXME */
+	return sn_asprintf("%s/.cache/gcli/reviews",
+	                   getenv("HOME"));
+}
+
+unsigned long
+djb2(unsigned char const *str)
+{
+    unsigned long hash = 5381;
+    int c;
+
+	while ((c = *str++))
+		hash = ((hash << 5) + hash) + c;
+
+	return hash;
+}
+
+
+static char *
+make_review_diff_file_name(char const *const owner, char const *const repo,
+                           gcli_id const pull_id)
+{
+	unsigned long hash = 0;
+
+	hash ^= djb2((unsigned char const *)owner);
+	hash ^= djb2((unsigned char const *)repo);
+
+	return sn_asprintf("%lx_%lu.diff", hash, pull_id);
+}
+
+static char *
+get_review_diff_file_name(char const *const owner, char const *const repo,
+                          gcli_id const pull_id)
+{
+	char *base = get_review_file_cache_dir();
+	char *file = make_review_diff_file_name(owner, repo, pull_id);
+	char *path = sn_asprintf("%s/%s", base, file);
+	free(base);
+	free(file);
+
+	return path;
+}
+
+struct review_ctx {
+	char const *owner, *repo;
+	char *diff_path;
+	gcli_id pull_id;
+};
+
+static void
+fetch_diff(struct review_ctx *ctx)
+{
+	/* diff does not exist, fetch it! */
+	FILE *f = fopen(ctx->diff_path, "w");
+	if (f == NULL)
+		err(1, "error: cannot open %s", ctx->diff_path);
+
+	if (gcli_pull_get_diff(g_clictx, f, ctx->owner, ctx->repo, ctx->pull_id) < 0) {
+		errx(1, "error: failed to get diff: %s",
+		     gcli_get_error(g_clictx));
+	}
+
+	fclose(f);
+	f = NULL;
+}
+
+static void
+edit_diff(char const *owner, char const *repo, gcli_id pull_id)
+{
+	struct review_ctx ctx = {
+		.owner = owner,
+		.repo = repo,
+		.pull_id = pull_id,
+		.diff_path = get_review_diff_file_name(owner, repo, pull_id),
+	};
+
+	if (access(ctx.diff_path, F_OK) < 0) {
+		fetch_diff(&ctx);
+	} else {
+		/* The file exists, ask whether to open again or to delete and start over. */
+		if (sn_yesno("There seems to already be a review in progress. Start over?"))
+			fetch_diff(&ctx);
+	}
+
+	free(ctx.diff_path);
 }
 
 int
@@ -104,8 +196,7 @@ subcommand_pull_review(int argc, char *argv[])
 	}
 
 	check_owner_and_repo(&owner, &repo);
+	edit_diff(owner, repo, pr_id);
 
-	(void) pr_id;
-	fprintf(stderr, "error: not yet implemented\n");
-	return EXIT_FAILURE;
+	return EXIT_SUCCESS;
 }
