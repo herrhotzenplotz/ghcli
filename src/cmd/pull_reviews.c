@@ -31,13 +31,81 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
+
+#include <gcli/cmd/cmd.h>
+
+static void
+usage(void)
+{
+	fprintf(stderr, "usage: gcli pulls review [-o owner -r repo] -i id\n");
+	fprintf(stderr, "OPTIONS:\n");
+	fprintf(stderr, "   -o owner         Operate on a repository by the given owner\n");
+	fprintf(stderr, "   -r repo          Operate on the given repository\n");
+	fprintf(stderr, "   -i id            Operate on the given PR id\n");
+	fprintf(stderr, "\n");
+	version();
+}
 
 int
 subcommand_pull_review(int argc, char *argv[])
 {
-	(void) argc;
-	(void) argv;
+	int ch;
+	char const *owner = NULL, *repo = NULL;
+	gcli_id pr_id;
+	bool have_id = false;
 
+	struct option options[] = {
+		{ .name = "owner",
+		  .has_arg = required_argument,
+		  .flag = NULL,
+		  .val = 'o', },
+		{ .name = "repo",
+		  .has_arg = required_argument,
+		  .flag = NULL,
+		  .val = 'r', },
+		{ .name = "id",
+		  .has_arg = required_argument,
+		  .flag = NULL,
+		  .val = 'i', },
+		{0},
+	};
+
+	while ((ch = getopt_long(argc, argv, "+o:r:i:", options, NULL)) != -1) {
+		switch (ch) {
+		case 'o': {
+			owner = optarg;
+		} break;
+		case 'r': {
+			repo = optarg;
+		} break;
+		case 'i': {
+			char *endptr;
+			pr_id = strtoul(optarg, &endptr, 10);
+			if (endptr != optarg + strlen(optarg))
+				errx(1, "error: bad PR id %s\n", optarg);
+
+			have_id = true;
+		} break;
+		default: {
+			usage();
+			return EXIT_FAILURE;
+		} break;
+		}
+	}
+
+	argc -= optind;
+	argv += optind;
+
+	if (!have_id) {
+		fprintf(stderr, "error: missing PR id. use -i <id>.\n");
+		usage();
+		return EXIT_FAILURE;
+	}
+
+	check_owner_and_repo(&owner, &repo);
+
+	(void) pr_id;
 	fprintf(stderr, "error: not yet implemented\n");
 	return EXIT_FAILURE;
 }
