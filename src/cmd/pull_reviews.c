@@ -36,6 +36,7 @@
 
 #include <gcli/pulls.h>
 #include <gcli/cmd/cmd.h>
+#include <gcli/cmd/editor.h>
 
 static void
 usage(void)
@@ -135,6 +136,8 @@ edit_diff(char const *owner, char const *repo, gcli_id pull_id)
 		if (sn_yesno("There seems to already be a review in progress. Start over?"))
 			fetch_diff(&ctx);
 	}
+
+	gcli_editor_open_file(g_clictx, ctx.diff_path);
 
 	free(ctx.diff_path);
 }
