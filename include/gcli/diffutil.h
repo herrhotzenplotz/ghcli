@@ -87,7 +87,7 @@ struct gcli_diff_comment {
 	TAILQ_ENTRY(gcli_diff_comment) next;
 
 	char *filename;
-	int row;
+	int start_row, end_row;
 	int diff_line_offset;
 
 	char *comment;

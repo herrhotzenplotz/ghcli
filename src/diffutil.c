@@ -614,7 +614,7 @@ make_comment(struct comment_read_ctx *ctx, char const *text,
 	comment->comment = calloc(text_len + 1, 1);
 	memcpy(comment->comment, text, text_len);
 
-	comment->row = line_number;
+	comment->start_row = line_number;
 	comment->diff_line_offset = diff_line_offset;
 
 	return comment;

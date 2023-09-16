@@ -386,7 +386,7 @@ ATF_TC_BODY(simple_patch_with_comments, tc)
 		ATF_REQUIRE(comment != NULL);
 
 		ATF_CHECK_STREQ(comment->filename, "include/ghcli/pulls.h");
-		ATF_CHECK(comment->row == 60);
+		ATF_CHECK(comment->start_row == 60);
 		ATF_CHECK(comment->diff_line_offset == 4);
 		ATF_CHECK_STREQ(comment->comment, "\nThis is a comment on line 60.\n");
 
@@ -438,7 +438,7 @@ ATF_TC_BODY(diff_with_two_hunks_and_comments, tc)
 
 		ATF_CHECK_STREQ(comment->filename, "README");
 		ATF_CHECK_STREQ(comment->comment, "This is the first comment\n");
-		ATF_CHECK(comment->row == 4);
+		ATF_CHECK(comment->start_row == 4);
 		ATF_CHECK(comment->diff_line_offset == 4);
 
 		comment = TAILQ_NEXT(comment, next);
@@ -446,7 +446,7 @@ ATF_TC_BODY(diff_with_two_hunks_and_comments, tc)
 
 		ATF_CHECK_STREQ(comment->filename, "README");
 		ATF_CHECK_STREQ(comment->comment, "This is the other comment\n");
-		ATF_CHECK(comment->row == 22);
+		ATF_CHECK(comment->start_row == 22);
 		ATF_CHECK(comment->diff_line_offset == 11);
 
 		comment = TAILQ_NEXT(comment, next);
@@ -510,7 +510,7 @@ ATF_TC_BODY(patch_with_two_diffs_and_comments, tc)
 
 		ATF_CHECK_STREQ(c->filename, "bar");
 		ATF_CHECK_STREQ(c->comment, "I do not like this change.\n");
-		ATF_CHECK(c->row == 23);
+		ATF_CHECK(c->start_row == 23);
 		ATF_CHECK(c->diff_line_offset == 4);
 
 		/* Second comment */
@@ -519,7 +519,7 @@ ATF_TC_BODY(patch_with_two_diffs_and_comments, tc)
 
 		ATF_CHECK_STREQ(c->filename, "foo");
 		ATF_CHECK_STREQ(c->comment, "This is horrible\nGet some help!\n");
-		ATF_CHECK(c->row == 10);
+		ATF_CHECK(c->start_row == 10);
 		ATF_CHECK(c->diff_line_offset == 9);
 
 		/* End */

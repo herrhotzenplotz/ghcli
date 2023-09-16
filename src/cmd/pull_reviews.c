@@ -167,7 +167,7 @@ edit_diff(char const *owner, char const *repo, gcli_id pull_id)
 
 	printf("\nThese are your comments:\n");
 	TAILQ_FOREACH(comment, &comments, next) {
-		printf("%s:%d: %s", comment->filename, comment->row, comment->comment);
+		printf("%s:%d: %s", comment->filename, comment->start_row, comment->comment);
 	}
 
 	free(ctx.diff_path);
