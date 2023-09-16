@@ -571,6 +571,55 @@ ATF_TC_BODY(single_diff_with_multiline_comment, tc)
 	gcli_free_diff_parser(&parser);
 }
 
+ATF_TC_WITHOUT_HEAD(line_removals_offset_bug);
+ATF_TC_BODY(line_removals_offset_bug, tc)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+	struct gcli_diff_comments comments = {0};
+	struct gcli_diff_comment *c;
+
+	char const input[] =
+		"diff --git a/include/ghcli/pulls.h b/include/ghcli/pulls.h\n"
+		"index 30a503cf..05d233eb 100644\n"
+		"--- a/include/ghcli/pulls.h\n"
+		"+++ b/include/ghcli/pulls.h\n"
+		"@@ -42,4 +42,3 @@ blah\n"
+		" \n"
+		"Test\n"
+		"{\n"
+		"-\n"
+		"}\n"
+		" \n"
+		"Another comment\n"
+		"{\n"
+		" Failure should be here\n"
+		"}\n";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof(input), "input", &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
+
+	c = TAILQ_FIRST(&comments);
+	ATF_REQUIRE(c != NULL);
+	ATF_CHECK(c->start_row == 43);
+	ATF_CHECK(c->end_row == 43);
+	ATF_CHECK(c->diff_line_offset == 2);
+
+	c = TAILQ_NEXT(c, next);
+	ATF_REQUIRE(c != NULL);
+
+	ATF_CHECK(c->start_row == 44);
+	ATF_CHECK(c->end_row == 44);
+	ATF_CHECK(c->diff_line_offset == 5);
+
+	c = TAILQ_NEXT(c, next);
+	ATF_CHECK(c == NULL);
+
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&parser);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -585,6 +634,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, diff_with_two_hunks_and_comments);
 	ATF_TP_ADD_TC(tp, patch_with_two_diffs_and_comments);
 	ATF_TP_ADD_TC(tp, single_diff_with_multiline_comment);
+	ATF_TP_ADD_TC(tp, line_removals_offset_bug);
 
 	return atf_no_error();
 }
