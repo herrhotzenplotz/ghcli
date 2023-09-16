@@ -604,16 +604,12 @@ struct comment_read_ctx {
 };
 
 static gcli_diff_comment *
-make_comment(struct comment_read_ctx *ctx, char const *text,
-             size_t text_len, int line_number,
-             int diff_line_offset)
+make_comment(struct comment_read_ctx *ctx, char *text,
+             int line_number, int diff_line_offset)
 {
 	gcli_diff_comment *comment = calloc(sizeof(*comment), 1);
 	comment->filename = strdup(ctx->diff->file_b);
-
-	comment->comment = calloc(text_len + 1, 1);
-	memcpy(comment->comment, text, text_len);
-
+	comment->comment = text;
 	comment->start_row = line_number;
 	comment->end_row = line_number;
 	comment->diff_line_offset = diff_line_offset;
@@ -621,14 +617,15 @@ make_comment(struct comment_read_ctx *ctx, char const *text,
 	return comment;
 }
 
-static void
-read_comment(struct comment_read_ctx *ctx)
+static int
+read_comment_unprefixed(struct comment_read_ctx *ctx)
 {
 	char const *start = ctx->front;
 	int const line = ctx->patched_line_offset;
 	int const diff_line_offset = ctx->diff_line_offset;
 	size_t comment_len = 0;
 	gcli_diff_comment *cmt;
+	char *text;
 
 	for (;;) {
 		char c = *ctx->front;
@@ -648,9 +645,67 @@ read_comment(struct comment_read_ctx *ctx)
 	else
 		comment_len = strlen(start);
 
-	cmt = make_comment(ctx, start, comment_len,
-	                   line, diff_line_offset);
+	text = calloc(comment_len + 1, 1);
+	memcpy(text, start, comment_len);
+
+	cmt = make_comment(ctx, text, line, diff_line_offset);
 	TAILQ_INSERT_TAIL(ctx->comments, cmt, next);
+
+	return 0;
+}
+
+static int
+read_comment_prefixed(struct comment_read_ctx *ctx)
+{
+	char const *start = ctx->front;
+	int const line = ctx->patched_line_offset;
+	int const diff_line_offset = ctx->diff_line_offset;
+	size_t comment_len = 0;
+	struct gcli_diff_comment *cmt;
+	char *text;
+
+	for (;;) {
+		char const *c = ctx->front;
+		if (*c != '>') {
+			if (*c == '\0' || *c == ' ' || *c == '+' || *c == '-' || *c == '{')
+				break;
+			else
+				return -1;
+		}
+
+		ctx->front = strchr(c, '\n');
+		if (ctx->front == NULL)
+			break;
+
+		/* Skip the prefix chars */
+		size_t const prefix_len = c[1] == ' ' ? 2 : 1;
+		comment_len += ctx->front - (c + prefix_len) + 1;
+
+		ctx->diff_line_offset += 1;
+		ctx->front += 1;
+	}
+
+	text = calloc(comment_len + 1, 1);
+	while (start < ctx->front) {
+		char const *line_end = strchr(start, '\n');
+		size_t const prefix_len = start[1] == ' ' ? 2 : 1;
+		strncat(text, start + prefix_len, line_end - (start + prefix_len) + 1);
+		start = line_end + 1;
+	}
+
+	cmt = make_comment(ctx, text, line, diff_line_offset);
+	TAILQ_INSERT_TAIL(ctx->comments, cmt, next);
+
+	return 0;
+}
+
+static int
+read_comment(struct comment_read_ctx *ctx)
+{
+	if (strncmp(ctx->front, "> ", 2) == 0)
+		return read_comment_prefixed(ctx);
+	else
+		return read_comment_unprefixed(ctx);
 }
 
 static int
@@ -695,7 +750,9 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		} break;
 		default: {
 			/* comment */
-			read_comment(&ctx);
+			if (read_comment(&ctx) < 0)
+				return -1;
+
 			continue;
 		} break;
 		}
