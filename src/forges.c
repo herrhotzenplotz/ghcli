@@ -133,7 +133,8 @@ github_forge_descriptor =
 	.pull_remove_labels        = github_issue_remove_labels,
 	.pull_set_milestone        = github_issue_set_milestone,
 
-	/* Releases */
+	.pull_create_review        = github_pull_create_review,
+
 	.create_release            = github_create_release,
 	.delete_release            = github_delete_release,
 	.get_releases              = github_get_releases,

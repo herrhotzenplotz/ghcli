@@ -80,4 +80,7 @@ int github_pull_add_reviewer(struct gcli_ctx *ctx, char const *owner,
 int github_pull_set_title(struct gcli_ctx *ctx, char const *owner,
                           char const *repo, gcli_id pull, char const *new_title);
 
+int github_pull_create_review(struct gcli_ctx *ctx,
+                              struct gcli_pull_create_review_details const *details);
+
 #endif /* GITHUB_PULLS_H */

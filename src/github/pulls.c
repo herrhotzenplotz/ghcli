@@ -643,3 +643,12 @@ github_pull_set_title(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	return rc;
 }
+
+int
+github_pull_create_review(struct gcli_ctx *ctx,
+                          struct gcli_pull_create_review_details const *details)
+{
+	(void) ctx;
+	(void) details;
+	return gcli_error(ctx, "not implemented");
+}
