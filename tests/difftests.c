@@ -528,6 +528,49 @@ ATF_TC_BODY(patch_with_two_diffs_and_comments, tc)
 	}
 }
 
+ATF_TC_WITHOUT_HEAD(single_diff_with_multiline_comment);
+ATF_TC_BODY(single_diff_with_multiline_comment, tc)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+	struct gcli_diff_comments comments = {0};
+	struct gcli_diff_comment *c;
+
+	char const input[] =
+		"diff --git a/include/ghcli/pulls.h b/include/ghcli/pulls.h\n"
+		"index 30a503cf..05d233eb 100644\n"
+		"--- a/include/ghcli/pulls.h\n"
+		"+++ b/include/ghcli/pulls.h\n"
+		"@@ -57,5 +57,6 @@ int  ghcli_get_prs(const char *org, const char *reponame, bool all, ghcli_pull *\n"
+		" void ghcli_print_pr_table(FILE *stream, ghcli_pull *pulls, int pulls_size);\n"
+		" void ghcli_print_pr_diff(FILE *stream, const char *org, const char *reponame, int pr_number);\n"
+		" void ghcli_pr_summary(FILE *stream, const char *org, const char *reponame, int pr_number);\n"
+		" \n"
+		"This is a comment from line 61 to 62\n"
+		"{\n"
+		"+void ghcli_pr_submit(const char *from, const char *to, int in_draft);\n"
+		" \n"
+		"}\n"
+		" #endif /* PULLS_H */\n";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof(input), "input", &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
+
+	c = TAILQ_FIRST(&comments);
+	ATF_REQUIRE(c != NULL);
+
+	ATF_CHECK(c->start_row == 61);
+	ATF_CHECK(c->end_row == 62);
+	ATF_CHECK_STREQ(c->comment, "This is a comment from line 61 to 62\n");
+
+	c = TAILQ_NEXT(c, next);
+	ATF_CHECK(c == NULL);
+
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&parser);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -541,6 +584,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, simple_patch_with_comments);
 	ATF_TP_ADD_TC(tp, diff_with_two_hunks_and_comments);
 	ATF_TP_ADD_TC(tp, patch_with_two_diffs_and_comments);
+	ATF_TP_ADD_TC(tp, single_diff_with_multiline_comment);
 
 	return atf_no_error();
 }

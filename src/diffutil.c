@@ -615,6 +615,7 @@ make_comment(struct comment_read_ctx *ctx, char const *text,
 	memcpy(comment->comment, text, text_len);
 
 	comment->start_row = line_number;
+	comment->end_row = line_number;
 	comment->diff_line_offset = diff_line_offset;
 
 	return comment;
@@ -631,7 +632,7 @@ read_comment(struct comment_read_ctx *ctx)
 
 	for (;;) {
 		char c = *ctx->front;
-		if (c == '\0' || c == ' ' || c == '+' || c == '-')
+		if (c == '\0' || c == ' ' || c == '+' || c == '-' || c == '{')
 			break;
 
 		ctx->front = strchr(ctx->front, '\n');
@@ -664,6 +665,7 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		.patched_line_offset = hunk->range_a_start,
 		.diff_line_offset = hunk->diff_line_offset,
 	};
+	int diff_range_off = -1;
 
 	for (;;) {
 		switch (*ctx.front) {
@@ -672,13 +674,29 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		case ' ':
 		case '+':
 			ctx.patched_line_offset += 1;
-			ctx.diff_line_offset += 1;
-			break;
 		case '-':
+			ctx.diff_line_offset += 1;
+			if (diff_range_off >= 0)
+				diff_range_off += 1;
 			break;
+		case '{':
+			diff_range_off = 0;
+			break;
+		case '}': {
+			if (diff_range_off < 0)
+				return -1;             /* not in a range */
+
+			gcli_diff_comment *c = TAILQ_LAST(out, gcli_diff_comments);
+			if (!c)
+				return -1;             /* no comment to refer to */
+
+			c->end_row = c->start_row + diff_range_off - 1;
+			diff_range_off = -1;
+		} break;
 		default: {
 			/* comment */
 			read_comment(&ctx);
+			continue;
 		} break;
 		}
 		if ((ctx.front = strchr(ctx.front, '\n')) == NULL)
