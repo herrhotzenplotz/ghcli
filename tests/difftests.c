@@ -663,6 +663,31 @@ ATF_TC_BODY(leading_angle_bracket_are_removed_in_comments, tc)
 	gcli_free_diff_parser(&parser);
 }
 
+ATF_TC_WITHOUT_HEAD(comment_before_hunk_header);
+ATF_TC_BODY(comment_before_hunk_header, tc)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+	struct gcli_diff_comments comments = {0};
+
+	char const input[] =
+		"diff --git a/include/ghcli/pulls.h b/include/ghcli/pulls.h\n"
+		"index 30a503cf..05d233eb 100644\n"
+		"--- a/include/ghcli/pulls.h\n"
+		"+++ b/include/ghcli/pulls.h\n"
+		"@@ -57,5 +57,6 @@ int  ghcli_get_prs(const char *org, const char *reponame, bool all, ghcli_pull *\n"
+		" void ghcli_print_pr_table(FILE *stream, ghcli_pull *pulls, int pulls_size);\n"
+		" void ghcli_print_pr_diff(FILE *stream, const char *org, const char *reponame, int pr_number);\n"
+		" void ghcli_pr_summary(FILE *stream, const char *org, const char *reponame, int pr_number);\n"
+		" \n"
+		"> Comment here makes no sense whatsoever\n"
+		"@@ -57,5 +57,6 @@ int  ghcli_get_prs(const char *org, const char *reponame, bool all, ghcli_pull *\n";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "input", &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+	ATF_CHECK(gcli_patch_get_comments(&patch, &comments) < 0);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -679,6 +704,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, single_diff_with_multiline_comment);
 	ATF_TP_ADD_TC(tp, line_removals_offset_bug);
 	ATF_TP_ADD_TC(tp, leading_angle_bracket_are_removed_in_comments);
+	ATF_TP_ADD_TC(tp, comment_before_hunk_header);
 
 	return atf_no_error();
 }

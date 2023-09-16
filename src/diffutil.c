@@ -629,8 +629,10 @@ read_comment_unprefixed(struct comment_read_ctx *ctx)
 
 	for (;;) {
 		char c = *ctx->front;
-		if (c == '\0' || c == ' ' || c == '+' || c == '-' || c == '{')
+		if (c == ' ' || c == '+' || c == '-' || c == '{')
 			break;
+		else if (c == '\0') /* invalid: comment at end of hunk */
+			return -1;
 
 		ctx->front = strchr(ctx->front, '\n');
 		if (ctx->front == NULL)
@@ -667,9 +669,9 @@ read_comment_prefixed(struct comment_read_ctx *ctx)
 	for (;;) {
 		char const *c = ctx->front;
 		if (*c != '>') {
-			if (*c == '\0' || *c == ' ' || *c == '+' || *c == '-' || *c == '{')
+			if (*c == ' ' || *c == '+' || *c == '-' || *c == '{')
 				break;
-			else
+			else if (*c == '\0') /* invalid: comment at end of hunk */
 				return -1;
 		}
 
