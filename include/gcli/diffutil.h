@@ -78,6 +78,18 @@ struct gcli_diff_parser {
 	bool buf_needs_free;
 };
 
+typedef struct gcli_diff_comment gcli_diff_comment;
+struct gcli_diff_comment {
+	TAILQ_ENTRY(gcli_diff_comment) next;
+
+	char *filename;
+	int row;
+	char *comment;
+};
+
+typedef struct gcli_diff_comments gcli_diff_comments;
+TAILQ_HEAD(gcli_diff_comments, gcli_diff_comment);
+
 int gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
                                  char const *filename,
                                  gcli_diff_parser *out);
@@ -86,6 +98,7 @@ int gcli_diff_parser_from_file(FILE *f, char const *filename,
 int gcli_parse_patch(gcli_diff_parser *parser, gcli_patch *out);
 int gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out);
 int gcli_patch_parse_prelude(gcli_diff_parser *parser, gcli_patch *out);
+int gcli_patch_get_comments(gcli_patch const *patch, gcli_diff_comments *out);
 void gcli_free_diff(gcli_diff *diff);
 void gcli_free_diff_hunk(gcli_diff_hunk *hunk);
 void gcli_free_patch(gcli_patch *patch);

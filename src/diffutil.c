@@ -577,3 +577,122 @@ gcli_free_diff_parser(gcli_diff_parser *parser)
 
 	memset(parser, 0, sizeof(*parser));
 }
+
+/********************************************************************
+ * Comment Extraction
+ *******************************************************************/
+struct comment_read_ctx {
+	gcli_diff const *diff;
+	gcli_diff_hunk const *hunk;
+	gcli_diff_comments *comments;
+	char const *front;
+	int current_line;
+};
+
+static gcli_diff_comment *
+make_comment(struct comment_read_ctx *ctx, char const *text,
+             size_t text_len, int line_number)
+{
+	gcli_diff_comment *comment = calloc(sizeof(*comment), 1);
+	comment->filename = strdup(ctx->diff->file_b);
+
+	comment->comment = calloc(text_len + 1, 1);
+	memcpy(comment->comment, text, text_len);
+
+	comment->row = line_number;
+
+	return comment;
+}
+
+static void
+read_comment(struct comment_read_ctx *ctx)
+{
+	char const *start = ctx->front;
+	int const line = ctx->current_line;
+	size_t comment_len = 0;
+	gcli_diff_comment *cmt;
+
+	for (;;) {
+		char c = *ctx->front;
+		if (c == '\0' || c == ' ' || c == '+' || c == '-')
+			break;
+
+		ctx->front = strchr(ctx->front, '\n');
+		if (ctx->front == NULL)
+			break;
+
+		ctx->front += 1;
+	}
+
+	if (ctx->front)
+		comment_len = ctx->front - start;
+	else
+		comment_len = strlen(start);
+
+	cmt = make_comment(ctx, start, comment_len, line);
+	TAILQ_INSERT_TAIL(ctx->comments, cmt, next);
+}
+
+static int
+gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
+                       gcli_diff_comments *out)
+{
+	struct comment_read_ctx ctx = {
+		.diff = diff,
+		.hunk = hunk,
+		.comments = out,
+		.front = hunk->body,
+		.current_line = hunk->range_a_start,
+	};
+
+	for (;;) {
+		switch (*ctx.front) {
+		case '\0':
+			break;
+		case ' ':
+		case '+':
+			ctx.current_line += 1;
+			break;
+		case '-':
+			break;
+		default: {
+			/* comment */
+			read_comment(&ctx);
+		} break;
+		}
+		if ((ctx.front = strchr(ctx.front, '\n')) == NULL)
+			break;
+
+		ctx.front += 1;
+	}
+
+	return 0;
+}
+
+static int
+gcli_diff_get_comments(gcli_diff const *diff, gcli_diff_comments *out)
+{
+	gcli_diff_hunk *hunk;
+
+	TAILQ_FOREACH(hunk, &diff->hunks, next) {
+		if (gcli_hunk_get_comments(diff, hunk, out) < 0)
+			return -1;
+	}
+
+	return 0;
+}
+
+int
+gcli_patch_get_comments(gcli_patch const *patch, gcli_diff_comments *out)
+{
+	gcli_diff const *diff;
+
+	TAILQ_INIT(out);
+
+	TAILQ_FOREACH(diff, &patch->diffs, next) {
+		if (gcli_diff_get_comments(diff, out) < 0)
+			return -1;
+	}
+
+	return 0;
+}

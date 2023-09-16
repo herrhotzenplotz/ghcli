@@ -362,6 +362,36 @@ ATF_TC_BODY(full_patch, tc)
 	gcli_free_diff_parser(&parser);
 }
 
+ATF_TC_WITHOUT_HEAD(simple_patch_with_comments);
+ATF_TC_BODY(simple_patch_with_comments, tc)
+{
+	gcli_patch patch = {0};
+	gcli_diff_parser parser = {0};
+	gcli_diff_comments comments = {0};
+
+	char const *const fname = "simple_patch_with_comments.patch";
+
+	FILE *inf = open_sample(fname);
+	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
+
+	{
+		gcli_diff_comment *comment = TAILQ_FIRST(&comments);
+		ATF_REQUIRE(comment != NULL);
+
+		ATF_CHECK_STREQ(comment->filename, "include/ghcli/pulls.h");
+		ATF_CHECK(comment->row == 60);
+		ATF_CHECK_STREQ(comment->comment, "\nThis is a comment on line 60.\n");
+
+		comment = TAILQ_NEXT(comment, next);
+		ATF_CHECK(comment == NULL);
+	}
+
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&parser);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -372,6 +402,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, diff_with_two_hunks);
 	ATF_TP_ADD_TC(tp, two_diffs_with_one_hunk_each);
 	ATF_TP_ADD_TC(tp, full_patch);
+	ATF_TP_ADD_TC(tp, simple_patch_with_comments);
 
 	return atf_no_error();
 }
