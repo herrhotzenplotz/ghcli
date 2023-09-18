@@ -167,7 +167,7 @@ ask_for_review_state(void)
 	do {
 		int c;
 
-		printf("What do you want to do with the review? [Leave (P)ending, (R)equest changes, (A)ccept] ");
+		printf("What do you want to do with the review? [Leave a (C)omment, (R)equest changes, (A)ccept] ");
 		fflush(stdout);
 
 		c = getchar();
@@ -181,8 +181,8 @@ ask_for_review_state(void)
 		case 'r': case 'R':
 			state = GCLI_REVIEW_REQUEST_CHANGES;
 			break;
-		case 'p': case 'P':
-			state = GCLI_REVIEW_PENDING;
+		case 'c': case 'C':
+			state = GCLI_REVIEW_COMMENT;
 			break;
 		default:
 			fprintf(stderr, "error: unrecognised answer\n");

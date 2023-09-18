@@ -115,7 +115,7 @@ struct gcli_pull_fetch_details {
 enum {
 	GCLI_REVIEW_ACCEPT_CHANGES = 1,
 	GCLI_REVIEW_REQUEST_CHANGES = 2,
-	GCLI_REVIEW_PENDING = 3,
+	GCLI_REVIEW_COMMENT = 3,
 };
 
 struct gcli_pull_create_review_details {
