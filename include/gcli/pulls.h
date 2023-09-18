@@ -37,8 +37,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include <sn/sn.h>
+#include <gcli/diffutil.h>
 #include <gcli/gcli.h>
+#include <sn/sn.h>
 
 struct gcli_pull_list {
 	struct gcli_pull *pulls;
@@ -109,6 +110,20 @@ struct gcli_pull_fetch_details {
 	char const *label;      /** a label attached to the pull request or NULL */
 	char const *milestone;  /** a milestone this pull request is a part of or NULL */
 	char const *search_term; /** some text to match in the pull request or NULL */
+};
+
+enum {
+	GCLI_REVIEW_ACCEPT_CHANGES = 1,
+	GCLI_REVIEW_REQUEST_CHANGES = 2,
+	GCLI_REVIEW_PENDING = 3,
+};
+
+struct gcli_pull_create_review_details {
+	char const *owner, *repo;
+	gcli_id pull_id;
+	struct gcli_diff_comments comments;
+	char const *body;
+	int review_state;
 };
 
 /** Generic list of checks ran on a pull request
@@ -191,5 +206,8 @@ int gcli_pull_get_patch(struct gcli_ctx *ctx, FILE *out, char const *owner,
 
 int gcli_pull_set_title(struct gcli_ctx *ctx, char const *owner,
                         char const *repo, gcli_id pull, char const *new_title);
+
+int gcli_pull_create_review(struct gcli_ctx *ctx,
+                            struct gcli_pull_create_review_details const *details);
 
 #endif /* PULLS_H */

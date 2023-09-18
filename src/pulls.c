@@ -232,3 +232,10 @@ gcli_pull_set_title(struct gcli_ctx *ctx, char const *const owner,
 {
 	gcli_null_check_call(pull_set_title, ctx, owner, repo, pull, new_title);
 }
+
+int
+gcli_pull_create_review(struct gcli_ctx *ctx,
+                        struct gcli_pull_create_review_details const *details)
+{
+	gcli_null_check_call(pull_create_review, ctx, details);
+}

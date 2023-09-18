@@ -98,9 +98,8 @@ get_review_diff_file_name(char const *const owner, char const *const repo,
 }
 
 struct review_ctx {
-	char const *owner, *repo;
 	char *diff_path;
-	gcli_id pull_id;
+	struct gcli_pull_create_review_details details;
 };
 
 static void
@@ -111,7 +110,7 @@ fetch_diff(struct review_ctx *ctx)
 	if (f == NULL)
 		err(1, "error: cannot open %s", ctx->diff_path);
 
-	if (gcli_pull_get_diff(g_clictx, f, ctx->owner, ctx->repo, ctx->pull_id) < 0) {
+	if (gcli_pull_get_diff(g_clictx, f, ctx->details.owner, ctx->details.repo, ctx->details.pull_id) < 0) {
 		errx(1, "error: failed to get diff: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -136,41 +135,90 @@ extract_diff_comments(struct review_ctx *ctx, gcli_diff_comments *out)
 	if (gcli_patch_get_comments(&patch, out) < 0)
 		errx(1, "error: failed to get comments");
 
+	ctx->details.body = strdup(patch.prelude);
+
 	gcli_free_patch(&patch);
 	gcli_free_diff_parser(&p);
 	fclose(f);
 }
 
 static void
-edit_diff(char const *owner, char const *repo, gcli_id pull_id)
+edit_diff(struct review_ctx *ctx)
 {
-	gcli_diff_comments comments = {0};
-	gcli_diff_comment *comment;
-
-	struct review_ctx ctx = {
-		.owner = owner,
-		.repo = repo,
-		.pull_id = pull_id,
-		.diff_path = get_review_diff_file_name(owner, repo, pull_id),
-	};
-
-	if (access(ctx.diff_path, F_OK) < 0) {
-		fetch_diff(&ctx);
+	if (access(ctx->diff_path, F_OK) < 0) {
+		fetch_diff(ctx);
 	} else {
 		/* The file exists, ask whether to open again or to delete and start over. */
 		if (sn_yesno("There seems to already be a review in progress. Start over?"))
-			fetch_diff(&ctx);
+			fetch_diff(ctx);
 	}
 
-	gcli_editor_open_file(g_clictx, ctx.diff_path);
-	extract_diff_comments(&ctx, &comments);
+	gcli_editor_open_file(g_clictx, ctx->diff_path);
+	extract_diff_comments(ctx, &ctx->details.comments);
 
+	free(ctx->diff_path);
+}
+
+static int
+ask_for_review_state(void)
+{
+	int state = 0;
+
+	do {
+		int c;
+
+		printf("What do you want to do with the review? [Leave (P)ending, (R)equest changes, (A)ccept] ");
+		fflush(stdout);
+
+		c = getchar();
+		switch (c) {
+		case EOF:
+			fprintf(stderr, "\nAborted\n");
+			exit(1);
+		case 'a': case 'A':
+			state = GCLI_REVIEW_ACCEPT_CHANGES;
+			break;
+		case 'r': case 'R':
+			state = GCLI_REVIEW_REQUEST_CHANGES;
+			break;
+		case 'p': case 'P':
+			state = GCLI_REVIEW_PENDING;
+			break;
+		default:
+			fprintf(stderr, "error: unrecognised answer\n");
+			break;
+		}
+	} while (!state);
+
+	return state;
+}
+
+static void
+do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
+{
+	gcli_diff_comment *comment;
+
+	struct review_ctx ctx = {
+		.details = {
+			.owner = owner,
+			.repo = repo,
+			.pull_id = pull_id,
+		},
+		.diff_path = get_review_diff_file_name(owner, repo, pull_id),
+	};
+
+	edit_diff(&ctx);
 	printf("\nThese are your comments:\n");
-	TAILQ_FOREACH(comment, &comments, next) {
-		printf("%s:%d: %s", comment->filename, comment->start_row, comment->comment);
+	TAILQ_FOREACH(comment, &ctx.details.comments, next) {
+		printf("%s:%d: info: %s", comment->filename, comment->start_row, comment->comment);
+		/* TODO print snippet this comment is attached to */
 	}
 
-	free(ctx.diff_path);
+	if (ctx.details.review_state == 0)
+		ctx.details.review_state = ask_for_review_state();
+
+	if (gcli_pull_create_review(g_clictx, &ctx.details) < 0)
+		errx(1, "error: failed to create review: %s", gcli_get_error(g_clictx));
 }
 
 int
@@ -178,7 +226,7 @@ subcommand_pull_review(int argc, char *argv[])
 {
 	int ch;
 	char const *owner = NULL, *repo = NULL;
-	gcli_id pr_id;
+	gcli_id pull_id;
 	bool have_id = false;
 
 	struct option options[] = {
@@ -207,7 +255,7 @@ subcommand_pull_review(int argc, char *argv[])
 		} break;
 		case 'i': {
 			char *endptr;
-			pr_id = strtoul(optarg, &endptr, 10);
+			pull_id = strtoul(optarg, &endptr, 10);
 			if (endptr != optarg + strlen(optarg))
 				errx(1, "error: bad PR id %s\n", optarg);
 
@@ -230,7 +278,7 @@ subcommand_pull_review(int argc, char *argv[])
 	}
 
 	check_owner_and_repo(&owner, &repo);
-	edit_diff(owner, repo, pr_id);
+	do_review_session(owner, repo, pull_id);
 
 	return EXIT_SUCCESS;
 }

@@ -428,6 +428,12 @@ struct gcli_forge_descriptor {
 		char const *new_title);
 
 	/**
+	 * Create a review on a PR */
+	int (*pull_create_review)(
+		struct gcli_ctx *ctx,
+		struct gcli_pull_create_review_details const *details);
+
+	/**
 	 * Get a list of releases in the given repo */
 	int (*get_releases)(
 		struct gcli_ctx *ctx,
