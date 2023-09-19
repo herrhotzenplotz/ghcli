@@ -167,7 +167,7 @@ ask_for_review_state(void)
 	do {
 		int c;
 
-		printf("What do you want to do with the review? [Leave a (C)omment, (R)equest changes, (A)ccept] ");
+		printf("What do you want to do with the review? [Leave a (C)omment, (R)equest changes, (A)ccept, (P)ostpone] ");
 		fflush(stdout);
 
 		c = getchar();
@@ -183,6 +183,9 @@ ask_for_review_state(void)
 			break;
 		case 'c': case 'C':
 			state = GCLI_REVIEW_COMMENT;
+			break;
+		case 'p': case 'P':
+			state = -1;
 			break;
 		default:
 			fprintf(stderr, "error: unrecognised answer\n");
@@ -216,6 +219,11 @@ do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
 
 	if (ctx.details.review_state == 0)
 		ctx.details.review_state = ask_for_review_state();
+
+	if (ctx.details.review_state < 0) {
+		printf("Review has been postponed. You can pick up again by rerunning the review subcommand.\n");
+		return;
+	}
 
 	if (gcli_pull_create_review(g_clictx, &ctx.details) < 0)
 		errx(1, "error: failed to create review: %s", gcli_get_error(g_clictx));
