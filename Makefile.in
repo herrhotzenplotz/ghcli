@@ -350,6 +350,7 @@ MANPAGES= \
 	docs/gcli-milestones.1 \
 	docs/gcli-pipelines.1 \
 	docs/gcli-pulls.1 \
+	docs/gcli-pulls-review.1 \
 	docs/gcli-releases.1 \
 	docs/gcli-repos.1 \
 	docs/gcli-snippets.1 \

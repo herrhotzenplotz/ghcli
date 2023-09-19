@@ -25,6 +25,10 @@
 .Op Fl f Ar owner:branch
 .Op Fl y
 .Op Ar "PR title..."
+.Nm
+.Cm review
+.Op Fl o Ar owner Fl r Ar repo
+.Fl i Ar id
 .Sh DESCRIPTION
 Use
 .Nm
@@ -34,6 +38,12 @@ various
 forges such as GitLab, Gitea or GitHub. Without any action specified,
 .Nm
 will list open PRs in the given or auto-detected repository.
+.Pp
+For the
+.Nm
+.Cm review
+subcommand please refer to
+.Xr gcli-pulls-review 1 .
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl s , -sorted
@@ -118,6 +128,9 @@ Enable the automerge feature when creating the PR.
 .It Ar "PR Title..."
 The title of the Pull Request or Merge Request.
 .El
+.It Cm review
+See
+.Xr gcli-pulls-review 1 .
 .El
 .Sh ACTIONS
 .Ar actions...
