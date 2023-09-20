@@ -810,8 +810,6 @@ gcli_patch_get_comments(gcli_patch const *patch, gcli_diff_comments *out)
 {
 	gcli_diff const *diff;
 
-	TAILQ_INIT(out);
-
 	TAILQ_FOREACH(diff, &patch->diffs, next) {
 		if (gcli_diff_get_comments(diff, out) < 0)
 			return -1;

@@ -380,6 +380,8 @@ ATF_TC_BODY(simple_patch_with_comments, tc)
 	FILE *inf = open_sample(fname);
 	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(&comments);
 	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
 
 	{
@@ -432,6 +434,8 @@ ATF_TC_BODY(diff_with_two_hunks_and_comments, tc)
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof(input), "input", &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(&comments);
 	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
 
 	{
@@ -503,6 +507,8 @@ ATF_TC_BODY(patch_with_two_diffs_and_comments, tc)
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof(input), "input", &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(&comments);
 	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
 
 	{
@@ -559,6 +565,8 @@ ATF_TC_BODY(single_diff_with_multiline_comment, tc)
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof(input), "input", &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(&comments);
 	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
 
 	c = TAILQ_FIRST(&comments);
@@ -602,6 +610,8 @@ ATF_TC_BODY(line_removals_offset_bug, tc)
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof(input), "input", &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(&comments);
 	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
 
 	c = TAILQ_FIRST(&comments);
@@ -653,6 +663,8 @@ ATF_TC_BODY(leading_angle_bracket_are_removed_in_comments, tc)
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "input", &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(&comments);
 	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
 
 	c = TAILQ_FIRST(&comments);
@@ -693,6 +705,8 @@ ATF_TC_BODY(comment_before_hunk_header, tc)
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "input", &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(&comments);
 	ATF_CHECK(gcli_patch_get_comments(&patch, &comments) < 0);
 }
 
