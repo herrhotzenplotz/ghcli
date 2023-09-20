@@ -159,6 +159,19 @@ edit_diff(struct review_ctx *ctx)
 	free(ctx->diff_path);
 }
 
+static void
+print_comment_list(struct gcli_diff_comments const *comments)
+{
+	struct gcli_diff_comment const *comment;
+
+	TAILQ_FOREACH(comment, comments, next) {
+		printf("%s: %d: %s\n%s\n\n",
+		       comment->filename, comment->start_row,
+		       comment->comment,
+		       comment->diff_text);
+	}
+}
+
 static int
 ask_for_review_state(void)
 {
@@ -199,8 +212,6 @@ ask_for_review_state(void)
 static void
 do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
 {
-	gcli_diff_comment *comment;
-
 	struct review_ctx ctx = {
 		.details = {
 			.owner = owner,
@@ -212,10 +223,7 @@ do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
 
 	edit_diff(&ctx);
 	printf("\nThese are your comments:\n");
-	TAILQ_FOREACH(comment, &ctx.details.comments, next) {
-		printf("%s:%d: info: %s", comment->filename, comment->start_row, comment->comment);
-		/* TODO print snippet this comment is attached to */
-	}
+	print_comment_list(&ctx.details.comments);
 
 	if (ctx.details.review_state == 0)
 		ctx.details.review_state = ask_for_review_state();
