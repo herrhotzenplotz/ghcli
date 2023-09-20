@@ -277,14 +277,26 @@ err_get_pull:
 
 int
 gitlab_mr_get_diff(struct gcli_ctx *ctx, FILE *stream, char const *owner,
-                   char const *reponame, gcli_id mr_number)
+                   char const *repo, gcli_id mr_number)
 {
-	(void) stream;
-	(void) owner;
-	(void) reponame;
-	(void) mr_number;
+	char *url = NULL;
+	int rc;
+	struct gcli_pull pull_data = {0};
 
-	return gcli_error(ctx, "not yet implemented");
+	/* Hack: The Gitlab API itself does not provide a documented endpoint
+         * to grab the diff of the merge request. Instead we fetch the web_url
+         * and append ».diff« to it which gives us the diff in plain-text. */
+	rc = gitlab_get_pull(ctx, owner, repo, mr_number, &pull_data);
+	if (rc < 0)
+		return rc;
+
+	url = sn_asprintf("%s.diff", pull_data.web_url);
+	gcli_pull_free(&pull_data);
+
+	rc = gcli_curl(ctx, stream, url, "application/text"); /* @@@ */
+	free(url);
+
+	return rc;
 }
 
 int

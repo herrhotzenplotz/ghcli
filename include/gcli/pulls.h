@@ -68,6 +68,7 @@ struct gcli_pull {
 	int changed_files;
 	int head_pipeline_id;       /* GitLab specific */
 	char *coverage;             /* Gitlab Specific */
+	char *web_url;
 
 	char **labels;
 	size_t labels_size;

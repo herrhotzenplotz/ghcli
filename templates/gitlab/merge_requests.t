@@ -35,6 +35,7 @@ object of struct gcli_pull with
 	 "head_pipeline"                => use parse_gitlab_mr_head_pipeline,
 	 "reviewers"                    => reviewers as array of char* use parse_gitlab_reviewer,
 	 "diff_refs"                    => use parse_gitlab_diff_refs,
+	 "web_url"                      => web_url as string,
 	 "merge_when_pipeline_succeeds" => automerge as bool);
 
 parser gitlab_mrs is array of struct gcli_pull use parse_gitlab_mr;
