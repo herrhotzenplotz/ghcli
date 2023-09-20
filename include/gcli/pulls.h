@@ -211,4 +211,7 @@ int gcli_pull_set_title(struct gcli_ctx *ctx, char const *owner,
 int gcli_pull_create_review(struct gcli_ctx *ctx,
                             struct gcli_pull_create_review_details const *details);
 
+int gcli_pull_get_patch(struct gcli_ctx *ctx, FILE *out, char const *owner,
+                        char const *repo, gcli_id pr_number);
+
 #endif /* PULLS_H */

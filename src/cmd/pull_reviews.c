@@ -103,15 +103,15 @@ struct review_ctx {
 };
 
 static void
-fetch_diff(struct review_ctx *ctx)
+fetch_patch(struct review_ctx *ctx)
 {
 	/* diff does not exist, fetch it! */
 	FILE *f = fopen(ctx->diff_path, "w");
 	if (f == NULL)
 		err(1, "error: cannot open %s", ctx->diff_path);
 
-	if (gcli_pull_get_diff(g_clictx, f, ctx->details.owner, ctx->details.repo, ctx->details.pull_id) < 0) {
-		errx(1, "error: failed to get diff: %s",
+	if (gcli_pull_get_patch(g_clictx, f, ctx->details.owner, ctx->details.repo, ctx->details.pull_id) < 0) {
+		errx(1, "error: failed to get patch: %s",
 		     gcli_get_error(g_clictx));
 	}
 
@@ -120,24 +120,27 @@ fetch_diff(struct review_ctx *ctx)
 }
 
 static void
-extract_diff_comments(struct review_ctx *ctx, gcli_diff_comments *out)
+extract_patch_comments(struct review_ctx *ctx, struct gcli_diff_comments *out)
 {
 	FILE *f = fopen(ctx->diff_path, "r");
 	struct gcli_diff_parser p = {0};
-	gcli_patch patch = {0};
+	struct gcli_patch_series series = {0};
+
+	TAILQ_INIT(&series);
 
 	if (gcli_diff_parser_from_file(f, ctx->diff_path, &p) < 0)
 		err(1, "error: failed to open diff");
 
-	if (gcli_parse_patch(&p, &patch) < 0)
+	if (gcli_parse_patch_series(&p, &series) < 0)
 		errx(1, "error: failed to parse patch");
 
-	if (gcli_patch_get_comments(&patch, out) < 0)
+	if (gcli_patch_series_get_comments(&series, out) < 0)
 		errx(1, "error: failed to get comments");
 
-	ctx->details.body = strdup(patch.prelude);
+	/* FIXME */
+	/* ctx->details.body = strdup(patch.prelude); */
 
-	gcli_free_patch(&patch);
+	gcli_free_patch_series(&series);
 	gcli_free_diff_parser(&p);
 	fclose(f);
 }
@@ -146,15 +149,15 @@ static void
 edit_diff(struct review_ctx *ctx)
 {
 	if (access(ctx->diff_path, F_OK) < 0) {
-		fetch_diff(ctx);
+		fetch_patch(ctx);
 	} else {
 		/* The file exists, ask whether to open again or to delete and start over. */
 		if (sn_yesno("There seems to already be a review in progress. Start over?"))
-			fetch_diff(ctx);
+			fetch_patch(ctx);
 	}
 
 	gcli_editor_open_file(g_clictx, ctx->diff_path);
-	extract_diff_comments(ctx, &ctx->details.comments);
+	extract_patch_comments(ctx, &ctx->details.comments);
 
 	free(ctx->diff_path);
 }

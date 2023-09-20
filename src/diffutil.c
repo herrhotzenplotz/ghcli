@@ -928,3 +928,16 @@ gcli_patch_series_get_comments(struct gcli_patch_series const *series,
 
 	return 0;
 }
+
+void
+gcli_free_patch_series(struct gcli_patch_series *series)
+{
+	gcli_patch *p = TAILQ_FIRST(series);
+	while (p) {
+		struct gcli_patch *n = TAILQ_NEXT(p, next);
+		gcli_free_patch(p);
+		free(p);
+		p = n;
+	}
+	TAILQ_INIT(series);
+}
