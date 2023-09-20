@@ -290,7 +290,8 @@ ATF_TC_BODY(two_diffs_with_one_hunk_each, tc)
 	gcli_diff *diff;
 	gcli_diff_hunk *hunk;
 
-	ATF_REQUIRE(gcli_diff_parser_from_buffer(diff_data, sizeof(diff_data), "diff_data", &parser) == 0);
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(
+		diff_data, sizeof(diff_data), "diff_data", &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
 
 	diff = TAILQ_FIRST(&patch.diffs);
@@ -389,6 +390,9 @@ ATF_TC_BODY(simple_patch_with_comments, tc)
 		ATF_CHECK(comment->start_row == 60);
 		ATF_CHECK(comment->diff_line_offset == 4);
 		ATF_CHECK_STREQ(comment->comment, "\nThis is a comment on line 60.\n");
+		ATF_CHECK_STREQ(comment->diff_text,
+		                "+void ghcli_pr_submit(const char *from, const char *to,"
+		                " int in_draft);\n");
 
 		comment = TAILQ_NEXT(comment, next);
 		ATF_CHECK(comment == NULL);
@@ -658,6 +662,10 @@ ATF_TC_BODY(leading_angle_bracket_are_removed_in_comments, tc)
 	                "This is a comment on line 60.\n"
 	                "\n"
 	                "This comment extends over multiple lines.\n");
+
+	ATF_CHECK_STREQ(c->diff_text,
+	                "+void ghcli_pr_submit(const char *from, const char *to, int in_draft);\n"
+	                " \n");
 
 	gcli_free_patch(&patch);
 	gcli_free_diff_parser(&parser);

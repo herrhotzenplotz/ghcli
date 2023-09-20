@@ -82,15 +82,17 @@ struct gcli_diff_parser {
 	bool buf_needs_free;
 };
 
+/* A single comment referring to a chunk in a dif */
 typedef struct gcli_diff_comment gcli_diff_comment;
 struct gcli_diff_comment {
 	TAILQ_ENTRY(gcli_diff_comment) next;
 
-	char *filename;
-	int start_row, end_row;
-	int diff_line_offset;
+	char *filename;            /* right side file name */
+	int start_row, end_row;    /* right side start- and end row */
+	int diff_line_offset;      /* line offset inside the diff */
 
-	char *comment;
+	char *comment;             /* text of the comment */
+	char *diff_text;           /* the diff text this comment refers to */
 };
 
 typedef struct gcli_diff_comments gcli_diff_comments;

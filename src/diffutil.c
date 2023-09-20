@@ -485,7 +485,7 @@ int
 gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 {
 	if (parse_diff_header(parser, out) < 0)
-		return -1;
+	return -1;
 
 	if (try_parse_new_file_mode(parser, out) < 0)
 		return -1;
@@ -723,8 +723,11 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		.diff_line_offset = hunk->diff_line_offset,
 	};
 	int diff_range_off = -1;
+	char const *range_start = NULL;
 
 	for (;;) {
+		struct gcli_diff_comment *c = TAILQ_LAST(out, gcli_diff_comments);
+
 		switch (*ctx.front) {
 		case '\0':
 			break;
@@ -735,20 +738,42 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 			ctx.diff_line_offset += 1;
 			if (diff_range_off >= 0)
 				diff_range_off += 1;
+
+			if (c && !c->diff_text) {
+				char const *end = strchr(ctx.front, '\n');
+				if (end == NULL)
+					end = ctx.front + strlen(ctx.front);
+
+				end += 1;
+
+				c->diff_text = calloc((end - ctx.front) + 1, 1);
+				memcpy(c->diff_text, ctx.front, end - ctx.front);
+			}
 			break;
 		case '{':
 			diff_range_off = 0;
+			if (!c || c->diff_text)
+				return -1;
+
+			range_start = ctx.front;
 			break;
 		case '}': {
 			if (diff_range_off < 0)
 				return -1;             /* not in a range */
 
-			gcli_diff_comment *c = TAILQ_LAST(out, gcli_diff_comments);
+			assert(range_start != NULL);
+
 			if (!c)
 				return -1;             /* no comment to refer to */
 
 			c->end_row = c->start_row + diff_range_off - 1;
 			diff_range_off = -1;
+
+			range_start += 2;
+
+			size_t const len = ctx.front - range_start;
+			c->diff_text = calloc(len + 1, 1);
+			memcpy(c->diff_text, range_start, len);
 		} break;
 		default: {
 			/* comment */
