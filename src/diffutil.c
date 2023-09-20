@@ -86,9 +86,6 @@ gcli_parse_patch(gcli_diff_parser *parser, gcli_patch *out)
 		TAILQ_INSERT_TAIL(&out->diffs, d, next);
 	}
 
-	if (parser->hd[0] != '\0')
-		return -1;
-
 	return 0;
 }
 
@@ -215,6 +212,41 @@ expect_prefix(struct token *t, char const *const prefix)
 	t->start += prefix_len;
 
 	return 0;
+}
+
+/* Git uses a patch separator in the format-patch code that ALWAYS
+ * looks something like:
+ *
+ *    "From long-ass-commit-hash-here Mon Sep 17 00:00:00 2001\n"
+ *
+ * We will 'abuse' this fact here. In fact git itself uses this to
+ * separate commits in an e-mailed patch series. */
+static bool
+is_patch_separator(struct token const *line)
+{
+	size_t const line_len = token_len(line);
+	char const prefix[] = "From ";
+	char const suffix[] = " Mon Sep 17 00:00:00 2001\n";
+
+	if (line_len < sizeof(prefix) - 1)
+		return false;
+
+	if (line_len < sizeof(suffix) - 1)
+		return false;
+
+	bool const prefix_matches =
+		memcmp(line->start, prefix, sizeof(prefix) - 1) == 0;
+
+	if (!prefix_matches)
+		return false;
+
+	/* The commit hash is always 40 chars wide */
+	bool const suffix_matches =
+		memcmp(line->start + (sizeof(prefix) - 1) + 40,
+		       suffix,
+		       sizeof(suffix) - 1) == 0;
+
+	return suffix_matches;
 }
 
 static int
@@ -376,6 +408,43 @@ parse_diff_index_line(gcli_diff_parser *parser, gcli_diff *out)
 }
 
 static int
+get_last_line(struct token *buffer, struct token *out)
+{
+	if (*buffer->end == '\n')
+		buffer->end -= 1;
+
+	out->start = buffer->end;
+	out->end = buffer->end;
+
+	while (out->start > buffer->start && out->start[0] != '\n')
+		out->start -= 1;
+
+	out->start += 1;
+
+	return 0;
+}
+
+static void
+fixup_hunk_before_next_patch(struct token *buf)
+{
+	struct token pbuf = *buf;
+
+	while (token_len(&pbuf)) {
+		struct token last_line;
+
+		get_last_line(&pbuf, &last_line);
+		char const c =  last_line.start[0];
+
+		if (c == ' ' || c == '+' || c == '-' || c == '}')
+			break;
+
+		pbuf.end = last_line.start - 1;
+	}
+
+	buf->end = pbuf.end;
+}
+
+static int
 read_hunk_body(gcli_diff_parser *parser, gcli_diff_hunk *hunk)
 {
 	struct token buf = {0};
@@ -400,6 +469,15 @@ read_hunk_body(gcli_diff_parser *parser, gcli_diff_hunk *hunk)
 
 		if (strncmp(line.start, "@@", 2) == 0)
 			break;
+
+		if (line.start[0] == 'F' && is_patch_separator(&line)) {
+			/* In this case we found the next patch.
+			 * Remove the patch trailer by scanning backwards
+			 * through it until we find the last line that
+			 * belongs to a comment or a diff hunk */
+			fixup_hunk_before_next_patch(&buf);
+			break;
+		}
 
 		/* If it is a comment, don't count this line into
 		 * the absolute diff offset of the hunk */
@@ -485,7 +563,7 @@ int
 gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 {
 	if (parse_diff_header(parser, out) < 0)
-	return -1;
+		return -1;
 
 	if (try_parse_new_file_mode(parser, out) < 0)
 		return -1;
@@ -515,6 +593,23 @@ gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 		}
 
 		TAILQ_INSERT_TAIL(&out->hunks, hunk, next);
+	}
+
+	return 0;
+}
+
+int
+gcli_parse_patch_series(struct gcli_diff_parser *parser,
+                        struct gcli_patch_series *series)
+{
+	TAILQ_INIT(series);
+
+	while (parser->hd[0] != '\0') {
+		struct gcli_patch *p = calloc(sizeof(*p), 1);
+
+		TAILQ_INSERT_TAIL(series, p, next);
+		if (gcli_parse_patch(parser, p) < 0)
+			return -1;
 	}
 
 	return 0;
@@ -812,6 +907,22 @@ gcli_patch_get_comments(gcli_patch const *patch, gcli_diff_comments *out)
 
 	TAILQ_FOREACH(diff, &patch->diffs, next) {
 		if (gcli_diff_get_comments(diff, out) < 0)
+			return -1;
+	}
+
+	return 0;
+}
+
+int
+gcli_patch_series_get_comments(struct gcli_patch_series const *series,
+                               struct gcli_diff_comments *out)
+{
+	struct gcli_patch const *patch;
+
+	TAILQ_INIT(out);
+
+	TAILQ_FOREACH(patch, series, next) {
+		if (gcli_patch_get_comments(patch, out) < 0)
 			return -1;
 	}
 

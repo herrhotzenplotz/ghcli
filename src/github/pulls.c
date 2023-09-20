@@ -238,7 +238,7 @@ github_pull_get_diff(struct gcli_ctx *ctx, FILE *stream, char const *owner,
 		"%s/repos/%s/%s/pulls/%"PRIid,
 		gcli_get_apibase(ctx),
 		e_owner, e_repo, pr_number);
-	rc = gcli_curl(ctx, stream, url, "Accept: application/vnd.github.v3.diff");
+	rc = gcli_curl(ctx, stream, url, "Accept: application/vnd.github.v3.patch");
 
 	free(e_owner);
 	free(e_repo);

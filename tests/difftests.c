@@ -710,6 +710,65 @@ ATF_TC_BODY(comment_before_hunk_header, tc)
 	ATF_CHECK(gcli_patch_get_comments(&patch, &comments) < 0);
 }
 
+ATF_TC_WITHOUT_HEAD(simple_patch_series);
+ATF_TC_BODY(simple_patch_series, tc)
+{
+	struct gcli_diff_comment *comment;
+	struct gcli_diff_comments comments = {0};
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch *patch;
+	struct gcli_patch_series series = {0};
+	char const *const fname = "simple_patch_series.patch";
+
+	FILE *inf = open_sample(fname);
+
+	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch_series(&parser, &series) == 0);
+
+	ATF_REQUIRE(patch = TAILQ_FIRST(&series));
+
+	ATF_CHECK_STREQ(patch->prelude,
+	                "From 361f83923b9924a3e8796b0ddf03f768e26a1236 Mon Sep 17 00:00:00 2001\n"
+	                "From: Nico Sonack <nsonack@herrhotzenplotz.de>\n"
+	                "Date: Sat, 16 Sep 2023 22:28:33 +0200\n"
+	                "Subject: [PATCH 1/2] Update README.md\n"
+	                "\n"
+	                "---\n"
+	                " README.md | 3 +++\n"
+	                " 1 file changed, 3 insertions(+)\n"
+	                "\n");
+
+	ATF_REQUIRE(patch = TAILQ_NEXT(patch, next));
+	ATF_CHECK_STREQ(patch->prelude,
+	                "From d9cbace712a92fdd0bac4f08b6d42e75069af363 Mon Sep 17 00:00:00 2001\n"
+	                "From: Nico Sonack <nsonack@herrhotzenplotz.de>\n"
+	                "Date: Wed, 20 Sep 2023 20:09:58 +0200\n"
+	                "Subject: [PATCH 2/2] Second commit\n"
+	                "\n"
+	                "This is the body of the commit.\n"
+	                "---\n"
+	                " README.md | 8 ++++++++\n"
+	                " 1 file changed, 8 insertions(+)\n"
+	                "\n");
+
+	ATF_CHECK((patch = TAILQ_NEXT(patch, next)) == NULL);
+
+	TAILQ_INIT(&comments);
+	ATF_REQUIRE(gcli_patch_series_get_comments(&series, &comments) == 0);
+
+	ATF_REQUIRE(comment = TAILQ_FIRST(&comments));
+
+	ATF_CHECK_STREQ(comment->comment, "Why so much whitespace?\n");
+	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n");
+	ATF_CHECK(comment->start_row == 4);
+	ATF_CHECK(comment->end_row == 5);
+
+	ATF_REQUIRE(comment = TAILQ_NEXT(comment, next));
+
+	ATF_CHECK_STREQ(comment->comment, "Why all this whitespace?\n");
+	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n+\n+\n+\n+\n+\n");
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -727,6 +786,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, line_removals_offset_bug);
 	ATF_TP_ADD_TC(tp, leading_angle_bracket_are_removed_in_comments);
 	ATF_TP_ADD_TC(tp, comment_before_hunk_header);
+	ATF_TP_ADD_TC(tp, simple_patch_series);
 
 	return atf_no_error();
 }

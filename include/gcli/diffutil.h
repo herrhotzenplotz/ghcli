@@ -64,8 +64,12 @@ typedef struct gcli_patch gcli_patch;
 struct gcli_patch {
 	char *prelude;             /* Text leading up to the first diff */
 
+	TAILQ_ENTRY(gcli_patch) next; /* Next pointer in patch series */
 	TAILQ_HEAD(, gcli_diff) diffs;
 };
+
+typedef struct gcli_patch_series gcli_patch_series;
+TAILQ_HEAD(gcli_patch_series, gcli_patch);
 
 typedef struct gcli_diff_parser gcli_diff_parser;
 struct gcli_diff_parser {
@@ -103,10 +107,20 @@ int gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
                                  gcli_diff_parser *out);
 int gcli_diff_parser_from_file(FILE *f, char const *filename,
                                gcli_diff_parser *out);
+
+int gcli_parse_patch_series(struct gcli_diff_parser *parser,
+                            struct gcli_patch_series *out);
+
+int gcli_parse_patch(struct gcli_diff_parser *parser, struct gcli_patch *out);
+
+int gcli_parse_diff(struct gcli_diff_parser *parser, struct gcli_diff *out);
+
 int gcli_parse_patch(gcli_diff_parser *parser, gcli_patch *out);
 int gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out);
 int gcli_patch_parse_prelude(gcli_diff_parser *parser, gcli_patch *out);
 int gcli_patch_get_comments(gcli_patch const *patch, gcli_diff_comments *out);
+int gcli_patch_series_get_comments(gcli_patch_series const *series,
+                                   gcli_diff_comments *out);
 void gcli_free_diff(gcli_diff *diff);
 void gcli_free_diff_hunk(gcli_diff_hunk *hunk);
 void gcli_free_patch(gcli_patch *patch);
