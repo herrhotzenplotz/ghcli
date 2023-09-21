@@ -284,8 +284,8 @@ gitlab_mr_get_diff(struct gcli_ctx *ctx, FILE *stream, char const *owner,
 	struct gcli_pull pull_data = {0};
 
 	/* Hack: The Gitlab API itself does not provide a documented endpoint
-         * to grab the diff of the merge request. Instead we fetch the web_url
-         * and append ».diff« to it which gives us the diff in plain-text. */
+	 * to grab the diff of the merge request. Instead we fetch the web_url
+	 * and append ».diff« to it which gives us the diff in plain-text. */
 	rc = gitlab_get_pull(ctx, owner, repo, mr_number, &pull_data);
 	if (rc < 0)
 		return rc;

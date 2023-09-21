@@ -125,6 +125,8 @@ void gcli_free_diff(gcli_diff *diff);
 void gcli_free_diff_hunk(gcli_diff_hunk *hunk);
 void gcli_free_patch(gcli_patch *patch);
 
+void gcli_free_patch_series(struct gcli_patch_series *series);
+
 void gcli_free_diff(struct gcli_diff *diff);
 
 void gcli_free_diff_hunk(struct gcli_diff_hunk *hunk);
