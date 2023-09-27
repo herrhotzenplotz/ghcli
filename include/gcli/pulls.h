@@ -123,7 +123,8 @@ struct gcli_pull_create_review_details {
 	char const *owner, *repo;
 	gcli_id pull_id;
 	struct gcli_diff_comments comments;
-	char const *body;
+	char *body;       /* string containing the prelude message by the user */
+	char *gcli_meta;  /* string containing gcli metadata and commands */
 	int review_state;
 };
 

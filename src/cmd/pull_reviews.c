@@ -119,13 +119,60 @@ fetch_patch(struct review_ctx *ctx)
 	f = NULL;
 }
 
+/* Splits the prelude of a patch series into two parts:
+ *
+ *  Lines starting with »GCLI: «
+ *  Lines not starting with this prefix.
+ *
+ * Lines starting with this prefix will be stored in a meta */
+static void
+process_series_prelude(char *prelude, struct gcli_pull_create_review_details *details)
+{
+	char *meta, *comment, *bol;
+	size_t const p_len = strlen(prelude);
+
+	bol = prelude;
+
+	meta = calloc(p_len + 1, 1);
+	comment = calloc(p_len + 1, 1);
+
+	/* Loop through input line-by-line */
+	for (;;) {
+		char *eol = strchr(bol, '\n');
+		size_t line_len;
+		static char const gcli_pref[] = "GCLI: ";
+		static size_t const gcli_pref_len = sizeof(gcli_pref) - 1;
+
+		if (eol == NULL)
+			eol = bol + strlen(bol);
+
+		line_len = eol - bol;
+
+		/* This line matches the prefix. Copy into meta */
+		if (line_len >= gcli_pref_len &&
+		    strncmp(bol, gcli_pref, gcli_pref_len) == 0) {
+			strncat(meta,
+			        bol + gcli_pref_len,
+			        line_len - gcli_pref_len + 1);
+		} else {
+			strncat(comment, bol, line_len + 1);
+		}
+
+		bol = eol + 1;
+		if (*bol == '\0')
+			break;
+	}
+
+	details->gcli_meta = meta;
+	details->body = comment;
+}
+
 static void
 extract_patch_comments(struct review_ctx *ctx, struct gcli_diff_comments *out)
 {
 	FILE *f = fopen(ctx->diff_path, "r");
 	struct gcli_diff_parser p = {0};
 	struct gcli_patch_series series = {0};
-	gcli_patch *patch;
 
 	TAILQ_INIT(&series.patches);
 
@@ -138,9 +185,7 @@ extract_patch_comments(struct review_ctx *ctx, struct gcli_diff_comments *out)
 	if (gcli_patch_series_get_comments(&series, out) < 0)
 		errx(1, "error: failed to get comments");
 
-	patch = TAILQ_FIRST(&series.patches);
-	if (patch)
-		ctx->details.body = strdup(patch->prelude);
+	process_series_prelude(series.prelude, &ctx->details);
 
 	gcli_free_patch_series(&series);
 	gcli_free_diff_parser(&p);
