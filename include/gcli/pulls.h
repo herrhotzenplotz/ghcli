@@ -57,6 +57,7 @@ struct gcli_pull {
 	char *base_label;
 	char *head_sha;
 	char *base_sha;
+	char *start_sha;
 	char *milestone;
 	gcli_id id;
 	gcli_id number;

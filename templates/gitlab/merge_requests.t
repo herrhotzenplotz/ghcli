@@ -13,8 +13,9 @@ parser gitlab_reviewer is object of char* select "username" as string;
 
 parser gitlab_diff_refs is
 object of struct gcli_pull with
-	("base_sha" => base_sha as string,
-	 "head_sha" => head_sha as string);
+	("base_sha"  => base_sha as string,
+	 "head_sha"  => head_sha as string,
+	 "start_sha" => start_sha as string);
 
 parser gitlab_mr is
 object of struct gcli_pull with
