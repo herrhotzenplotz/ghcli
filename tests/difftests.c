@@ -725,7 +725,7 @@ ATF_TC_BODY(simple_patch_series, tc)
 	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch_series(&parser, &series) == 0);
 
-	ATF_REQUIRE(patch = TAILQ_FIRST(&series));
+	ATF_REQUIRE(patch = TAILQ_FIRST(&series.patches));
 
 	ATF_CHECK_STREQ(patch->prelude,
 	                "From 361f83923b9924a3e8796b0ddf03f768e26a1236 Mon Sep 17 00:00:00 2001\n"

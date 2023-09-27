@@ -69,7 +69,11 @@ struct gcli_patch {
 };
 
 typedef struct gcli_patch_series gcli_patch_series;
-TAILQ_HEAD(gcli_patch_series, gcli_patch);
+struct gcli_patch_series {
+	TAILQ_HEAD(, gcli_patch) patches;
+
+	char *prelude;
+};
 
 typedef struct gcli_diff_parser gcli_diff_parser;
 struct gcli_diff_parser {

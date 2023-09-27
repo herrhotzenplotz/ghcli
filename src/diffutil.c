@@ -602,12 +602,12 @@ int
 gcli_parse_patch_series(struct gcli_diff_parser *parser,
                         struct gcli_patch_series *series)
 {
-	TAILQ_INIT(series);
+	TAILQ_INIT(&series->patches);
 
 	while (parser->hd[0] != '\0') {
 		struct gcli_patch *p = calloc(sizeof(*p), 1);
 
-		TAILQ_INSERT_TAIL(series, p, next);
+		TAILQ_INSERT_TAIL(&series->patches, p, next);
 		if (gcli_parse_patch(parser, p) < 0)
 			return -1;
 	}
@@ -921,7 +921,7 @@ gcli_patch_series_get_comments(struct gcli_patch_series const *series,
 
 	TAILQ_INIT(out);
 
-	TAILQ_FOREACH(patch, series, next) {
+	TAILQ_FOREACH(patch, &series->patches, next) {
 		if (gcli_patch_get_comments(patch, out) < 0)
 			return -1;
 	}
@@ -932,12 +932,12 @@ gcli_patch_series_get_comments(struct gcli_patch_series const *series,
 void
 gcli_free_patch_series(struct gcli_patch_series *series)
 {
-	gcli_patch *p = TAILQ_FIRST(series);
+	struct gcli_patch *p = TAILQ_FIRST(&series->patches);
 	while (p) {
 		struct gcli_patch *n = TAILQ_NEXT(p, next);
 		gcli_free_patch(p);
 		free(p);
 		p = n;
 	}
-	TAILQ_INIT(series);
+	TAILQ_INIT(&series->patches);
 }

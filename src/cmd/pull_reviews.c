@@ -125,8 +125,9 @@ extract_patch_comments(struct review_ctx *ctx, struct gcli_diff_comments *out)
 	FILE *f = fopen(ctx->diff_path, "r");
 	struct gcli_diff_parser p = {0};
 	struct gcli_patch_series series = {0};
+	gcli_patch *patch;
 
-	TAILQ_INIT(&series);
+	TAILQ_INIT(&series.patches);
 
 	if (gcli_diff_parser_from_file(f, ctx->diff_path, &p) < 0)
 		err(1, "error: failed to open diff");
@@ -137,8 +138,9 @@ extract_patch_comments(struct review_ctx *ctx, struct gcli_diff_comments *out)
 	if (gcli_patch_series_get_comments(&series, out) < 0)
 		errx(1, "error: failed to get comments");
 
-	/* FIXME */
-	/* ctx->details.body = strdup(patch.prelude); */
+	patch = TAILQ_FIRST(&series.patches);
+	if (patch)
+		ctx->details.body = strdup(patch->prelude);
 
 	gcli_free_patch_series(&series);
 	gcli_free_diff_parser(&p);
