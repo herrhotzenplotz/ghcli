@@ -115,4 +115,7 @@ int gitlab_mr_set_title(struct gcli_ctx *ctx, char const *const owner,
                         char const *const repo, gcli_id const id,
                         char const *const new_title);
 
+int gitlab_mr_create_review(struct gcli_ctx *ctx,
+                            struct gcli_pull_create_review_details const *details);
+
 #endif /* GITLAB_MERGE_REQUESTS_H */

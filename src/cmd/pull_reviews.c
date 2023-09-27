@@ -128,13 +128,14 @@ fetch_patch(struct review_ctx *ctx)
 static void
 process_series_prelude(char *prelude, struct gcli_pull_create_review_details *details)
 {
-	char *meta, *comment, *bol;
+	char *comment, *bol;
 	size_t const p_len = strlen(prelude);
 
 	bol = prelude;
 
-	meta = calloc(p_len + 1, 1);
 	comment = calloc(p_len + 1, 1);
+
+	TAILQ_INIT(&details->meta_lines);
 
 	/* Loop through input line-by-line */
 	for (;;) {
@@ -151,9 +152,16 @@ process_series_prelude(char *prelude, struct gcli_pull_create_review_details *de
 		/* This line matches the prefix. Copy into meta */
 		if (line_len >= gcli_pref_len &&
 		    strncmp(bol, gcli_pref, gcli_pref_len) == 0) {
-			strncat(meta,
-			        bol + gcli_pref_len,
-			        line_len - gcli_pref_len + 1);
+			struct gcli_review_meta_line *ml;
+
+			char *meta = calloc(line_len - gcli_pref_len + 1, 1);
+			memcpy(meta, bol + gcli_pref_len, line_len - gcli_pref_len);
+
+			ml = calloc(sizeof(*ml), 1);
+			ml->entry = meta;
+
+			TAILQ_INSERT_TAIL(&details->meta_lines, ml, next);
+
 		} else {
 			strncat(comment, bol, line_len + 1);
 		}
@@ -163,7 +171,6 @@ process_series_prelude(char *prelude, struct gcli_pull_create_review_details *de
 			break;
 	}
 
-	details->gcli_meta = meta;
 	details->body = comment;
 }
 

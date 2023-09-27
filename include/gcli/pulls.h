@@ -120,12 +120,17 @@ enum {
 	GCLI_REVIEW_COMMENT = 3,
 };
 
+struct gcli_review_meta_line {
+	TAILQ_ENTRY(gcli_review_meta_line) next;
+	char *entry;
+};
+
 struct gcli_pull_create_review_details {
 	char const *owner, *repo;
 	gcli_id pull_id;
 	struct gcli_diff_comments comments;
 	char *body;       /* string containing the prelude message by the user */
-	char *gcli_meta;  /* string containing gcli metadata and commands */
+	TAILQ_HEAD(, gcli_review_meta_line) meta_lines;
 	int review_state;
 };
 
@@ -215,5 +220,8 @@ int gcli_pull_create_review(struct gcli_ctx *ctx,
 
 int gcli_pull_get_patch(struct gcli_ctx *ctx, FILE *out, char const *owner,
                         char const *repo, gcli_id pr_number);
+
+char const *gcli_pull_get_meta_by_key(struct gcli_pull_create_review_details const *,
+                                      char const *key);
 
 #endif /* PULLS_H */

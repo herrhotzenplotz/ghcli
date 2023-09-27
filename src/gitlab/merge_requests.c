@@ -30,8 +30,9 @@
 #include <gcli/curl.h>
 #include <gcli/gitlab/api.h>
 #include <gcli/gitlab/config.h>
-#include <gcli/gitlab/repos.h>
 #include <gcli/gitlab/merge_requests.h>
+#include <gcli/gitlab/repos.h>
+#include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 #include <gcli/json_gen.h>
 
@@ -883,4 +884,86 @@ gitlab_mr_set_title(struct gcli_ctx *ctx, char const *const owner,
 	free(payload);
 
 	return rc;
+}
+
+static int
+post_diff_comment(struct gcli_ctx *ctx,
+                  struct gcli_pull_create_review_details const *details,
+                  struct gcli_diff_comment const *comment)
+{
+	char *e_owner, *e_repo;
+	char *url, *payload;
+	char const *base_sha, *start_sha, *head_sha;
+	int rc = 0;
+	struct gcli_jsongen gen = {0};
+
+	if ((base_sha = gcli_pull_get_meta_by_key(details, "base_sha")) == NULL)
+		return gcli_error(ctx, "no base_sha in meta");
+
+	if ((start_sha = gcli_pull_get_meta_by_key(details, "start_sha")) == NULL)
+		return gcli_error(ctx, "no start_sha in meta");
+
+	if ((head_sha = gcli_pull_get_meta_by_key(details, "head_sha")) == NULL)
+		return gcli_error(ctx, "no head_sha in meta");
+
+	e_owner = gcli_urlencode(details->owner);
+	e_repo  = gcli_urlencode(details->repo);
+
+
+	/* /projects/:id/merge_requests/:merge_request_iid/discussions */
+	url = sn_asprintf("%s/projects/%s%%2F%s/merge_requests/%lu/discussions",
+	                  gcli_get_apibase(ctx), e_owner, e_repo,
+	                  details->pull_id);
+
+	/* Generate payload */
+	if (gcli_jsongen_init(&gen) < 0)
+		goto err_jsongen_init;
+
+	gcli_jsongen_begin_object(&gen); {
+		gcli_jsongen_objmember(&gen, "body");
+		gcli_jsongen_string(&gen, comment->comment);
+
+		gcli_jsongen_objmember(&gen, "position[position_type]");
+		gcli_jsongen_string(&gen, "text");
+
+		gcli_jsongen_objmember(&gen, "position[base_sha]");
+		gcli_jsongen_string(&gen, base_sha);
+
+		gcli_jsongen_objmember(&gen, "position[start_sha]");
+		gcli_jsongen_string(&gen, start_sha);
+
+		gcli_jsongen_objmember(&gen, "position[head_sha]");
+		gcli_jsongen_string(&gen, head_sha);
+	}
+	gcli_jsongen_end_object(&gen);
+
+	payload = gcli_jsongen_to_string(&gen);
+
+	/* TODO: Submit to API */
+	rc = gcli_error(ctx, "not implemented: %s", __func__);
+
+	free(payload);
+
+err_jsongen_init:
+	free(e_owner);
+	free(e_repo);
+	free(url);
+
+	return rc;
+}
+
+int
+gitlab_mr_create_review(struct gcli_ctx *ctx,
+                        struct gcli_pull_create_review_details const *details)
+{
+	int rc;
+	struct gcli_diff_comment const *comment;
+
+	TAILQ_FOREACH(comment, &details->comments, next) {
+		rc = post_diff_comment(ctx, details, comment);
+		if (rc < 0)
+			return rc;
+	}
+
+	return gcli_error(ctx, "not yet implemented");
 }

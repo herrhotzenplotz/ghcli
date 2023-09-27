@@ -220,6 +220,7 @@ gitlab_forge_descriptor =
 	.pull_add_reviewer         = gitlab_mr_add_reviewer,
 	.pull_clear_milestone      = gitlab_mr_clear_milestone,
 	.pull_close                = gitlab_mr_close,
+	.pull_create_review        = gitlab_mr_create_review,
 	.pull_get_diff             = gitlab_mr_get_diff,
 	.pull_get_patch            = gitlab_mr_get_patch,
 	.pull_merge                = gitlab_mr_merge,
