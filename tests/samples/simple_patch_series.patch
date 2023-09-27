@@ -1,3 +1,8 @@
+GCLI: base_sha f00b4rc01dc0fee
+This is just a global comment.
+
+It should not end up in the patch prelude but in the patch series
+prelude.
 From 361f83923b9924a3e8796b0ddf03f768e26a1236 Mon Sep 17 00:00:00 2001
 From: Nico Sonack <nsonack@herrhotzenplotz.de>
 Date: Sat, 16 Sep 2023 22:28:33 +0200

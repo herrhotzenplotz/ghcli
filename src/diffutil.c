@@ -598,11 +598,40 @@ gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 	return 0;
 }
 
+static int
+patch_series_read_prelude(struct gcli_diff_parser *parser,
+                          struct gcli_patch_series *series)
+{
+	char const *prelude_begin = parser->hd;
+
+	for (;;) {
+		struct token line = {0};
+		if (nextline(parser, &line) < 0)
+			break;
+
+		if (is_patch_separator(&line))
+			break;
+
+		parser->hd = line.end + 1;
+		parser->col = 1;
+		parser->row += 1;
+	}
+
+	size_t const prelude_len = parser->hd - prelude_begin;
+	series->prelude = calloc(prelude_len + 1, 1);
+	memcpy(series->prelude, prelude_begin, prelude_len);
+
+	return 0;
+}
+
 int
 gcli_parse_patch_series(struct gcli_diff_parser *parser,
                         struct gcli_patch_series *series)
 {
 	TAILQ_INIT(&series->patches);
+
+	if (patch_series_read_prelude(parser, series) < 0)
+		return -1;
 
 	while (parser->hd[0] != '\0') {
 		struct gcli_patch *p = calloc(sizeof(*p), 1);

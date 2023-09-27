@@ -769,6 +769,26 @@ ATF_TC_BODY(simple_patch_series, tc)
 	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n+\n+\n+\n+\n+\n");
 }
 
+ATF_TC_WITHOUT_HEAD(patch_series_with_prelude);
+ATF_TC_BODY(patch_series_with_prelude, tc)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch_series series = {0};
+	char const *const fname = "simple_patch_series.patch";
+
+	FILE *inf = open_sample(fname);
+
+	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch_series(&parser, &series) == 0);
+
+	ATF_CHECK_STREQ(series.prelude,
+	                "GCLI: base_sha f00b4rc01dc0fee\n"
+	                "This is just a global comment.\n"
+	                "\n"
+	                "It should not end up in the patch prelude but in the patch series\n"
+	                "prelude.\n");
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -787,6 +807,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, leading_angle_bracket_are_removed_in_comments);
 	ATF_TP_ADD_TC(tp, comment_before_hunk_header);
 	ATF_TP_ADD_TC(tp, simple_patch_series);
+	ATF_TP_ADD_TC(tp, patch_series_with_prelude);
 
 	return atf_no_error();
 }
