@@ -102,6 +102,7 @@ struct gcli_diff_comment {
 
 	int diff_line_offset;      /* line offset inside the diff */
 
+	char *commit_hash;         /* The commit this comment refers to */
 	char *comment;             /* text of the comment */
 	char *diff_text;           /* the diff text this comment refers to */
 };

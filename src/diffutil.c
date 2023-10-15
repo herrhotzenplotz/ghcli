@@ -745,6 +745,7 @@ make_comment(struct comment_read_ctx *ctx, char *text,
 	comment->before.end_row = line_info->original_line;
 	comment->comment = text;
 	comment->diff_line_offset = diff_line_offset;
+	comment->commit_hash = strdup(ctx->diff->hash_b);
 
 	return comment;
 }
