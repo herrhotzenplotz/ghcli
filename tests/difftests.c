@@ -762,11 +762,17 @@ ATF_TC_BODY(simple_patch_series, tc)
 	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n");
 	ATF_CHECK(comment->after.start_row == 4);
 	ATF_CHECK(comment->after.end_row == 5);
+	ATF_CHECK(comment->before.start_row == 0);
+	ATF_CHECK(comment->before.end_row == 0);
 
 	ATF_REQUIRE(comment = TAILQ_NEXT(comment, next));
 
 	ATF_CHECK_STREQ(comment->comment, "Why all this whitespace?\n");
 	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n+\n+\n+\n+\n+\n");
+	ATF_CHECK(comment->after.start_row == 7);
+	ATF_CHECK(comment->after.end_row == 13);
+	ATF_CHECK(comment->before.start_row == 0);
+	ATF_CHECK(comment->before.end_row == 0);
 }
 
 ATF_TC_WITHOUT_HEAD(patch_series_with_prelude);
