@@ -223,6 +223,31 @@ github_pull_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
 }
 
 int
+github_print_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
+                       char const *repo, gcli_id pr_number)
+{
+	char *url = NULL;
+	char *e_owner = NULL;
+	char *e_repo = NULL;
+	int rc = 0;
+
+	e_owner = gcli_urlencode(owner);
+	e_repo  = gcli_urlencode(repo);
+
+	url = sn_asprintf(
+		"%s/repos/%s/%s/pulls/%lu",
+		gcli_get_apibase(ctx),
+		e_owner, e_repo, pr_number);
+	rc = gcli_curl(ctx, stream, url, "Accept: application/vnd.github.v3.patch");
+
+	free(e_owner);
+	free(e_repo);
+	free(url);
+
+	return rc;
+}
+
+int
 github_pull_get_diff(struct gcli_ctx *ctx, FILE *stream, char const *owner,
                      char const *repo, gcli_id const pr_number)
 {
@@ -238,7 +263,7 @@ github_pull_get_diff(struct gcli_ctx *ctx, FILE *stream, char const *owner,
 		"%s/repos/%s/%s/pulls/%"PRIid,
 		gcli_get_apibase(ctx),
 		e_owner, e_repo, pr_number);
-	rc = gcli_curl(ctx, stream, url, "Accept: application/vnd.github.v3.patch");
+	rc = gcli_curl(ctx, stream, url, "Accept: application/vnd.github.v3.diff");
 
 	free(e_owner);
 	free(e_repo);

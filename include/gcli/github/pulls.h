@@ -47,6 +47,9 @@ int github_pull_get_diff(struct  gcli_ctx *ctx, FILE *stream, char const *owner,
 int github_pull_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
                           char const *reponame, gcli_id pr_number);
 
+int github_print_pull_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
+                            char const *reponame, gcli_id pr_number);
+
 int github_pull_get_checks(struct gcli_ctx *ctx, char const *owner,
                            char const *repo, gcli_id pr_number,
                            struct gcli_pull_checks_list *out);
