@@ -160,9 +160,9 @@ ATF_TC_BODY(parse_simple_diff, tc)
 	ATF_REQUIRE(hunk != NULL);
 
 	ATF_CHECK(hunk->range_a_start == 3);
-	ATF_CHECK(hunk->range_a_end == 5);
+	ATF_CHECK(hunk->range_a_length == 5);
 	ATF_CHECK(hunk->range_r_start == 3);
-	ATF_CHECK(hunk->range_r_end == 3);
+	ATF_CHECK(hunk->range_r_length == 3);
 	ATF_CHECK(hunk->diff_line_offset == 1);
 	ATF_CHECK_STREQ(hunk->context_info, "This is just a placeholder");
 	ATF_CHECK_STREQ(hunk->body,
@@ -224,9 +224,9 @@ ATF_TC_BODY(diff_with_two_hunks, tp)
 	ATF_REQUIRE(h != NULL);
 
 	ATF_CHECK(h->range_r_start == 1);
-	ATF_CHECK(h->range_r_end == 3);
+	ATF_CHECK(h->range_r_length == 3);
 	ATF_CHECK(h->range_a_start == 1);
-	ATF_CHECK(h->range_a_end == 5);
+	ATF_CHECK(h->range_a_length == 5);
 	ATF_CHECK(h->diff_line_offset == 1);
 
 	ATF_CHECK_STREQ(h->context_info, "");
@@ -242,9 +242,9 @@ ATF_TC_BODY(diff_with_two_hunks, tp)
 	ATF_REQUIRE(h != NULL);
 
 	ATF_CHECK(h->range_r_start == 5);
-	ATF_CHECK(h->range_r_end == 3);
+	ATF_CHECK(h->range_r_length == 3);
 	ATF_CHECK(h->range_a_start == 7);
-	ATF_CHECK(h->range_a_end == 5);
+	ATF_CHECK(h->range_a_length == 5);
 	ATF_CHECK(h->diff_line_offset == 7);
 
 	ATF_CHECK_STREQ(h->context_info, "Test test test");
@@ -309,9 +309,9 @@ ATF_TC_BODY(two_diffs_with_one_hunk_each, tc)
 	ATF_REQUIRE(hunk != NULL);
 	ATF_CHECK_STREQ(hunk->context_info, "");
 	ATF_CHECK(hunk->range_r_start == 1);
-	ATF_CHECK(hunk->range_r_end == 3);
+	ATF_CHECK(hunk->range_r_length == 3);
 	ATF_CHECK(hunk->range_a_start == 1);
-	ATF_CHECK(hunk->range_a_end == 5);
+	ATF_CHECK(hunk->range_a_length == 5);
 	ATF_CHECK(hunk->diff_line_offset == 1);
 
 	ATF_CHECK_STREQ(hunk->body,
@@ -339,9 +339,9 @@ ATF_TC_BODY(two_diffs_with_one_hunk_each, tc)
 	hunk = TAILQ_FIRST(&diff->hunks);
 	ATF_REQUIRE(hunk != NULL);
 	ATF_CHECK(hunk->range_r_start == 0);
-	ATF_CHECK(hunk->range_r_end == 0);
+	ATF_CHECK(hunk->range_r_length == 0);
 	ATF_CHECK(hunk->range_a_start == 1);
-	ATF_CHECK(hunk->range_a_end == 0);
+	ATF_CHECK(hunk->range_a_length == 0);
 	ATF_CHECK(hunk->diff_line_offset == 1);
 	ATF_CHECK_STREQ(hunk->body, "+wat\n");
 

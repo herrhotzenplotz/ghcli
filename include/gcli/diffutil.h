@@ -39,7 +39,7 @@ typedef struct gcli_diff_hunk gcli_diff_hunk;
 struct gcli_diff_hunk {
 	TAILQ_ENTRY(gcli_diff_hunk) next;
 
-	int range_a_start, range_a_end, range_r_start, range_r_end;
+	int range_a_start, range_a_length, range_r_start, range_r_length;
 	char *context_info;
 	char *body;
 

@@ -268,7 +268,7 @@ parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_hunk *out)
 
 	char const delim_r = *line.start++;
 	if (delim_r == ',') {
-		if (read_number(&line, 10, &out->range_r_end) < 0)
+		if (read_number(&line, 10, &out->range_r_length) < 0)
 			return -1;
 	} else if (delim_r != ' ') {
 		return -1;
@@ -283,7 +283,7 @@ parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_hunk *out)
 	char const delim_a = *line.start;
 	if (delim_a == ',') {
 		line.start += 1;
-		if (read_number(&line, 10, &out->range_a_end) < 0)
+		if (read_number(&line, 10, &out->range_a_length) < 0)
 			return -1;
 	} else if (delim_a != ' ') {
 		return -1;
