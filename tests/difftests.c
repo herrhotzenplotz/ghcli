@@ -518,9 +518,13 @@ ATF_TC_BODY(patch_with_two_diffs_and_comments, tc)
 		c = TAILQ_FIRST(&comments);
 		ATF_REQUIRE(c != NULL);
 
-		ATF_CHECK_STREQ(c->after.filename, "bar");
 		ATF_CHECK_STREQ(c->comment, "I do not like this change.\n");
+		ATF_CHECK_STREQ(c->after.filename, "bar");
+		ATF_CHECK_STREQ(c->before.filename, "bar");
 		ATF_CHECK(c->after.start_row == 23);
+		ATF_CHECK(c->after.end_row == 23);
+		ATF_CHECK(c->before.start_row == 23);
+		ATF_CHECK(c->before.end_row == 23);
 		ATF_CHECK(c->diff_line_offset == 4);
 
 		/* Second comment */
@@ -762,8 +766,8 @@ ATF_TC_BODY(simple_patch_series, tc)
 	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n");
 	ATF_CHECK(comment->after.start_row == 4);
 	ATF_CHECK(comment->after.end_row == 5);
-	ATF_CHECK(comment->before.start_row == 0);
-	ATF_CHECK(comment->before.end_row == 0);
+	ATF_CHECK(comment->before.start_row == 4);
+	ATF_CHECK(comment->before.end_row == 4);
 
 	ATF_REQUIRE(comment = TAILQ_NEXT(comment, next));
 
@@ -771,8 +775,8 @@ ATF_TC_BODY(simple_patch_series, tc)
 	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n+\n+\n+\n+\n+\n");
 	ATF_CHECK(comment->after.start_row == 7);
 	ATF_CHECK(comment->after.end_row == 13);
-	ATF_CHECK(comment->before.start_row == 0);
-	ATF_CHECK(comment->before.end_row == 0);
+	ATF_CHECK(comment->before.start_row == 7);
+	ATF_CHECK(comment->before.end_row == 7);
 }
 
 ATF_TC_WITHOUT_HEAD(patch_series_with_prelude);

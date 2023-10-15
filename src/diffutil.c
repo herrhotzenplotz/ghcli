@@ -718,23 +718,31 @@ gcli_free_diff_parser(gcli_diff_parser *parser)
 /********************************************************************
  * Comment Extraction
  *******************************************************************/
+struct hunk_line_info {
+	int patched_line;
+	int original_line;
+};
+
 struct comment_read_ctx {
 	gcli_diff const *diff;
 	gcli_diff_hunk const *hunk;
 	gcli_diff_comments *comments;
 	char const *front;
-	int patched_line_offset;       /* Offset of the comment in the final patched file */
+	struct hunk_line_info line_info;
 	int diff_line_offset;          /* Offset of the comment within the current diff */
 };
 
 static gcli_diff_comment *
 make_comment(struct comment_read_ctx *ctx, char *text,
-             int line_number, int diff_line_offset)
+             struct hunk_line_info const *line_info, int diff_line_offset)
 {
 	gcli_diff_comment *comment = calloc(sizeof(*comment), 1);
 	comment->after.filename = strdup(ctx->diff->file_b);
-	comment->after.start_row = line_number;
-	comment->after.end_row = line_number;
+	comment->after.start_row = line_info->patched_line;
+	comment->after.end_row = line_info->patched_line;
+	comment->before.filename = strdup(ctx->diff->file_a);
+	comment->before.start_row = line_info->original_line;
+	comment->before.end_row = line_info->original_line;
 	comment->comment = text;
 	comment->diff_line_offset = diff_line_offset;
 
@@ -745,7 +753,7 @@ static int
 read_comment_unprefixed(struct comment_read_ctx *ctx)
 {
 	char const *start = ctx->front;
-	int const line = ctx->patched_line_offset;
+	struct hunk_line_info const line = ctx->line_info;
 	int const diff_line_offset = ctx->diff_line_offset;
 	size_t comment_len = 0;
 	gcli_diff_comment *cmt;
@@ -774,7 +782,7 @@ read_comment_unprefixed(struct comment_read_ctx *ctx)
 	text = calloc(comment_len + 1, 1);
 	memcpy(text, start, comment_len);
 
-	cmt = make_comment(ctx, text, line, diff_line_offset);
+	cmt = make_comment(ctx, text, &line, diff_line_offset);
 	TAILQ_INSERT_TAIL(ctx->comments, cmt, next);
 
 	return 0;
@@ -784,7 +792,7 @@ static int
 read_comment_prefixed(struct comment_read_ctx *ctx)
 {
 	char const *start = ctx->front;
-	int const line = ctx->patched_line_offset;
+	struct hunk_line_info const line = ctx->line_info;
 	int const diff_line_offset = ctx->diff_line_offset;
 	size_t comment_len = 0;
 	struct gcli_diff_comment *cmt;
@@ -819,7 +827,7 @@ read_comment_prefixed(struct comment_read_ctx *ctx)
 		start = line_end + 1;
 	}
 
-	cmt = make_comment(ctx, text, line, diff_line_offset);
+	cmt = make_comment(ctx, text, &line, diff_line_offset);
 	TAILQ_INSERT_TAIL(ctx->comments, cmt, next);
 
 	return 0;
@@ -843,7 +851,10 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		.hunk = hunk,
 		.comments = out,
 		.front = hunk->body,
-		.patched_line_offset = hunk->range_a_start,
+		.line_info = {
+			.patched_line = hunk->range_a_start,
+			.original_line = hunk->range_r_start,
+		},
 		.diff_line_offset = hunk->diff_line_offset,
 	};
 	int diff_range_off = -1;
@@ -852,13 +863,19 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 	for (;;) {
 		struct gcli_diff_comment *c = TAILQ_LAST(out, gcli_diff_comments);
 
-		switch (*ctx.front) {
+		char const hd = *ctx.front;
+
+		switch (hd) {
 		case '\0':
 			break;
 		case ' ':
 		case '+':
-			ctx.patched_line_offset += 1;
 		case '-':
+			if (hd == '+' || hd == ' ')
+				ctx.line_info.patched_line += 1;
+			if (hd == '-' || hd == ' ')
+				ctx.line_info.original_line += 1;
+
 			ctx.diff_line_offset += 1;
 			if (diff_range_off >= 0)
 				diff_range_off += 1;
