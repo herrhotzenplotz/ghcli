@@ -697,17 +697,17 @@ github_pull_create_review(struct gcli_ctx *ctx,
 				gcli_jsongen_begin_object(&gen);
 				{
 					gcli_jsongen_objmember(&gen, "path");
-					gcli_jsongen_string(&gen, comment->filename);
+					gcli_jsongen_string(&gen, comment->after.filename);
 
 					gcli_jsongen_objmember(&gen, "body");
 					gcli_jsongen_string(&gen, comment->comment);
 
 					gcli_jsongen_objmember(&gen, "line");
-					gcli_jsongen_number(&gen, comment->end_row);
+					gcli_jsongen_number(&gen, comment->after.end_row);
 
-					if (comment->start_row != comment->end_row) {
+					if (comment->after.start_row != comment->after.end_row) {
 						gcli_jsongen_objmember(&gen, "start_line");
-						gcli_jsongen_number(&gen, comment->start_row);
+						gcli_jsongen_number(&gen, comment->after.start_row);
 					}
 				}
 				gcli_jsongen_end_object(&gen);

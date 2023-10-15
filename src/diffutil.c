@@ -732,10 +732,10 @@ make_comment(struct comment_read_ctx *ctx, char *text,
              int line_number, int diff_line_offset)
 {
 	gcli_diff_comment *comment = calloc(sizeof(*comment), 1);
-	comment->filename = strdup(ctx->diff->file_b);
+	comment->after.filename = strdup(ctx->diff->file_b);
+	comment->after.start_row = line_number;
+	comment->after.end_row = line_number;
 	comment->comment = text;
-	comment->start_row = line_number;
-	comment->end_row = line_number;
 	comment->diff_line_offset = diff_line_offset;
 
 	return comment;
@@ -890,7 +890,7 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 			if (!c)
 				return -1;             /* no comment to refer to */
 
-			c->end_row = c->start_row + diff_range_off - 1;
+			c->after.end_row = c->after.start_row + diff_range_off - 1;
 			diff_range_off = -1;
 
 			range_start += 2;

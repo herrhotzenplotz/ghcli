@@ -95,8 +95,11 @@ typedef struct gcli_diff_comment gcli_diff_comment;
 struct gcli_diff_comment {
 	TAILQ_ENTRY(gcli_diff_comment) next;
 
-	char *filename;            /* right side file name */
-	int start_row, end_row;    /* right side start- and end row */
+	struct {
+		char *filename;
+		int start_row, end_row;
+	} before, after;           /* range info for before and after applying hunk */
+
 	int diff_line_offset;      /* line offset inside the diff */
 
 	char *comment;             /* text of the comment */

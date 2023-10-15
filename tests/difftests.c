@@ -388,8 +388,8 @@ ATF_TC_BODY(simple_patch_with_comments, tc)
 		gcli_diff_comment *comment = TAILQ_FIRST(&comments);
 		ATF_REQUIRE(comment != NULL);
 
-		ATF_CHECK_STREQ(comment->filename, "include/ghcli/pulls.h");
-		ATF_CHECK(comment->start_row == 60);
+		ATF_CHECK_STREQ(comment->after.filename, "include/ghcli/pulls.h");
+		ATF_CHECK(comment->after.start_row == 60);
 		ATF_CHECK(comment->diff_line_offset == 4);
 		ATF_CHECK_STREQ(comment->comment, "\nThis is a comment on line 60.\n");
 		ATF_CHECK_STREQ(comment->diff_text,
@@ -444,17 +444,17 @@ ATF_TC_BODY(diff_with_two_hunks_and_comments, tc)
 		comment = TAILQ_FIRST(&comments);
 		ATF_REQUIRE(comment != NULL);
 
-		ATF_CHECK_STREQ(comment->filename, "README");
+		ATF_CHECK_STREQ(comment->after.filename, "README");
 		ATF_CHECK_STREQ(comment->comment, "This is the first comment\n");
-		ATF_CHECK(comment->start_row == 4);
+		ATF_CHECK(comment->after.start_row == 4);
 		ATF_CHECK(comment->diff_line_offset == 4);
 
 		comment = TAILQ_NEXT(comment, next);
 		ATF_REQUIRE(comment != NULL);
 
-		ATF_CHECK_STREQ(comment->filename, "README");
+		ATF_CHECK_STREQ(comment->after.filename, "README");
 		ATF_CHECK_STREQ(comment->comment, "This is the other comment\n");
-		ATF_CHECK(comment->start_row == 22);
+		ATF_CHECK(comment->after.start_row == 22);
 		ATF_CHECK(comment->diff_line_offset == 11);
 
 		comment = TAILQ_NEXT(comment, next);
@@ -518,18 +518,18 @@ ATF_TC_BODY(patch_with_two_diffs_and_comments, tc)
 		c = TAILQ_FIRST(&comments);
 		ATF_REQUIRE(c != NULL);
 
-		ATF_CHECK_STREQ(c->filename, "bar");
+		ATF_CHECK_STREQ(c->after.filename, "bar");
 		ATF_CHECK_STREQ(c->comment, "I do not like this change.\n");
-		ATF_CHECK(c->start_row == 23);
+		ATF_CHECK(c->after.start_row == 23);
 		ATF_CHECK(c->diff_line_offset == 4);
 
 		/* Second comment */
 		c = TAILQ_NEXT(c, next);
 		ATF_REQUIRE(c != NULL);
 
-		ATF_CHECK_STREQ(c->filename, "foo");
+		ATF_CHECK_STREQ(c->after.filename, "foo");
 		ATF_CHECK_STREQ(c->comment, "This is horrible\nGet some help!\n");
-		ATF_CHECK(c->start_row == 10);
+		ATF_CHECK(c->after.start_row == 10);
 		ATF_CHECK(c->diff_line_offset == 9);
 
 		/* End */
@@ -572,8 +572,8 @@ ATF_TC_BODY(single_diff_with_multiline_comment, tc)
 	c = TAILQ_FIRST(&comments);
 	ATF_REQUIRE(c != NULL);
 
-	ATF_CHECK(c->start_row == 61);
-	ATF_CHECK(c->end_row == 62);
+	ATF_CHECK(c->after.start_row == 61);
+	ATF_CHECK(c->after.end_row == 62);
 	ATF_CHECK_STREQ(c->comment, "This is a comment from line 61 to 62\n");
 
 	c = TAILQ_NEXT(c, next);
@@ -616,15 +616,15 @@ ATF_TC_BODY(line_removals_offset_bug, tc)
 
 	c = TAILQ_FIRST(&comments);
 	ATF_REQUIRE(c != NULL);
-	ATF_CHECK(c->start_row == 43);
-	ATF_CHECK(c->end_row == 43);
+	ATF_CHECK(c->after.start_row == 43);
+	ATF_CHECK(c->after.end_row == 43);
 	ATF_CHECK(c->diff_line_offset == 2);
 
 	c = TAILQ_NEXT(c, next);
 	ATF_REQUIRE(c != NULL);
 
-	ATF_CHECK(c->start_row == 44);
-	ATF_CHECK(c->end_row == 44);
+	ATF_CHECK(c->after.start_row == 44);
+	ATF_CHECK(c->after.end_row == 44);
 	ATF_CHECK(c->diff_line_offset == 5);
 
 	c = TAILQ_NEXT(c, next);
@@ -760,8 +760,8 @@ ATF_TC_BODY(simple_patch_series, tc)
 
 	ATF_CHECK_STREQ(comment->comment, "Why so much whitespace?\n");
 	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n");
-	ATF_CHECK(comment->start_row == 4);
-	ATF_CHECK(comment->end_row == 5);
+	ATF_CHECK(comment->after.start_row == 4);
+	ATF_CHECK(comment->after.end_row == 5);
 
 	ATF_REQUIRE(comment = TAILQ_NEXT(comment, next));
 
