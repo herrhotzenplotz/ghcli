@@ -100,6 +100,8 @@ struct gcli_diff_comment {
 		int start_row, end_row;
 	} before, after;           /* range info for before and after applying hunk */
 
+	bool start_is_in_new, end_is_in_new;
+
 	int diff_line_offset;      /* line offset inside the diff */
 
 	char *commit_hash;         /* The commit this comment refers to */

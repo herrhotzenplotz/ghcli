@@ -687,6 +687,102 @@ ATF_TC_BODY(leading_angle_bracket_are_removed_in_comments, tc)
 	gcli_free_diff_parser(&parser);
 }
 
+static void
+get_diff_comments(char const *const in, size_t const in_size,
+                  struct gcli_diff_comments *out)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(in, in_size, "input", &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(out);
+	ATF_REQUIRE(gcli_patch_get_comments(&patch, out) == 0);
+
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&parser);
+}
+
+ATF_TC_WITHOUT_HEAD(old_and_new_are_set_correctly_in_patch);
+ATF_TC_BODY(old_and_new_are_set_correctly_in_patch, tc)
+{
+	struct gcli_diff_comments comments = {0};
+	struct gcli_diff_comment *c;
+
+	char const input[] =
+		"diff --git a/include/ghcli/pulls.h b/include/ghcli/pulls.h\n"
+		"index 30a503cf..05d233eb 100644\n"
+		"--- a/include/ghcli/pulls.h\n"
+		"+++ b/include/ghcli/pulls.h\n"
+		"@@ -57,5 +57,6 @@ int  ghcli_get_prs(const char *org, const char *reponame, bool all, ghcli_pull *\n"
+		" void ghcli_print_pr_table(FILE *stream, ghcli_pull *pulls, int pulls_size);\n"
+		" void ghcli_print_pr_diff(FILE *stream, const char *org, const char *reponame, int pr_number);\n"
+		" void ghcli_pr_summary(FILE *stream, const char *org, const char *reponame, int pr_number);\n"
+		" \n"
+		"> This is a comment on line 60.\n"
+		">\n"
+		"> This comment extends over multiple lines.\n"
+		"{\n"
+		"+void ghcli_pr_submit(const char *from, const char *to, int in_draft);\n"
+		"}\n"
+		" #endif /* PULLS_H */\n";
+
+	get_diff_comments(input, sizeof(input), &comments);
+
+	c = TAILQ_FIRST(&comments);
+	ATF_REQUIRE(c != NULL);
+
+	ATF_CHECK(c->before.start_row == 61);
+	ATF_CHECK(c->before.end_row == 61);
+	ATF_CHECK(c->after.start_row == 61);
+	ATF_CHECK(c->after.end_row == 61);
+
+	ATF_CHECK(c->start_is_in_new == true);
+	ATF_CHECK(c->end_is_in_new == true);
+}
+
+ATF_TC_WITHOUT_HEAD(new_and_old_with_both_deletions_and_additions);
+ATF_TC_BODY(new_and_old_with_both_deletions_and_additions, tc)
+{
+	struct gcli_diff_comments comments = {0};
+	struct gcli_diff_comment *c;
+
+	char const input[] =
+		"diff --git a/include/ghcli/pulls.h b/include/ghcli/pulls.h\n"
+		"index 30a503cf..05d233eb 100644\n"
+		"--- a/README.md\n"
+		"+++ b/README.md\n"
+		"@@ -6,9 +6,8 @@ Das hier ist nur ein kurzer Test.\n"
+		" Ich füge zum Test hier mal eine neue Zeile ein.\n"
+		" \n"
+		" \n"
+		"> The hell?\n"
+		"{\n"
+		"-\n"
+		"-\n"
+		"-\n"
+		"+This is just a change.\n"
+		"+Across multiple lines.\n"
+		"}\n"
+		" \n"
+		" \n"
+		" This line belongs to a different commit.\n";
+
+	get_diff_comments(input, sizeof(input), &comments);
+
+	c = TAILQ_FIRST(&comments);
+	ATF_REQUIRE(c != NULL);
+
+	ATF_CHECK(c->before.start_row == 9);
+	ATF_CHECK(c->before.end_row == 11);
+	ATF_CHECK(c->after.start_row == 9);
+	ATF_CHECK(c->after.end_row == 10);
+
+	ATF_CHECK(c->start_is_in_new == false);
+	ATF_CHECK(c->end_is_in_new == true);
+}
+
 ATF_TC_WITHOUT_HEAD(comment_before_hunk_header);
 ATF_TC_BODY(comment_before_hunk_header, tc)
 {
@@ -844,6 +940,8 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, simple_patch_series);
 	ATF_TP_ADD_TC(tp, patch_series_with_prelude);
 	ATF_TP_ADD_TC(tp, multiline_change_with_comment);
+	ATF_TP_ADD_TC(tp, old_and_new_are_set_correctly_in_patch);
+	ATF_TP_ADD_TC(tp, new_and_old_with_both_deletions_and_additions);
 
 	return atf_no_error();
 }

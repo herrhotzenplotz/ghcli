@@ -730,6 +730,7 @@ struct comment_read_ctx {
 	char const *front;
 	struct hunk_line_info line_info;
 	int diff_line_offset;          /* Offset of the comment within the current diff */
+	bool last_line_is_new;
 };
 
 static gcli_diff_comment *
@@ -857,9 +858,12 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 			.original_line = hunk->range_r_start,
 		},
 		.diff_line_offset = hunk->diff_line_offset,
+		.last_line_is_new = false,
 	};
 	char const *range_start = NULL;
-	bool in_comment = false, in_multiline_comment = false;
+	bool    in_comment = false,           /* whether we are reading lines referring to a comment */
+		in_multiline_comment = false, /* whether the current comment is a multiline comment */
+		is_first_line = true;         /* whether this is the first diff line of a comment */
 
 	for (;;) {
 		struct gcli_diff_comment *c = TAILQ_LAST(out, gcli_diff_comments);
@@ -869,10 +873,11 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		switch (hd) {
 		case '\0':
 			break;
-		case ' ':
 		case '+':
+		case ' ':
 		case '-':
 			ctx.diff_line_offset += 1;
+			ctx.last_line_is_new = hd == '+';
 
 			if (hd == '+' || hd == ' ')
 				ctx.line_info.patched_line += 1;
@@ -888,7 +893,19 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 
 				c->diff_text = calloc((end - ctx.front) + 1, 1);
 				memcpy(c->diff_text, ctx.front, end - ctx.front);
+
+				c->start_is_in_new = c->end_is_in_new = hd == '+';
 			}
+
+			if (c && in_comment && in_multiline_comment) {
+				c->end_is_in_new = ctx.last_line_is_new;
+
+				if (is_first_line)
+					c->start_is_in_new = ctx.last_line_is_new;
+
+			}
+			is_first_line = false;
+
 			break;
 		case '{':
 			if (!c || c->diff_text)
@@ -925,6 +942,7 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 
 			in_comment = true;
 			in_multiline_comment = false;
+			is_first_line = true;
 
 			continue;
 		} break;
