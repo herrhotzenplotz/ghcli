@@ -799,6 +799,31 @@ ATF_TC_BODY(patch_series_with_prelude, tc)
 	                "prelude.\n");
 }
 
+ATF_TC_WITHOUT_HEAD(multiline_change_with_comment);
+ATF_TC_BODY(multiline_change_with_comment, tc)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+	struct gcli_diff_comments comments = {0};
+	struct gcli_diff_comment *comment;
+
+	char const *const fname = "multiline_change_with_comment.diff";
+
+	FILE *inf = open_sample(fname);
+
+	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(&comments);
+	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
+
+	ATF_REQUIRE(comment = TAILQ_FIRST(&comments));
+	ATF_CHECK(comment->before.start_row == 9);
+	ATF_CHECK(comment->before.end_row == 11);
+	ATF_CHECK(comment->after.start_row == 9);
+	ATF_CHECK(comment->after.end_row == 10);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -818,6 +843,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, comment_before_hunk_header);
 	ATF_TP_ADD_TC(tp, simple_patch_series);
 	ATF_TP_ADD_TC(tp, patch_series_with_prelude);
+	ATF_TP_ADD_TC(tp, multiline_change_with_comment);
 
 	return atf_no_error();
 }

@@ -857,8 +857,8 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		},
 		.diff_line_offset = hunk->diff_line_offset,
 	};
-	int diff_range_off = -1;
 	char const *range_start = NULL;
+	bool in_comment = false, in_multiline_comment = false;
 
 	for (;;) {
 		struct gcli_diff_comment *c = TAILQ_LAST(out, gcli_diff_comments);
@@ -871,16 +871,14 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 		case ' ':
 		case '+':
 		case '-':
+			ctx.diff_line_offset += 1;
+
 			if (hd == '+' || hd == ' ')
 				ctx.line_info.patched_line += 1;
 			if (hd == '-' || hd == ' ')
 				ctx.line_info.original_line += 1;
 
-			ctx.diff_line_offset += 1;
-			if (diff_range_off >= 0)
-				diff_range_off += 1;
-
-			if (c && !c->diff_text) {
+			if (c && !c->diff_text && !in_multiline_comment) {
 				char const *end = strchr(ctx.front, '\n');
 				if (end == NULL)
 					end = ctx.front + strlen(ctx.front);
@@ -892,34 +890,40 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 			}
 			break;
 		case '{':
-			diff_range_off = 0;
 			if (!c || c->diff_text)
 				return -1;
 
 			range_start = ctx.front;
+			in_multiline_comment = true;
+
 			break;
 		case '}': {
-			if (diff_range_off < 0)
-				return -1;             /* not in a range */
-
 			assert(range_start != NULL);
 
-			if (!c)
+			if (!c || !in_comment || !in_multiline_comment)
 				return -1;             /* no comment to refer to */
-
-			c->after.end_row = c->after.start_row + diff_range_off - 1;
-			diff_range_off = -1;
 
 			range_start += 2;
 
 			size_t const len = ctx.front - range_start;
 			c->diff_text = calloc(len + 1, 1);
 			memcpy(c->diff_text, range_start, len);
+
+			/* FIXME: add deletion-only and addition-only detection here */
+			if (c->after.end_row != ctx.line_info.patched_line)
+				c->after.end_row = ctx.line_info.patched_line - 1;
+			if (c->before.end_row != ctx.line_info.original_line)
+				c->before.end_row = ctx.line_info.original_line - 1;
+
+			in_comment = false;
 		} break;
 		default: {
 			/* comment */
 			if (read_comment(&ctx) < 0)
 				return -1;
+
+			in_comment = true;
+			in_multiline_comment = false;
 
 			continue;
 		} break;
