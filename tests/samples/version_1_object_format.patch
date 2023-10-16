@@ -1,0 +1,21 @@
+From a4545b5e32af1be6ba8f41a80dc885ce6c34d36aa5958dfba05b79ffeef8a084 Mon Sep 17 00:00:00 2001
+From: Nico Sonack <nsonack@herrhotzenplotz.de>
+Date: Mon, 16 Oct 2023 17:36:56 +0200
+Subject: [PATCH] Help 2
+
+Signed-off-by: Nico Sonack <nsonack@herrhotzenplotz.de>
+---
+ bar | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 100644 bar
+
+diff --git a/bar b/bar
+new file mode 100644
+index 0000000..1f0626c
+--- /dev/null
++++ b/bar
+@@ -0,0 +1 @@
++lol
+-- 
+2.42.0
+

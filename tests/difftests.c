@@ -895,6 +895,20 @@ ATF_TC_BODY(patch_series_with_prelude, tc)
 	                "prelude.\n");
 }
 
+/* Git object format version 1 is using SHA256 to hash objects. */
+ATF_TC_WITHOUT_HEAD(patch_for_git_object_format_version_1);
+ATF_TC_BODY(patch_for_git_object_format_version_1, tc)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch_series series = {0};
+	char const *const fname = "version_1_object_format.patch";
+
+	FILE *inf = open_sample(fname);
+
+	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch_series(&parser, &series) == 0);
+}
+
 ATF_TC_WITHOUT_HEAD(multiline_change_with_comment);
 ATF_TC_BODY(multiline_change_with_comment, tc)
 {
@@ -942,6 +956,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, multiline_change_with_comment);
 	ATF_TP_ADD_TC(tp, old_and_new_are_set_correctly_in_patch);
 	ATF_TP_ADD_TC(tp, new_and_old_with_both_deletions_and_additions);
+	ATF_TP_ADD_TC(tp, patch_for_git_object_format_version_1);
 
 	return atf_no_error();
 }

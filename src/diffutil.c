@@ -240,9 +240,13 @@ is_patch_separator(struct token const *line)
 	if (!prefix_matches)
 		return false;
 
-	/* The commit hash is always 40 chars wide */
+	/* The commit hash is always 40 chars wide - but only when
+	 * using SHA1 commit hashes (version 0 format).
+         *
+	 * When using version 1 object format, hashes are SHA256
+	 * and thus 64 characters long. */
 	bool const suffix_matches =
-		memcmp(line->start + (sizeof(prefix) - 1) + 40,
+		memcmp(line->start + (line_len - (sizeof(suffix) - 2)),
 		       suffix,
 		       sizeof(suffix) - 1) == 0;
 
