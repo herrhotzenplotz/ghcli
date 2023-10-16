@@ -42,6 +42,8 @@
 
 #include <time.h> /* for nanosleep */
 
+#include <openssl/evp.h>
+
 /* Workaround because gitlab doesn't give us an explicit field for
  * this. */
 static void
@@ -886,6 +888,50 @@ gitlab_mr_set_title(struct gcli_ctx *ctx, char const *const owner,
 	return rc;
 }
 
+/* Compute the SHA1 message digest of the given input string. Returns
+ * NULL on failure or the hexadecimal representation of the digest on
+ * success */
+static char *
+digest_sha1(char const *const string)
+{
+	int success = 0;
+	unsigned char hash_data[20] = {0};
+	unsigned int hash_data_len = sizeof(hash_data);
+
+	size_t const result_size = 41;
+	char *result = calloc(result_size, 1);
+
+	success = EVP_Digest(string, strlen(string), hash_data, &hash_data_len,
+	                     EVP_sha1(), NULL);
+	if (!success)
+		return NULL;
+
+	for (size_t i = 0; i < sizeof(hash_data); ++i) {
+		snprintf(result + 2*i, result_size - 2*i, "%02x", hash_data[i]);
+	}
+
+	return result;
+}
+
+static int
+line_code(struct gcli_ctx *ctx, struct gcli_jsongen *const gen,
+          char const *filename, int const old, int const new)
+{
+	char tmp[128] = {0};
+	char *sha_digest;
+
+	sha_digest = digest_sha1(filename);
+	if (!sha_digest)
+		return gcli_error(ctx, "failed to produce SHA1 digest of filename");
+
+	snprintf(tmp, sizeof(tmp), "%s_%d_%d", sha_digest, old, new);
+	gcli_jsongen_string(gen, tmp);
+
+	free(sha_digest);
+
+	return 0;
+}
+
 static int
 post_diff_comment(struct gcli_ctx *ctx,
                   struct gcli_pull_create_review_details const *details,
@@ -919,28 +965,76 @@ post_diff_comment(struct gcli_ctx *ctx,
 	if (gcli_jsongen_init(&gen) < 0)
 		goto err_jsongen_init;
 
-	gcli_jsongen_begin_object(&gen); {
+	gcli_jsongen_begin_object(&gen);
+	{
 		gcli_jsongen_objmember(&gen, "body");
 		gcli_jsongen_string(&gen, comment->comment);
 
-		gcli_jsongen_objmember(&gen, "position[position_type]");
-		gcli_jsongen_string(&gen, "text");
+		gcli_jsongen_objmember(&gen, "commit_id");
+		gcli_jsongen_string(&gen, comment->commit_hash);
 
-		gcli_jsongen_objmember(&gen, "position[base_sha]");
-		gcli_jsongen_string(&gen, base_sha);
+		gcli_jsongen_objmember(&gen, "position");
+		gcli_jsongen_begin_object(&gen);
+		{
+			gcli_jsongen_objmember(&gen, "position_type");
+			gcli_jsongen_string(&gen, "text");
 
-		gcli_jsongen_objmember(&gen, "position[start_sha]");
-		gcli_jsongen_string(&gen, start_sha);
+			gcli_jsongen_objmember(&gen, "base_sha");
+			gcli_jsongen_string(&gen, base_sha);
 
-		gcli_jsongen_objmember(&gen, "position[head_sha]");
-		gcli_jsongen_string(&gen, head_sha);
+			gcli_jsongen_objmember(&gen, "start_sha");
+			gcli_jsongen_string(&gen, start_sha);
+
+			gcli_jsongen_objmember(&gen, "head_sha");
+			gcli_jsongen_string(&gen, head_sha);
+
+			gcli_jsongen_objmember(&gen, "new_path");
+			gcli_jsongen_string(&gen, comment->after.filename);
+
+			gcli_jsongen_objmember(&gen, "old_path");
+			gcli_jsongen_string(&gen, comment->before.filename);
+
+			gcli_jsongen_objmember(&gen, "new_line");
+			gcli_jsongen_number(&gen, comment->after.start_row);
+
+			gcli_jsongen_objmember(&gen, "line_range");
+			gcli_jsongen_begin_object(&gen);
+			{
+
+				gcli_jsongen_objmember(&gen, "start");
+				gcli_jsongen_begin_object(&gen);
+				{
+					gcli_jsongen_objmember(&gen, "type");
+					gcli_jsongen_string(&gen, comment->start_is_in_new ? "new" : "old");
+
+					gcli_jsongen_objmember(&gen, "line_code");
+					line_code(ctx, &gen, comment->after.filename,
+					          comment->before.start_row, comment->after.start_row);
+				}
+				gcli_jsongen_end_object(&gen);
+
+				gcli_jsongen_objmember(&gen, "end");
+				gcli_jsongen_begin_object(&gen);
+				{
+					gcli_jsongen_objmember(&gen, "type");
+					gcli_jsongen_string(&gen, comment->end_is_in_new ? "new" : "old");
+
+					gcli_jsongen_objmember(&gen, "line_code");
+					line_code(ctx, &gen, comment->after.filename,
+					          comment->before.end_row, comment->after.end_row);
+				}
+				gcli_jsongen_end_object(&gen);
+			}
+			gcli_jsongen_end_object(&gen);
+		}
+		gcli_jsongen_end_object(&gen);
 	}
 	gcli_jsongen_end_object(&gen);
 
 	payload = gcli_jsongen_to_string(&gen);
+	puts(payload);
 
-	/* TODO: Submit to API */
-	rc = gcli_error(ctx, "not implemented: %s", __func__);
+	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 
 	free(payload);
 

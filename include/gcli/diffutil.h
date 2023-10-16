@@ -125,15 +125,22 @@ int gcli_parse_patch(struct gcli_diff_parser *parser, struct gcli_patch *out);
 int gcli_parse_diff(struct gcli_diff_parser *parser, struct gcli_diff *out);
 
 int gcli_parse_patch(struct gcli_diff_parser *parser, struct gcli_patch *out);
+
 int gcli_parse_diff(struct gcli_diff_parser *parser, struct gcli_diff *out);
+
 int gcli_patch_parse_prelude(struct gcli_diff_parser *parser,
                              struct gcli_patch *out);
+
 int gcli_patch_get_comments(struct gcli_patch const *patch,
                             struct gcli_diff_comments *out);
+
 int gcli_patch_series_get_comments(struct gcli_patch_series const *series,
                                    struct gcli_diff_comments *out);
+
 void gcli_free_diff(struct gcli_diff *diff);
+
 void gcli_free_diff_hunk(struct gcli_diff_hunk *hunk);
+
 void gcli_free_patch(struct gcli_patch *patch);
 
 void gcli_free_patch_series(struct gcli_patch_series *series);
@@ -143,6 +150,5 @@ void gcli_free_diff(struct gcli_diff *diff);
 void gcli_free_diff_hunk(struct gcli_diff_hunk *hunk);
 
 void gcli_free_diff_parser(struct gcli_diff_parser *parser);
-void gcli_free_patch_series(struct gcli_patch_series *series);
 
 #endif /* GCLI_DIFFUTIL_H */

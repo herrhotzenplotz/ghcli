@@ -83,6 +83,10 @@ LIBREADLINE_LIBS=	${LIBREADLINE_LIBS_$(LIBREADLINE_FOUND)}
 LIBREADLINE_CPPFLAGS_1=	-DHAVE_LIBREADLINE=1
 LIBREADLINE_CPPFLAGS=	${LIBREADLINE_CPPFLAGS_$(LIBREADLINE_FOUND)}
 
+############## LIBCRYPTO ########################################
+LIBCRYPTO_CFLAGS=	@LIBCRYPTO_CFLAGS@
+LIBCRYPTO_LIBS=		@LIBCRYPTO_LIBS@
+
 .PHONY: all all-auto clean clean-auto check check-auto install install-auto
 all: Makefile
 	@$(MAKE) all-auto
