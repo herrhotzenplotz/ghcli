@@ -50,7 +50,7 @@ open_sample(char const *const name)
 ATF_TC_WITHOUT_HEAD(free_patch_cleans_up_properly);
 ATF_TC_BODY(free_patch_cleans_up_properly, tc)
 {
-	gcli_patch patch = {0};
+	struct gcli_patch patch = {0};
 
 	gcli_free_patch(&patch);
 
@@ -61,8 +61,8 @@ ATF_TC_BODY(free_patch_cleans_up_properly, tc)
 ATF_TC_WITHOUT_HEAD(patch_prelude);
 ATF_TC_BODY(patch_prelude, tc)
 {
-	gcli_patch patch = {0};
-	gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+	struct gcli_diff_parser parser = {0};
 	char const *const fname = "01_diff_prelude.patch";
 
 	FILE *inf = open_sample("01_diff_prelude.patch");
@@ -92,8 +92,8 @@ ATF_TC_BODY(patch_prelude, tc)
 ATF_TC_WITHOUT_HEAD(empty_patch_should_not_fail);
 ATF_TC_BODY(empty_patch_should_not_fail, tc)
 {
-	gcli_patch patch = {0};
-	gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+	struct gcli_diff_parser parser = {0};
 
 	char zeros[] = "";
 
@@ -108,8 +108,8 @@ ATF_TC_BODY(empty_patch_should_not_fail, tc)
 ATF_TC_WITHOUT_HEAD(empty_hunk_should_not_fault);
 ATF_TC_BODY(empty_hunk_should_not_fault, tc)
 {
-	gcli_diff diff = {0};
-	gcli_diff_parser parser = {0};
+	struct gcli_diff diff = {0};
+	struct gcli_diff_parser parser = {0};
 
 	char input[] = "";
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "testinput", &parser) == 0);
@@ -123,9 +123,9 @@ ATF_TC_BODY(empty_hunk_should_not_fault, tc)
 ATF_TC_WITHOUT_HEAD(parse_simple_diff);
 ATF_TC_BODY(parse_simple_diff, tc)
 {
-	gcli_diff diff = {0};
-	gcli_diff_parser parser = {0};
-	gcli_diff_hunk *hunk = NULL;
+	struct gcli_diff diff = {0};
+	struct gcli_diff_parser parser = {0};
+	struct gcli_diff_hunk *hunk = NULL;
 
 	char zeros[] =
 		"diff --git a/README b/README\n"
@@ -183,8 +183,8 @@ ATF_TC_BODY(parse_simple_diff, tc)
 ATF_TC_WITHOUT_HEAD(diff_with_two_hunks);
 ATF_TC_BODY(diff_with_two_hunks, tp)
 {
-	gcli_diff_parser parser = {0};
-	gcli_diff diff = {0};
+	struct gcli_diff_parser parser = {0};
+	struct gcli_diff diff = {0};
 	char input[] =
 		"diff --git a/README b/README\n"
 		"index d193b83..21af54a 100644\n"
@@ -217,7 +217,7 @@ ATF_TC_BODY(diff_with_two_hunks, tp)
 	ATF_CHECK_STREQ(diff.r_file, "README");
 	ATF_CHECK_STREQ(diff.a_file, "README");
 
-	gcli_diff_hunk *h = NULL;
+	struct gcli_diff_hunk *h = NULL;
 
 	/* First hunk of this diff */
 	h = TAILQ_FIRST(&diff.hunks);
@@ -285,10 +285,10 @@ ATF_TC_BODY(two_diffs_with_one_hunk_each, tc)
 		"+++ b/foo.json\n"
 		"@@ -0,0 +1 @@\n"
 		"+wat\n";
-	gcli_patch patch = {0};
-	gcli_diff_parser parser = {0};
-	gcli_diff *diff;
-	gcli_diff_hunk *hunk;
+	struct gcli_patch patch = {0};
+	struct gcli_diff_parser parser = {0};
+	struct gcli_diff *diff;
+	struct gcli_diff_hunk *hunk;
 
 	ATF_REQUIRE(gcli_diff_parser_from_buffer(
 		diff_data, sizeof(diff_data), "diff_data", &parser) == 0);
@@ -356,8 +356,8 @@ ATF_TC_BODY(two_diffs_with_one_hunk_each, tc)
 ATF_TC_WITHOUT_HEAD(full_patch);
 ATF_TC_BODY(full_patch, tc)
 {
-	gcli_patch patch = {0};
-	gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+	struct gcli_diff_parser parser = {0};
 	char const *const fname = "01_diff_prelude.patch";
 
 	FILE *inf = open_sample("01_diff_prelude.patch");
@@ -371,9 +371,9 @@ ATF_TC_BODY(full_patch, tc)
 ATF_TC_WITHOUT_HEAD(simple_patch_with_comments);
 ATF_TC_BODY(simple_patch_with_comments, tc)
 {
-	gcli_patch patch = {0};
-	gcli_diff_parser parser = {0};
-	gcli_diff_comments comments = {0};
+	struct gcli_patch patch = {0};
+	struct gcli_diff_parser parser = {0};
+	struct gcli_diff_comments comments = {0};
 
 	char const *const fname = "simple_patch_with_comments.patch";
 
@@ -385,7 +385,7 @@ ATF_TC_BODY(simple_patch_with_comments, tc)
 	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
 
 	{
-		gcli_diff_comment *comment = TAILQ_FIRST(&comments);
+		struct gcli_diff_comment *comment = TAILQ_FIRST(&comments);
 		ATF_REQUIRE(comment != NULL);
 
 		ATF_CHECK_STREQ(comment->after.filename, "include/ghcli/pulls.h");

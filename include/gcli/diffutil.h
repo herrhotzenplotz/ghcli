@@ -35,7 +35,9 @@
 #include <stdlib.h>
 #include <sys/queue.h>
 
-typedef struct gcli_diff_hunk gcli_diff_hunk;
+struct gcli_patch;
+struct gcli_patch_series;
+
 struct gcli_diff_hunk {
 	TAILQ_ENTRY(gcli_diff_hunk) next;
 
@@ -46,9 +48,9 @@ struct gcli_diff_hunk {
 	int diff_line_offset;           /* line offset of this hunk inside the diff */
 };
 
-typedef struct gcli_diff gcli_diff;
 struct gcli_diff {
 	TAILQ_ENTRY(gcli_diff) next;    /* Tailq ntex pointer */
+	struct gcli_patch *patch;       /* optional: the patch this diff belongs to */
 
 	char *file_a, *file_b;
 	char *hash_a, *hash_b;
@@ -60,23 +62,22 @@ struct gcli_diff {
 	TAILQ_HEAD(, gcli_diff_hunk) hunks;
 };
 
-typedef struct gcli_patch gcli_patch;
 struct gcli_patch {
 	char *prelude;             /* Text leading up to the first diff */
 	char *commit_hash;         /* commit hash for this patch */
+
+	struct gcli_patch_series *patch_series;  /* the patch series this patch is a part of */
 
 	TAILQ_ENTRY(gcli_patch) next; /* Next pointer in patch series */
 	TAILQ_HEAD(, gcli_diff) diffs;
 };
 
-typedef struct gcli_patch_series gcli_patch_series;
 struct gcli_patch_series {
 	TAILQ_HEAD(, gcli_patch) patches;
 
 	char *prelude;
 };
 
-typedef struct gcli_diff_parser gcli_diff_parser;
 struct gcli_diff_parser {
 	char const *buf, *hd;
 	size_t buf_size;
@@ -92,7 +93,6 @@ struct gcli_diff_parser {
 };
 
 /* A single comment referring to a chunk in a dif */
-typedef struct gcli_diff_comment gcli_diff_comment;
 struct gcli_diff_comment {
 	TAILQ_ENTRY(gcli_diff_comment) next;
 
@@ -104,20 +104,18 @@ struct gcli_diff_comment {
 	bool start_is_in_new, end_is_in_new;
 
 	int diff_line_offset;      /* line offset inside the diff */
-
 	char *commit_hash;         /* The commit this comment refers to */
 	char *comment;             /* text of the comment */
 	char *diff_text;           /* the diff text this comment refers to */
 };
 
-typedef struct gcli_diff_comments gcli_diff_comments;
 TAILQ_HEAD(gcli_diff_comments, gcli_diff_comment);
 
 int gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
                                  char const *filename,
-                                 gcli_diff_parser *out);
+                                 struct gcli_diff_parser *out);
 int gcli_diff_parser_from_file(FILE *f, char const *filename,
-                               gcli_diff_parser *out);
+                               struct gcli_diff_parser *out);
 
 int gcli_parse_patch_series(struct gcli_diff_parser *parser,
                             struct gcli_patch_series *out);
@@ -126,15 +124,17 @@ int gcli_parse_patch(struct gcli_diff_parser *parser, struct gcli_patch *out);
 
 int gcli_parse_diff(struct gcli_diff_parser *parser, struct gcli_diff *out);
 
-int gcli_parse_patch(gcli_diff_parser *parser, gcli_patch *out);
-int gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out);
-int gcli_patch_parse_prelude(gcli_diff_parser *parser, gcli_patch *out);
-int gcli_patch_get_comments(gcli_patch const *patch, gcli_diff_comments *out);
-int gcli_patch_series_get_comments(gcli_patch_series const *series,
-                                   gcli_diff_comments *out);
-void gcli_free_diff(gcli_diff *diff);
-void gcli_free_diff_hunk(gcli_diff_hunk *hunk);
-void gcli_free_patch(gcli_patch *patch);
+int gcli_parse_patch(struct gcli_diff_parser *parser, struct gcli_patch *out);
+int gcli_parse_diff(struct gcli_diff_parser *parser, struct gcli_diff *out);
+int gcli_patch_parse_prelude(struct gcli_diff_parser *parser,
+                             struct gcli_patch *out);
+int gcli_patch_get_comments(struct gcli_patch const *patch,
+                            struct gcli_diff_comments *out);
+int gcli_patch_series_get_comments(struct gcli_patch_series const *series,
+                                   struct gcli_diff_comments *out);
+void gcli_free_diff(struct gcli_diff *diff);
+void gcli_free_diff_hunk(struct gcli_diff_hunk *hunk);
+void gcli_free_patch(struct gcli_patch *patch);
 
 void gcli_free_patch_series(struct gcli_patch_series *series);
 
@@ -142,7 +142,7 @@ void gcli_free_diff(struct gcli_diff *diff);
 
 void gcli_free_diff_hunk(struct gcli_diff_hunk *hunk);
 
-void gcli_free_diff_parser(gcli_diff_parser *parser);
+void gcli_free_diff_parser(struct gcli_diff_parser *parser);
 void gcli_free_patch_series(struct gcli_patch_series *series);
 
 #endif /* GCLI_DIFFUTIL_H */

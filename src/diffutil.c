@@ -39,7 +39,8 @@ static bool is_patch_separator(struct token const *line);
 
 int
 gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
-                             char const *filename, gcli_diff_parser *out)
+                             char const *filename,
+                             struct gcli_diff_parser *out)
 {
 	out->buf = out->hd = buf;
 	out->buf_size = buf_size;
@@ -51,7 +52,7 @@ gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
 
 int
 gcli_diff_parser_from_file(FILE *f, char const *filename,
-                           gcli_diff_parser *out)
+                           struct gcli_diff_parser *out)
 {
 	long len = 0;
 	char *buf;
@@ -75,7 +76,7 @@ gcli_diff_parser_from_file(FILE *f, char const *filename,
 }
 
 int
-gcli_parse_patch(gcli_diff_parser *parser, gcli_patch *out)
+gcli_parse_patch(struct gcli_diff_parser *parser, struct gcli_patch *out)
 {
 	if (gcli_patch_parse_prelude(parser, out) < 0)
 		return -1;
@@ -84,7 +85,7 @@ gcli_parse_patch(gcli_diff_parser *parser, gcli_patch *out)
 
 	/* TODO cleanup */
 	while (parser->hd[0] == 'd') {
-		gcli_diff *d = calloc(sizeof(*d), 1);
+		struct gcli_diff *d = calloc(sizeof(*d), 1);
 
 		if (gcli_parse_diff(parser, d) < 0)
 			return -1;
@@ -107,7 +108,7 @@ token_len(struct token const *const t)
 }
 
 static int
-nextline(gcli_diff_parser *parser, struct token *out)
+nextline(struct gcli_diff_parser *parser, struct token *out)
 {
 	out->start = parser->hd;
 	if (*out->start == '\0')
@@ -140,7 +141,7 @@ read_commit_hash_from_separator(struct token const *line, struct gcli_patch *out
 }
 
 int
-gcli_patch_parse_prelude(gcli_diff_parser *parser, gcli_patch *out)
+gcli_patch_parse_prelude(struct gcli_diff_parser *parser, struct gcli_patch *out)
 {
 	assert(out->prelude == NULL);
 	char const *prelude_begin = parser->hd;
@@ -289,7 +290,8 @@ is_patch_separator(struct token const *line)
 }
 
 static int
-parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_hunk *out)
+parse_hunk_range_info(struct gcli_diff_parser *parser,
+                      struct gcli_diff_hunk *out)
 {
 	struct token line = {0};
 
@@ -347,7 +349,7 @@ parse_hunk_range_info(gcli_diff_parser *parser, gcli_diff_hunk *out)
 }
 
 static int
-parse_diff_header(gcli_diff_parser *parser, gcli_diff *out)
+parse_diff_header(struct gcli_diff_parser *parser, struct gcli_diff *out)
 {
 	char const hunk_marker[] = "diff --git ";
 	struct token line = {0};
@@ -391,7 +393,7 @@ parse_diff_header(gcli_diff_parser *parser, gcli_diff *out)
 }
 
 static int
-parse_diff_index_line(gcli_diff_parser *parser, gcli_diff *out)
+parse_diff_index_line(struct gcli_diff_parser *parser, struct gcli_diff *out)
 {
 	struct token line = {0};
 	char const *tl;
@@ -484,7 +486,7 @@ fixup_hunk_before_next_patch(struct token *buf)
 }
 
 static int
-read_hunk_body(gcli_diff_parser *parser, gcli_diff_hunk *hunk)
+read_hunk_body(struct gcli_diff_parser *parser, struct gcli_diff_hunk *hunk)
 {
 	struct token buf = {0};
 	size_t buf_len;
@@ -539,7 +541,7 @@ read_hunk_body(gcli_diff_parser *parser, gcli_diff_hunk *hunk)
 
 /* Parse the additions- or removals file name */
 static int
-parse_hunk_a_or_r_file(gcli_diff_parser *parser, char c, char **out)
+parse_hunk_a_or_r_file(struct gcli_diff_parser *parser, char c, char **out)
 {
 	struct token line = {0};
 	size_t linelen;
@@ -575,7 +577,7 @@ parse_hunk_a_or_r_file(gcli_diff_parser *parser, char c, char **out)
 }
 
 static int
-try_parse_new_file_mode(gcli_diff_parser *parser, gcli_diff *out)
+try_parse_new_file_mode(struct gcli_diff_parser *parser, struct gcli_diff *out)
 {
 	struct token line = {0};
 	char const fmode_prefix[] = "new file mode ";
@@ -599,7 +601,7 @@ try_parse_new_file_mode(gcli_diff_parser *parser, gcli_diff *out)
 }
 
 int
-gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
+gcli_parse_diff(struct gcli_diff_parser *parser, struct gcli_diff *out)
 {
 	if (parse_diff_header(parser, out) < 0)
 		return -1;
@@ -619,7 +621,7 @@ gcli_parse_diff(gcli_diff_parser *parser, gcli_diff *out)
 	parser->diff_line_offset = 0;
 	TAILQ_INIT(&out->hunks);
 	while (parser->hd[0] == '@') {
-		gcli_diff_hunk *hunk = calloc(sizeof(*hunk), 1);
+		struct gcli_diff_hunk *hunk = calloc(sizeof(*hunk), 1);
 
 		if (parse_hunk_range_info(parser, hunk) < 0) {
 			free(hunk);
@@ -684,7 +686,7 @@ gcli_parse_patch_series(struct gcli_diff_parser *parser,
 }
 
 void
-gcli_free_diff_hunk(gcli_diff_hunk *hunk)
+gcli_free_diff_hunk(struct gcli_diff_hunk *hunk)
 {
 	free(hunk->context_info);
 	hunk->context_info = NULL;
@@ -694,7 +696,7 @@ gcli_free_diff_hunk(gcli_diff_hunk *hunk)
 }
 
 void
-gcli_free_diff(gcli_diff *diff)
+gcli_free_diff(struct gcli_diff *diff)
 {
 	free(diff->file_a);
 	diff->file_a = NULL;
@@ -717,9 +719,9 @@ gcli_free_diff(gcli_diff *diff)
 	free(diff->a_file);
 	diff->a_file = NULL;
 
-	gcli_diff_hunk *h = TAILQ_FIRST(&diff->hunks);
+	struct gcli_diff_hunk *h = TAILQ_FIRST(&diff->hunks);
 	while (h) {
-		gcli_diff_hunk *n = TAILQ_NEXT(h, next);
+		struct gcli_diff_hunk *n = TAILQ_NEXT(h, next);
 		gcli_free_diff_hunk(h);
 		free(h);
 		h = n;
@@ -728,9 +730,9 @@ gcli_free_diff(gcli_diff *diff)
 }
 
 void
-gcli_free_patch(gcli_patch *patch)
+gcli_free_patch(struct gcli_patch *patch)
 {
-	gcli_diff *d, *n;
+	struct gcli_diff *d, *n;
 
 	free(patch->prelude);
 	patch->prelude = NULL;
@@ -746,7 +748,7 @@ gcli_free_patch(gcli_patch *patch)
 }
 
 void
-gcli_free_diff_parser(gcli_diff_parser *parser)
+gcli_free_diff_parser(struct gcli_diff_parser *parser)
 {
 	if (parser->buf_needs_free)
 		free((char *)parser->buf);
@@ -763,20 +765,20 @@ struct hunk_line_info {
 };
 
 struct comment_read_ctx {
-	gcli_diff const *diff;
-	gcli_diff_hunk const *hunk;
-	gcli_diff_comments *comments;
+	struct gcli_diff const *diff;
+	struct gcli_diff_hunk const *hunk;
+	struct gcli_diff_comments *comments;
 	char const *front;
 	struct hunk_line_info line_info;
 	int diff_line_offset;          /* Offset of the comment within the current diff */
 	bool last_line_is_new;
 };
 
-static gcli_diff_comment *
+static struct gcli_diff_comment *
 make_comment(struct comment_read_ctx *ctx, char *text,
              struct hunk_line_info const *line_info, int diff_line_offset)
 {
-	gcli_diff_comment *comment = calloc(sizeof(*comment), 1);
+	struct gcli_diff_comment *comment = calloc(sizeof(*comment), 1);
 	comment->after.filename = strdup(ctx->diff->file_b);
 	comment->after.start_row = line_info->patched_line;
 	comment->after.end_row = line_info->patched_line;
@@ -797,7 +799,7 @@ read_comment_unprefixed(struct comment_read_ctx *ctx)
 	struct hunk_line_info const line = ctx->line_info;
 	int const diff_line_offset = ctx->diff_line_offset;
 	size_t comment_len = 0;
-	gcli_diff_comment *cmt;
+	struct gcli_diff_comment *cmt;
 	char *text;
 
 	for (;;) {
@@ -884,8 +886,9 @@ read_comment(struct comment_read_ctx *ctx)
 }
 
 static int
-gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
-                       gcli_diff_comments *out)
+gcli_hunk_get_comments(struct gcli_diff const *diff,
+                       struct gcli_diff_hunk const *hunk,
+                       struct gcli_diff_comments *out)
 {
 	struct comment_read_ctx ctx = {
 		.diff = diff,
@@ -996,9 +999,10 @@ gcli_hunk_get_comments(gcli_diff const *diff, gcli_diff_hunk const *hunk,
 }
 
 static int
-gcli_diff_get_comments(gcli_diff const *diff, gcli_diff_comments *out)
+gcli_diff_get_comments(struct gcli_diff const *diff,
+                       struct gcli_diff_comments *out)
 {
-	gcli_diff_hunk *hunk;
+	struct gcli_diff_hunk *hunk;
 
 	TAILQ_FOREACH(hunk, &diff->hunks, next) {
 		if (gcli_hunk_get_comments(diff, hunk, out) < 0)
@@ -1009,9 +1013,10 @@ gcli_diff_get_comments(gcli_diff const *diff, gcli_diff_comments *out)
 }
 
 int
-gcli_patch_get_comments(gcli_patch const *patch, gcli_diff_comments *out)
+gcli_patch_get_comments(struct gcli_patch const *patch,
+                        struct gcli_diff_comments *out)
 {
-	gcli_diff const *diff;
+	struct gcli_diff const *diff;
 
 	TAILQ_FOREACH(diff, &patch->diffs, next) {
 		if (gcli_diff_get_comments(diff, out) < 0)
