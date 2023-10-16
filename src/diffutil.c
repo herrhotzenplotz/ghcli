@@ -787,7 +787,15 @@ make_comment(struct comment_read_ctx *ctx, char *text,
 	comment->before.end_row = line_info->original_line;
 	comment->comment = text;
 	comment->diff_line_offset = diff_line_offset;
-	comment->commit_hash = strdup(ctx->diff->hash_b);
+
+	/* If the diff has an associated patch use its commit hash.
+	 * otherwise fallback to the hash in the diff header. This
+         * may happen when we only parsed a diff and not a patch
+         * and extracted comments from it. */
+	if (ctx->diff->patch && ctx->diff->patch->commit_hash)
+		comment->commit_hash = strdup(ctx->diff->patch->commit_hash);
+	else
+		comment->commit_hash = strdup(ctx->diff->hash_b);
 
 	return comment;
 }
