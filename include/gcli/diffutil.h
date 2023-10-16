@@ -63,6 +63,7 @@ struct gcli_diff {
 typedef struct gcli_patch gcli_patch;
 struct gcli_patch {
 	char *prelude;             /* Text leading up to the first diff */
+	char *commit_hash;         /* commit hash for this patch */
 
 	TAILQ_ENTRY(gcli_patch) next; /* Next pointer in patch series */
 	TAILQ_HEAD(, gcli_diff) diffs;

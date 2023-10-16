@@ -901,12 +901,18 @@ ATF_TC_BODY(patch_for_git_object_format_version_1, tc)
 {
 	struct gcli_diff_parser parser = {0};
 	struct gcli_patch_series series = {0};
+	struct gcli_patch *patch;
 	char const *const fname = "version_1_object_format.patch";
 
 	FILE *inf = open_sample(fname);
 
 	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch_series(&parser, &series) == 0);
+
+	ATF_REQUIRE(patch = TAILQ_FIRST(&series.patches));
+	ATF_CHECK_STREQ(
+		patch->commit_hash,
+		"a4545b5e32af1be6ba8f41a80dc885ce6c34d36aa5958dfba05b79ffeef8a084");
 }
 
 ATF_TC_WITHOUT_HEAD(multiline_change_with_comment);

@@ -29,8 +29,13 @@
 
 #include <gcli/diffutil.h>
 
+#include <sn/sn.h>
+
 #include <assert.h>
 #include <string.h>
+
+struct token;
+static bool is_patch_separator(struct token const *line);
 
 int
 gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
@@ -80,6 +85,7 @@ gcli_parse_patch(gcli_diff_parser *parser, gcli_patch *out)
 	/* TODO cleanup */
 	while (parser->hd[0] == 'd') {
 		gcli_diff *d = calloc(sizeof(*d), 1);
+
 		if (gcli_parse_diff(parser, d) < 0)
 			return -1;
 
@@ -114,6 +120,25 @@ nextline(gcli_diff_parser *parser, struct token *out)
 	return 0;
 }
 
+static int
+read_commit_hash_from_separator(struct token const *line, struct gcli_patch *out)
+{
+	char const *end_of_hash, *start_of_hash;
+
+	start_of_hash = strchr(line->start, ' ');
+	if (!start_of_hash)
+		return -1;
+
+	start_of_hash += 1;
+	end_of_hash = strchr(start_of_hash, ' ');
+
+	if (!end_of_hash)
+		return -1;
+
+	out->commit_hash = sn_strndup(start_of_hash, end_of_hash - start_of_hash);
+	return 0;
+}
+
 int
 gcli_patch_parse_prelude(gcli_diff_parser *parser, gcli_patch *out)
 {
@@ -129,6 +154,16 @@ gcli_patch_parse_prelude(gcli_diff_parser *parser, gcli_patch *out)
 
 		if (line_len > 5 && strncmp(line.start, "diff ", 5) == 0)
 			break;
+
+		if (!out->commit_hash) {
+			if (is_patch_separator(&line)) {
+				int rc;
+
+				rc = read_commit_hash_from_separator(&line, out);
+				if (rc < 0)
+					return rc;
+			}
+		}
 
 		parser->hd = line.end + 1;
 		parser->col = 1;
