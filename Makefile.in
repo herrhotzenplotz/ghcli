@@ -275,7 +275,9 @@ $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS): pgen
 	./pgen -tc -o $@ $<
 
 gcli: libgcli.a $(GCLI_OBJS)
-	$(CCACHE) $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli $(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS) $(LIBEDIT_LIBS) $(LIBREADLINE_LIBS)
+	$(CCACHE) $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli \
+		$(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS) $(LIBEDIT_LIBS) \
+		$(LIBREADLINE_LIBS) $(LIBCRYPTO_LIBS)
 
 libgcli.a: $(LIBGCLI_OBJS)
 	$(AR) -rc libgcli.a $(LIBGCLI_OBJS)
@@ -286,13 +288,16 @@ $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 .SUFFIXES: .c .libgcli.o .gcli.o .pgen.o .tests.o
 .c.libgcli.o:
 	@mkdir -p $$(dirname $@)
-	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -DIN_LIBGCLI=1 -c -o $@ $<
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
+		$(LIBCURL_CFLAGS) $(LIBCRYPTO_CFLAGS) \
+		-DIN_LIBGCLI=1 -c -o $@ $<
 
 .c.gcli.o:
 	@mkdir -p $$(dirname $@)
 	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
 		$(LIBEDIT_CPPFLAGS) $(LIBREADLINE_CPPFLAGS) \
-		$(LIBCURL_CFLAGS) $(LIBEDIT_CFLAGS) $(LIBREADLINE_CFLAGS) \
+		$(LIBCURL_CFLAGS) $(LIBEDIT_CFLAGS) \
+		$(LIBREADLINE_CFLAGS) $(LIBCRYPTO_CFLAGS) \
 		-c -o $@ $<
 
 .c.pgen.o:
@@ -323,9 +328,9 @@ TEST_PROGRAMS = \
 
 $(TEST_PROGRAMS): libgcli.a $(TEST_PROGRAMS:=.tests.o)
 	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
-		$(LIBATFC_CFLAGS) $(LDFLAGS) -o $@ \
-		$(@:=.tests.o) libgcli.a \
-		$(LIBATFC_LIBS) $(LIBCURL_LIBS)
+		$(LIBATFC_CFLAGS) $(LIBCURL_CFLAGS) $(LIBCRYPTO_CFLAGS) \
+		$(LDFLAGS) -o $@ $(@:=.tests.o) libgcli.a \
+		$(LIBATFC_LIBS) $(LIBCURL_LIBS) $(LIBCRYPTO_LIBS)
 
 .c.tests.o:
 	@mkdir -p $$(dirname $@)
