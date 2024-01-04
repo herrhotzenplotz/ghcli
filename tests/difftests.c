@@ -391,7 +391,7 @@ ATF_TC_BODY(simple_patch_with_comments, tc)
 		ATF_CHECK_STREQ(comment->after.filename, "include/ghcli/pulls.h");
 		ATF_CHECK(comment->after.start_row == 60);
 		ATF_CHECK(comment->diff_line_offset == 4);
-		ATF_CHECK_STREQ(comment->comment, "\nThis is a comment on line 60.\n");
+		ATF_CHECK_STREQ(comment->comment, "This is a comment on line 60.\n");
 		ATF_CHECK_STREQ(comment->diff_text,
 		                "+void ghcli_pr_submit(const char *from, const char *to,"
 		                " int in_draft);\n");

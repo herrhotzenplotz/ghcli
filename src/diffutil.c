@@ -984,6 +984,7 @@ gcli_hunk_get_comments(struct gcli_diff const *diff,
 
 			in_comment = false;
 		} break;
+		case '\n': break; /* skip - not comment */
 		default: {
 			/* comment */
 			if (read_comment(&ctx) < 0)
