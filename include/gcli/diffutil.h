@@ -59,7 +59,7 @@ struct gcli_diff {
 
 	char *r_file, *a_file;   /* file with removals and additions */
 
-	TAILQ_HEAD(, gcli_diff_hunk) hunks;
+	TAILQ_HEAD(gcli_diff_hunks, gcli_diff_hunk) hunks;
 };
 
 struct gcli_patch {
@@ -69,7 +69,8 @@ struct gcli_patch {
 	struct gcli_patch_series *patch_series;  /* the patch series this patch is a part of */
 
 	TAILQ_ENTRY(gcli_patch) next; /* Next pointer in patch series */
-	TAILQ_HEAD(, gcli_diff) diffs;
+	// FIXME: is this declaration really needed?
+	TAILQ_HEAD(gcli_diffs, gcli_diff) diffs;
 };
 
 struct gcli_patch_series {

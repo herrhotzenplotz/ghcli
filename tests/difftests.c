@@ -993,7 +993,7 @@ ATF_TC_BODY(bug_patch_series_fail_get_comments, tc)
 		                "Naja...\n"
 		                "{\n"
 		                "+This line belongs to a different commit.\n"
-		                "}");
+		                "}\n");
 
 		ATF_CHECK(TAILQ_NEXT(h, next) == NULL);
 	}

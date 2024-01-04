@@ -75,6 +75,49 @@ gcli_diff_parser_from_file(FILE *f, char const *filename,
 	return gcli_diff_parser_from_buffer(buf, len, filename, out);
 }
 
+static char const *
+gcli_strrstr(char const *const haystack, char const *const needle)
+{
+	char const *hd = haystack;
+	size_t const needle_len = strlen(needle);
+
+	if (strstr(haystack, needle) == NULL)
+		return NULL;
+
+	for (;;) {
+		char const *const tmp = strstr(hd, needle);
+		if (tmp == NULL)
+			return  hd - needle_len;
+
+		hd = tmp + needle_len;
+	}
+}
+
+/* Remove a possibly parsed patch trailer included in the last hunk */
+static int
+fixup_last_diff_in_patch(struct gcli_patch *patch)
+{
+	/* find the last diff in the patch */
+	struct gcli_diff *d = TAILQ_LAST(&patch->diffs, gcli_diffs);
+	if (d == NULL)
+		return 0;
+
+	/* if we found a diff grab the last hunk */
+	struct gcli_diff_hunk *h = TAILQ_LAST(&d->hunks, gcli_diff_hunks);
+
+	assert(h);
+
+	/* Find last occurence of \n--\n */
+	char const *const last = gcli_strrstr(h->body, "\n--\n");
+	if (last == NULL)
+		return 0;
+
+	size_t const offset = last - h->body; /* silly const dance */
+	h->body[offset + 1] = '\0';
+
+	return 0;
+}
+
 int
 gcli_parse_patch(struct gcli_diff_parser *parser, struct gcli_patch *out)
 {
@@ -93,7 +136,7 @@ gcli_parse_patch(struct gcli_diff_parser *parser, struct gcli_patch *out)
 		TAILQ_INSERT_TAIL(&out->diffs, d, next);
 	}
 
-	return 0;
+	return fixup_last_diff_in_patch(out);
 }
 
 struct token {
