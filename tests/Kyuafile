@@ -39,5 +39,6 @@ atf_test_program{
 }
 
 atf_test_program{
-        name = 'difftests'
+        name = 'difftests',
+	timeout = 1
 }

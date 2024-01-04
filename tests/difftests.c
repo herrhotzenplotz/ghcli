@@ -940,6 +940,88 @@ ATF_TC_BODY(multiline_change_with_comment, tc)
 	ATF_CHECK(comment->after.end_row == 10);
 }
 
+ATF_TC_WITHOUT_HEAD(bug_patch_series_fail_get_comments);
+ATF_TC_BODY(bug_patch_series_fail_get_comments, tc)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch_series series = {0};
+	struct gcli_diff_comments comments = {0};
+	struct gcli_patch const *p = NULL;
+
+	char const *const fname = "patch_series_fail_get_comments.patch";
+
+	FILE *inf = open_sample(fname);
+
+	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch_series(&parser, &series) == 0);
+
+	p = TAILQ_FIRST(&series.patches);
+	{
+		struct gcli_diff const *d = TAILQ_FIRST(&p->diffs);
+		struct gcli_diff_hunk const *h = TAILQ_FIRST(&d->hunks);
+
+		ATF_CHECK_STREQ(h->body,
+		                " # README\n"
+		                " \n"
+		                " Das hier ist nur ein kurzer Test.\n"
+		                "Deine Mutter\n"
+		                "{\n"
+		                "+\n"
+		                "+\n"
+		                "+Ich füge zum Test hier mal eine neue Zeile ein.\n"
+		                "}\n");
+
+		ATF_CHECK(TAILQ_NEXT(h, next) == NULL);
+	}
+
+	p = TAILQ_NEXT(p, next);
+	{
+		struct gcli_diff const *d = TAILQ_FIRST(&p->diffs);
+		struct gcli_diff_hunk const *h = TAILQ_FIRST(&d->hunks);
+
+		ATF_CHECK_STREQ(h->body,
+		                " \n"
+		                " \n"
+		                " Ich füge zum Test hier mal eine neue Zeile ein.\n"
+		                "+\n"
+		                "+\n"
+		                "+\n"
+		                "+\n"
+		                "+\n"
+		                "+\n"
+		                "+\n"
+		                "Naja...\n"
+		                "{\n"
+		                "+This line belongs to a different commit.\n"
+		                "}");
+
+		ATF_CHECK(TAILQ_NEXT(h, next) == NULL);
+	}
+
+	p = TAILQ_NEXT(p, next);
+	{
+		struct gcli_diff const *d = TAILQ_FIRST(&p->diffs);
+		struct gcli_diff_hunk const *h = TAILQ_FIRST(&d->hunks);
+
+		ATF_CHECK_STREQ(h->body,
+		                " Ich füge zum Test hier mal eine neue Zeile ein.\n"
+		                " \n"
+		                " \n"
+		                "-\n"
+		                "-\n"
+		                "-\n"
+		                "+This is just a change.\n"
+		                "+Across multiple lines.\n"
+		                " \n"
+		                " \n"
+		                " This line belongs to a different commit.\n");
+
+		ATF_CHECK(TAILQ_NEXT(h, next) == NULL);
+	}
+
+	ATF_REQUIRE(gcli_patch_series_get_comments(&series, &comments) == 0);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -963,6 +1045,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, old_and_new_are_set_correctly_in_patch);
 	ATF_TP_ADD_TC(tp, new_and_old_with_both_deletions_and_additions);
 	ATF_TP_ADD_TC(tp, patch_for_git_object_format_version_1);
+	ATF_TP_ADD_TC(tp, bug_patch_series_fail_get_comments);
 
 	return atf_no_error();
 }

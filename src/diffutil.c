@@ -449,43 +449,6 @@ parse_diff_index_line(struct gcli_diff_parser *parser, struct gcli_diff *out)
 }
 
 static int
-get_last_line(struct token *buffer, struct token *out)
-{
-	if (*buffer->end == '\n')
-		buffer->end -= 1;
-
-	out->start = buffer->end;
-	out->end = buffer->end;
-
-	while (out->start > buffer->start && out->start[0] != '\n')
-		out->start -= 1;
-
-	out->start += 1;
-
-	return 0;
-}
-
-static void
-fixup_hunk_before_next_patch(struct token *buf)
-{
-	struct token pbuf = *buf;
-
-	while (token_len(&pbuf)) {
-		struct token last_line;
-
-		get_last_line(&pbuf, &last_line);
-		char const c =  last_line.start[0];
-
-		if (c == ' ' || c == '+' || c == '-' || c == '}')
-			break;
-
-		pbuf.end = last_line.start - 1;
-	}
-
-	buf->end = pbuf.end;
-}
-
-static int
 read_hunk_body(struct gcli_diff_parser *parser, struct gcli_diff_hunk *hunk)
 {
 	struct token buf = {0};
@@ -511,17 +474,11 @@ read_hunk_body(struct gcli_diff_parser *parser, struct gcli_diff_hunk *hunk)
 		if (strncmp(line.start, "@@", 2) == 0)
 			break;
 
-		if (line.start[0] == 'F' && is_patch_separator(&line)) {
-			/* In this case we found the next patch.
-			 * Remove the patch trailer by scanning backwards
-			 * through it until we find the last line that
-			 * belongs to a comment or a diff hunk */
-			fixup_hunk_before_next_patch(&buf);
+		if (line.start[0] == 'F' && is_patch_separator(&line))
 			break;
-		}
 
-		/* If it is a comment, don't count this line into
-		 * the absolute diff offset of the hunk */
+		/* If it is a comment, don't count this line into the absolute diff
+		 * offset of the hunk */
 		if (line.start[0] == ' ' || line.start[0] == '+' ||
 		    line.start[0] == '-')
 		{
@@ -788,10 +745,9 @@ make_comment(struct comment_read_ctx *ctx, char *text,
 	comment->comment = text;
 	comment->diff_line_offset = diff_line_offset;
 
-	/* If the diff has an associated patch use its commit hash.
-	 * otherwise fallback to the hash in the diff header. This
-         * may happen when we only parsed a diff and not a patch
-         * and extracted comments from it. */
+	/* If the diff has an associated patch use its commit hash. otherwise fallback
+	 * to the hash in the diff header. This may happen when we only parsed a
+	 * diff and not a patch and extracted comments from it. */
 	if (ctx->diff->patch && ctx->diff->patch->commit_hash)
 		comment->commit_hash = strdup(ctx->diff->patch->commit_hash);
 	else
