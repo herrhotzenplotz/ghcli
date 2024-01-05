@@ -39,8 +39,7 @@ static bool is_patch_separator(struct token const *line);
 
 int
 gcli_diff_parser_from_buffer(char const *buf, size_t buf_size,
-                             char const *filename,
-                             struct gcli_diff_parser *out)
+                             char const *filename, struct gcli_diff_parser *out)
 {
 	out->buf = out->hd = buf;
 	out->buf_size = buf_size;
