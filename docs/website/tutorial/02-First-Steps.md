@@ -3,7 +3,7 @@
 ## Listing issues
 
 Let's start off by listing some issues - here for the curl project
-which is hosted on GitHub under curl/curl. To list issues for it one
+which is hosted on GitHub under `curl/curl`. To list issues for it one
 would run:
 
     $ gcli -t github issues -o curl -r curl
