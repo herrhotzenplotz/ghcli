@@ -32,6 +32,25 @@ fetch the first 10 issues:
 
     $ gcli -t github issues -o curl -r curl -n10
 
+## Searching for issues
+
+Before reporting a bug or looking for solutions to a problem that
+you found in a program you may want to search for issues.
+
+Let's search for `avast` in `curl/curl`:
+
+	$ gcli -t github issues -o curl -r curl -a avast
+	NUMBER  NOTES  STATE   TITLE
+	 11383      9  open    Issue with FileZilla server (GnuTLS) and close_notify
+	 10551      7  closed  Unable to use curl 7.87 for SSL connections on Windows 10 Pro
+	  8848      2  closed  CURL SSL certificate problem when AVAST HTTPS scanning enabled
+	$
+
+As you can see searching for something is just a matter of appending
+keywords to the `issues` subcommand. You can specify any amount of
+search terms - they will all be used in the query. Again, `-a`
+ignores the status of the issue such that we also see closed tickets.
+
 ## Examining issues
 
 As of now we only produced lists of issues. However, we may also want
