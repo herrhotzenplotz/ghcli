@@ -29,6 +29,7 @@
 
 #include <config.h>
 
+#include <gcli/cmd/cmd.h>
 #include <gcli/cmd/cmdconfig.h>
 #include <gcli/cmd/gitconfig.h>
 
@@ -526,6 +527,10 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 		  .has_arg = no_argument,
 		  .flag    = NULL,
 		  .val     = 'v' },
+		{ .name    = "version",
+		  .has_arg = no_argument,
+		  .flag    = NULL,
+		  .val     = 'V' },
 		{0},
 	};
 
@@ -539,7 +544,7 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 	/* Start off by pre-populating the config structure */
 	readenv(cfg);
 
-	while ((ch = getopt_long(*argc, *argv, "+a:r:cqvt:", options, NULL)) != -1) {
+	while ((ch = getopt_long(*argc, *argv, "+a:r:cqvt:V", options, NULL)) != -1) {
 		switch (ch) {
 		case 'a': {
 			cfg->override_default_account = optarg;
@@ -570,6 +575,13 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 				        "Have either github, gitlab or gitea.\n", optarg);
 				return EXIT_FAILURE;
 			}
+		} break;
+		case 'V': {
+			longversion();
+			/* call exit here because if we return an OK we would continue
+			 * running the gcli command. we do not want this as this flag
+			 * only ever prints the version and exits. */
+			exit(EXIT_SUCCESS);
 		} break;
 		case 0: break;
 		case '?':

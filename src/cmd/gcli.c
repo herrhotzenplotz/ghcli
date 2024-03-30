@@ -136,20 +136,21 @@ usage(void)
 {
 	fprintf(stderr, "usage: gcli [options] subcommand\n\n");
 	fprintf(stderr, "OPTIONS:\n");
-	fprintf(stderr, "  -a account     Use the configured account instead of inferring it\n");
-	fprintf(stderr, "  -r remote      Infer account from the given git remote\n");
-	fprintf(stderr, "  -t type        Force the account type:\n");
-	fprintf(stderr, "                    - github (default: github.com)\n");
-	fprintf(stderr, "                    - gitlab (default: gitlab.com)\n");
-	fprintf(stderr, "                    - gitea (default: codeberg.org)\n");
-	fprintf(stderr, "                    - bugzilla (default: bugs.freebsd.org)\n");
-	fprintf(stderr, "  -c             Force colour and text formatting.\n");
-	fprintf(stderr, "  -q             Be quiet. (Not implemented yet)\n\n");
-	fprintf(stderr, "  -v             Be verbose.\n\n");
+	fprintf(stderr, "  -a account       Use the configured account instead of inferring it\n");
+	fprintf(stderr, "  -r remote        Infer account from the given git remote\n");
+	fprintf(stderr, "  -t type          Force the account type:\n");
+	fprintf(stderr, "                      - github (default: github.com)\n");
+	fprintf(stderr, "                      - gitlab (default: gitlab.com)\n");
+	fprintf(stderr, "                      - gitea (default: codeberg.org)\n");
+	fprintf(stderr, "                      - bugzilla (default: bugs.freebsd.org)\n");
+	fprintf(stderr, "  -c               Force colour and text formatting.\n");
+	fprintf(stderr, "  -q               Be quiet. (Not implemented yet)\n");
+	fprintf(stderr, "  -v               Be verbose.\n");
+	fprintf(stderr, "  -V | --version   Print version and exit.\n\n");
 	fprintf(stderr, "SUBCOMMANDS:\n");
 	for (size_t i = 0; i < subcommands_size; ++i) {
 		fprintf(stderr,
-		        "  %-13.13s  %s\n",
+		        "  %-15.15s  %s\n",
 		        subcommands[i].cmd_name,
 		        subcommands[i].docstring);
 	}
