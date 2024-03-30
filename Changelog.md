@@ -6,6 +6,16 @@ This changelog does not follow semantic versioning.
 
 ### Added
 
+### Fixed
+
+### Changed
+
+### Removed
+
+## 2.3.0 (2024-Mar-25)
+
+### Added
+
 - It is now possible to build gcli against libgcli as a DLL on cygwin.
   Submitted by: Daisuke Fujimura
 
@@ -51,10 +61,6 @@ This changelog does not follow semantic versioning.
 
 - The build on Haiku has been fixed. GCLI can now be compiled and
   used on this platform.
-
-### Changed
-
-### Removed
 
 ## 2.2.0 (2024-Feb-05)
 

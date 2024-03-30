@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([gcli],
-        [2.3.0-devel],
+        [2.4.0-devel],
         [~herrhotzenplotz/gcli-discuss@lists.sr.ht],
         [gcli],
         [https://herrhotzenplotz.de/gcli])
