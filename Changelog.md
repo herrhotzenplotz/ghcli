@@ -6,6 +6,9 @@ This changelog does not follow semantic versioning.
 
 ### Added
 
+- Added a convenience flag `-V` or `--version` that prints the
+  version of gcli.
+
 ### Fixed
 
 ### Changed
