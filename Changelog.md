@@ -11,6 +11,11 @@ This changelog does not follow semantic versioning.
 
 ### Fixed
 
+- Fixed resolving true .git directory when working inside a git
+  worktree. This used to work before, however newer versions of git
+  changed how these worktrees pointing to the true git directory.
+  Reported by: Robert Clausecker
+
 ### Changed
 
 ### Removed
