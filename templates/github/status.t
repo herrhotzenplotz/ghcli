@@ -3,7 +3,7 @@ include "gcli/github/status.h";
 parser github_notification_subject is
 object of struct gcli_notification with
 	("title" => title as string,
-	 "type"  => type as string);
+	 "type"  => type as github_notification_target_type);
 
 parser github_notification_repository is
 object of struct gcli_notification with

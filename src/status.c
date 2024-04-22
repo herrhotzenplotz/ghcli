@@ -44,7 +44,6 @@ gcli_free_notification(struct gcli_notification *const notification)
 	free(notification->title);
 	free(notification->reason);
 	free(notification->date);
-	free(notification->type);
 	free(notification->repository);
 }
 
@@ -64,4 +63,23 @@ int
 gcli_notification_mark_as_read(struct gcli_ctx *ctx, char const *id)
 {
 	gcli_null_check_call(notification_mark_as_read, ctx, id);
+}
+
+static char const *
+notification_target_type_strings[MAX_GCLI_NOTIFICATION_TARGET] = {
+	[GCLI_NOTIFICATION_TARGET_INVALID] = "Invalid",
+	[GCLI_NOTIFICATION_TARGET_ISSUE] = "Issue",
+	[GCLI_NOTIFICATION_TARGET_PULL_REQUEST] = "Pull Request",
+	[GCLI_NOTIFICATION_TARGET_COMMIT] = "Commit",
+	[GCLI_NOTIFICATION_TARGET_EPIC] = "Epic",
+	[GCLI_NOTIFICATION_TARGET_REPOSITORY] = "Repository",
+};
+
+char const *
+gcli_notification_target_type_str(enum gcli_notification_target_type type)
+{
+	if (type < 0 || type > MAX_GCLI_NOTIFICATION_TARGET)
+		return NULL;
+
+	return notification_target_type_strings[type];
 }

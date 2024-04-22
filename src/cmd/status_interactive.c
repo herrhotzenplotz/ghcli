@@ -49,7 +49,9 @@ print_notification_table(struct gcli_notification_list const *list)
 
 	for (size_t i = 0; i < list->notifications_size; ++i) {
 		struct gcli_notification const *n = &list->notifications[i];
-		gcli_tbl_add_row(table, (long)i + 1, n->repository, n->type, n->reason);
+		gcli_tbl_add_row(table, (long)i + 1, n->repository,
+		                 gcli_notification_target_type_str(n->type),
+		                 n->reason);
 	}
 
 	gcli_tbl_end(table);

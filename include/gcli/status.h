@@ -38,12 +38,24 @@
 
 #include <stdlib.h>
 
+enum gcli_notification_target_type {
+	GCLI_NOTIFICATION_TARGET_INVALID = 0,
+
+	GCLI_NOTIFICATION_TARGET_ISSUE,
+	GCLI_NOTIFICATION_TARGET_PULL_REQUEST,
+	GCLI_NOTIFICATION_TARGET_COMMIT,
+	GCLI_NOTIFICATION_TARGET_EPIC,
+	GCLI_NOTIFICATION_TARGET_REPOSITORY,
+
+	MAX_GCLI_NOTIFICATION_TARGET,
+};
+
 struct gcli_notification {
 	char *id;
 	char *title;
 	char *reason;
 	char *date;
-	char *type;
+	enum gcli_notification_target_type type;
 	char *repository;
 
 	/* target specific data */
@@ -60,5 +72,6 @@ int gcli_get_notifications(struct gcli_ctx *ctx, int count,
 int gcli_notification_mark_as_read(struct gcli_ctx *ctx, char const *id);
 void gcli_free_notification(struct gcli_notification *);
 void gcli_free_notifications(struct gcli_notification_list *);
+char const *gcli_notification_target_type_str(enum gcli_notification_target_type type);
 
 #endif /* STATUS_H */

@@ -42,6 +42,8 @@
 
 #include <stdint.h>
 
+#include <gcli/status.h>
+
 #define get_int(ctx, input, out)           get_int_(ctx, input, out, __func__)
 #define get_id(ctx, input, out)            get_id_(ctx, input, out, __func__)
 #define get_long(ctx, input, out)          get_long_(ctx, input, out, __func__)
@@ -72,6 +74,12 @@ int get_label_(struct gcli_ctx *ctx, json_stream *input, char const **out, char 
 int get_github_style_colour(struct gcli_ctx *ctx, json_stream *input, uint32_t *out);
 int get_gitlab_style_colour(struct gcli_ctx *ctx, json_stream *input, uint32_t *out);
 int get_github_is_pr(struct gcli_ctx *ctx, json_stream *input, int *out);
+int get_github_notification_target_type(struct gcli_ctx *ctx, json_stream *input,
+                                        enum gcli_notification_target_type *out);
+int get_gitlab_notification_target_type(struct gcli_ctx *ctx, json_stream *input,
+                                        enum gcli_notification_target_type *out);
+int get_gitea_notification_target_type(struct gcli_ctx *ctx, json_stream *input,
+                                       enum gcli_notification_target_type *out);
 int get_gitlab_can_be_merged(struct gcli_ctx *ctx, json_stream *input, bool *out);
 int get_gitea_visibility(struct gcli_ctx *ctx, json_stream *input, char **out);
 sn_sv gcli_json_escape(sn_sv);

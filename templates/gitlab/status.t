@@ -14,7 +14,7 @@ object of struct gcli_notification with
 	 "action_name" => reason as string,
 	 "id"          => id as int_to_string,
 	 "body"        => title as string,
-	 "target_type" => type as string,
+	 "target_type" => type as gitlab_notification_target_type,
 	 "project"     => use parse_gitlab_project,
 	 "target"      => use parse_gitlab_target);
 
