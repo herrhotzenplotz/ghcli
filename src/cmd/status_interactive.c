@@ -39,7 +39,7 @@ print_notification_table(struct gcli_notification_list const *list)
 {
 	gcli_tbl *table;
 	struct gcli_tblcoldef const columns[] = {
-		{ .name = "ID",     .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "NUMBER", .type = GCLI_TBLCOLTYPE_LONG,   .flags = 0 },
 		{ .name = "REPO",   .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 		{ .name = "TYPE",   .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 		{ .name = "REASON", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
@@ -49,33 +49,91 @@ print_notification_table(struct gcli_notification_list const *list)
 
 	for (size_t i = 0; i < list->notifications_size; ++i) {
 		struct gcli_notification const *n = &list->notifications[i];
-		gcli_tbl_add_row(table, n->id, n->repository, n->type, n->reason);
+		gcli_tbl_add_row(table, (long)i + 1, n->repository, n->type, n->reason);
 	}
 
 	gcli_tbl_end(table);
 }
 
+static void
+refresh_notifications(struct gcli_notification_list *list)
+{
+	int rc = 0;
+
+	gcli_free_notifications(list);
+
+	rc = gcli_get_notifications(g_clictx, -1, list);
+	if (rc < 0)
+		errx(1, "Failed to fetch notifications: %s", gcli_get_error(g_clictx));
+}
+
+static void
+status_interactive_notification(struct gcli_notification const *const notif)
+{
+	char *user_input = NULL;
+	for (;;) {
+		user_input = gcli_cmd_prompt( "[%s] What? (details, quit)", NULL, notif->repository);
+
+		if (strcmp(user_input, "quit") == 0 ||
+		    strcmp(user_input, "q") == 0) {
+			break;
+
+		} else if (strcmp(user_input, "details") == 0 ||
+		           strcmp(user_input, "d") == 0) {
+
+			fprintf(stderr, "gcli: not implemented\n");
+		}
+
+		free(user_input);
+		user_input = NULL;
+	}
+
+	free(user_input);
+	user_input = NULL;
+}
+
 int
 gcli_status_interactive(void)
 {
-	struct gcli_notification_list notifications = {0};
-	int rc = 0;
+	struct gcli_notification_list list = {0};
 	char *user_input = NULL;
 
-	rc = gcli_get_notifications(g_clictx, -1, &notifications);
-	if (rc < 0)
-		errx(1, "Failed to fetch notifications: %s", gcli_get_error(g_clictx));
-
-	print_notification_table(&notifications);
+	refresh_notifications(&list);
+	print_notification_table(&list);
 
 	for (;;) {
-		user_input = gcli_cmd_prompt("ID or quit", NULL);
+		user_input = gcli_cmd_prompt("Enter number, list or quit", NULL);
 
 		if (strcmp(user_input, "q") == 0 ||
 		    strcmp(user_input, "quit") == 0) {
 			goto out;
+
+		} else if (strcmp(user_input, "l") == 0 ||
+		           strcmp(user_input, "list") == 0) {
+			refresh_notifications(&list);
+			print_notification_table(&list);
+
+		} else {
+			size_t number = 0;
+			char *endptr = NULL;
+
+			number = strtoul(user_input, &endptr, 10);
+			if (endptr != user_input + strlen(user_input)) {
+				fprintf(stderr, "gcli: bad notification number: %s\n",
+				        user_input);
+
+				goto next;
+			}
+
+			if (number == 0 || number > list.notifications_size) {
+				fprintf(stderr, "gcli: unknown notification number\n");
+				goto next;
+			}
+
+			status_interactive_notification(&list.notifications[number-1]);
 		}
 
+	next:
 		free(user_input);
 		user_input = NULL;
 	}
