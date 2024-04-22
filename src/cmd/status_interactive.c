@@ -70,7 +70,7 @@ refresh_notifications(struct gcli_notification_list *list)
 }
 
 static void
-status_interactive_notification(struct gcli_notification const *const notif)
+handle_issue_notification(struct gcli_notification const *const notif)
 {
 	char *user_input = NULL;
 	for (;;) {
@@ -92,6 +92,29 @@ status_interactive_notification(struct gcli_notification const *const notif)
 
 	free(user_input);
 	user_input = NULL;
+}
+
+typedef void (*notification_handler)(struct gcli_notification const *);
+static notification_handler
+notification_handlers[MAX_GCLI_NOTIFICATION_TARGET] = {
+	[GCLI_NOTIFICATION_TARGET_ISSUE] = handle_issue_notification,
+};
+
+static void
+status_interactive_notification(struct gcli_notification const *const notif)
+{
+	if (notif->type >= MAX_GCLI_NOTIFICATION_TARGET) {
+		fprintf(stderr, "gcli: error: bad notification type\n");
+		return;
+	}
+
+	if (notification_handlers[notif->type] == NULL) {
+		fprintf(stderr, "gcli: error: notification type '%s' not supported\n",
+		        gcli_notification_target_type_str(notif->type));
+		return;
+	}
+
+	notification_handlers[notif->type](notif);
 }
 
 int
