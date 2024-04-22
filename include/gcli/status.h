@@ -45,6 +45,9 @@ struct gcli_notification {
 	char *date;
 	char *type;
 	char *repository;
+
+	/* target specific data */
+	gcli_id target_id;   /* The internal ID of the target data */
 };
 
 struct gcli_notification_list {

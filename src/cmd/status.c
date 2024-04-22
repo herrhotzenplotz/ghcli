@@ -71,16 +71,22 @@ void
 gcli_print_notifications(struct gcli_notification_list const *const list)
 {
 	for (size_t i = 0; i < list->notifications_size; ++i) {
-		printf("%s - %s - %s - %s",
+		printf("%s - %s - %s",
 		       list->notifications[i].id,
 		       list->notifications[i].repository,
-		       list->notifications[i].type, list->notifications[i].date);
+		       list->notifications[i].type);
 
-		if (list->notifications[i].reason) {
-			printf(" - %s\n", list->notifications[i].reason);
-		} else {
-			printf("\n");
-		}
+		/* XXX what about target_id being zero? does any forge generate
+		 *     zero for valid IDs? */
+		if (list->notifications[i].target_id)
+			printf(" %"PRIid, list->notifications[i].target_id);
+
+		printf(" - %s", list->notifications[i].date);
+
+		if (list->notifications[i].reason)
+			printf(" - %s", list->notifications[i].reason);
+
+		printf("\n");
 
 		pretty_print(list->notifications[i].title, 4, 80, stdout);
 		putchar('\n');
