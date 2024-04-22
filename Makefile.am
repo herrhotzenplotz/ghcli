@@ -83,6 +83,7 @@ gcli_SOURCES = \
 	include/gcli/cmd/repos.h src/cmd/repos.c \
 	include/gcli/cmd/snippets.h src/cmd/snippets.c \
 	include/gcli/cmd/status.h src/cmd/status.c \
+	include/gcli/cmd/status_interactive.h src/cmd/status_interactive.c \
 	include/gcli/cmd/table.h src/cmd/table.c \
 	include/gcli/cmd/interactive.h src/cmd/interactive.c \
 	src/cmd/api.c \
