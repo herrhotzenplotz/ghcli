@@ -36,6 +36,8 @@ There are official packages available:
 - [Debian Testing](https://packages.debian.org/trixie/gcli)
 - [ArchLinux AUR](https://aur.archlinux.org/packages/gcli)
 - [NixPkgs Unstable](https://search.nixos.org/packages?channel=unstable&show=gcli&from=0&size=50&sort=relevance&type=packages&query=gcli)
+- [NetBSD pkgsrc](https://pkgsrc.se/devel/gcli)
+- [MacPorts](https://ports.macports.org/port/gcli/)
 
 ### Dependencies
 
