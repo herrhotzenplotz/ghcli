@@ -60,7 +60,10 @@ struct gcli_notification {
 	char *repository;
 
 	/* target specific data */
-	gcli_id target_id;   /* The internal ID of the target data */
+	struct {
+		gcli_id id;   /* The internal ID of the target data */
+		gcli_id project_id;
+	} target;
 };
 
 struct gcli_notification_list {

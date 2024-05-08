@@ -6,7 +6,7 @@ object of struct gcli_notification with
 
 parser gitlab_target is
 object of struct gcli_notification with
-	("iid" => target_id as id);
+	("iid" => target.id as id);
 
 parser gitlab_todo is
 object of struct gcli_notification with
