@@ -248,6 +248,7 @@ gitlab_forge_descriptor =
 
 	/* Notifications */
 	.get_notifications         = gitlab_get_notifications,
+	.notification_get_issue    = gitlab_notification_get_issue,
 	.notification_mark_as_read = gitlab_notification_mark_as_read,
 
 	/* Internal stuff */

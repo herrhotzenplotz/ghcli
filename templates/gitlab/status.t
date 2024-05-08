@@ -2,7 +2,8 @@ include "gcli/gitlab/status.h";
 
 parser gitlab_project is
 object of struct gcli_notification with
-	("path_with_namespace" => repository as string);
+	("path_with_namespace" => repository as string,
+	 "id"                  => target.project_id as id);
 
 parser gitlab_target is
 object of struct gcli_notification with
