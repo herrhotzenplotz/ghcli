@@ -98,5 +98,5 @@ gcli_notification_get_issue(struct gcli_ctx *ctx,
 			gcli_notification_target_type_str(notification->type));
 	}
 
-	return gcli_error(ctx, "not implemented");
+	gcli_null_check_call(notification_get_issue, ctx, notification, out);
 }
