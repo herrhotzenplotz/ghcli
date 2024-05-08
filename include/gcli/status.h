@@ -35,6 +35,7 @@
 #endif
 
 #include <gcli/gcli.h>
+#include <gcli/issues.h>
 
 #include <stdlib.h>
 
@@ -73,5 +74,9 @@ int gcli_notification_mark_as_read(struct gcli_ctx *ctx, char const *id);
 void gcli_free_notification(struct gcli_notification *);
 void gcli_free_notifications(struct gcli_notification_list *);
 char const *gcli_notification_target_type_str(enum gcli_notification_target_type type);
+int gcli_notification_get_issue(struct gcli_ctx *ctx,
+                                struct gcli_notification const *notification,
+                                struct gcli_issue *out);
+
 
 #endif /* STATUS_H */

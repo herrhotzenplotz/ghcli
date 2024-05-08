@@ -83,3 +83,20 @@ gcli_notification_target_type_str(enum gcli_notification_target_type type)
 
 	return notification_target_type_strings[type];
 }
+
+int
+gcli_notification_get_issue(struct gcli_ctx *ctx,
+                            struct gcli_notification const *const notification,
+                            struct gcli_issue *out)
+{
+	(void) out;
+
+	if (notification->type != GCLI_NOTIFICATION_TARGET_ISSUE) {
+		return gcli_error(
+			ctx,
+			"cannot call gcli_notification_get_issue with a notification of type %s",
+			gcli_notification_target_type_str(notification->type));
+	}
+
+	return gcli_error(ctx, "not implemented");
+}

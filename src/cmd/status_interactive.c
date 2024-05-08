@@ -29,6 +29,7 @@
 
 #include <gcli/cmd/cmd.h>
 #include <gcli/cmd/interactive.h>
+#include <gcli/cmd/issues.h>
 #include <gcli/cmd/status_interactive.h>
 #include <gcli/cmd/table.h>
 
@@ -66,13 +67,20 @@ refresh_notifications(struct gcli_notification_list *list)
 
 	rc = gcli_get_notifications(g_clictx, -1, list);
 	if (rc < 0)
-		errx(1, "Failed to fetch notifications: %s", gcli_get_error(g_clictx));
+		errx(1, "gcli: failed to fetch notifications: %s", gcli_get_error(g_clictx));
 }
 
 static void
 handle_issue_notification(struct gcli_notification const *const notif)
 {
 	char *user_input = NULL;
+	int rc = 0;
+	struct gcli_issue issue = {0};
+
+	rc = gcli_notification_get_issue(g_clictx, notif, &issue);
+	if (rc < 0)
+		errx(1, "gcli: failed to fetch issue: %s", gcli_get_error(g_clictx));
+
 	for (;;) {
 		user_input = gcli_cmd_prompt( "[%s] What? (details, quit)", NULL, notif->repository);
 
@@ -82,14 +90,14 @@ handle_issue_notification(struct gcli_notification const *const notif)
 
 		} else if (strcmp(user_input, "details") == 0 ||
 		           strcmp(user_input, "d") == 0) {
-
-			fprintf(stderr, "gcli: not implemented\n");
+			gcli_issue_print_summary(&issue);
 		}
 
 		free(user_input);
 		user_input = NULL;
 	}
 
+	gcli_issue_free(&issue);
 	free(user_input);
 	user_input = NULL;
 }
