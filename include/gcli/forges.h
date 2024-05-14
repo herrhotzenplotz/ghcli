@@ -522,6 +522,13 @@ struct gcli_forge_descriptor {
 	    struct gcli_issue *out);
 
 	/**
+	 * Given a notification fetch the target's comments */
+	int (*notification_get_comments)(
+		struct gcli_ctx *ctx,
+		struct gcli_notification const *notification,
+		struct gcli_comment_list *out);
+
+	/**
 	 * Mark notification with the given id as read
 	 *
 	 * Returns 0 on success or negative code on failure. */

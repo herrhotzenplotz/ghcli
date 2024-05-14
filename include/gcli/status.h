@@ -34,6 +34,7 @@
 #include <config.h>
 #endif
 
+#include <gcli/comments.h>
 #include <gcli/gcli.h>
 #include <gcli/issues.h>
 
@@ -82,5 +83,8 @@ int gcli_notification_get_issue(struct gcli_ctx *ctx,
                                 struct gcli_notification const *notification,
                                 struct gcli_issue *out);
 
+int gcli_notification_get_comments(struct gcli_ctx *ctx,
+                                   struct gcli_notification const *const notification,
+                                   struct gcli_comment_list *comments);
 
 #endif /* STATUS_H */

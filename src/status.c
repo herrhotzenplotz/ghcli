@@ -101,3 +101,11 @@ gcli_notification_get_issue(struct gcli_ctx *ctx,
 
 	gcli_null_check_call(notification_get_issue, ctx, notification, out);
 }
+
+int
+gcli_notification_get_comments(struct gcli_ctx *ctx,
+                               struct gcli_notification const *const notification,
+                               struct gcli_comment_list *comments)
+{
+	gcli_null_check_call(notification_get_comments, ctx, notification, comments);
+}
