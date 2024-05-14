@@ -43,4 +43,7 @@ int github_perform_submit_comment(struct gcli_ctx *ctx,
 int github_get_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
                         gcli_id issue, struct gcli_comment_list *out);
 
+int github_fetch_comments(struct gcli_ctx *ctx, char *url,
+                          struct gcli_comment_list *const out);
+
 #endif /* GITHUB_COMMENTS_H */
