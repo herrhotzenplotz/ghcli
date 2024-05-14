@@ -44,4 +44,8 @@ int github_notification_get_issue(struct gcli_ctx *ctx,
                                   struct gcli_notification const *notification,
                                   struct gcli_issue *out);
 
+int github_notification_get_comments(struct gcli_ctx *const ctx,
+                                     struct gcli_notification const *const notification,
+                                     struct gcli_comment_list *const out);
+
 #endif /* GITHUB_STATUS_H */
