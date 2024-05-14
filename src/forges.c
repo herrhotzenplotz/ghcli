@@ -157,6 +157,7 @@ github_forge_descriptor =
 	/* Notifications */
 	.get_notifications         = github_get_notifications,
 	.notification_mark_as_read = github_notification_mark_as_read,
+	.notification_get_issue    = github_notification_get_issue,
 
 	/* Internal stuff */
 	.get_api_error_string      = github_api_error_string,
