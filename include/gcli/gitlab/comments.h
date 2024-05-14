@@ -48,4 +48,7 @@ int gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner,
                            char const *repo, gcli_id issue,
                            struct gcli_comment_list *out);
 
+int gitlab_fetch_comments(struct gcli_ctx *ctx, char *url,
+                          struct gcli_comment_list *const out);
+
 #endif /* GITLAB_COMMENTS_H */
