@@ -44,6 +44,8 @@ int github_issues_search(struct gcli_ctx *ctx, char const *owner, char const *re
                          struct gcli_issue_fetch_details const *details, int max,
                          struct gcli_issue_list *out);
 
+int github_fetch_issue(struct gcli_ctx *ctx, char *url, struct gcli_issue *out);
+
 int github_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
                              char const *repo, gcli_id issue_number,
                              struct gcli_issue *out);
