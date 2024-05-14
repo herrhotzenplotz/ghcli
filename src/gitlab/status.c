@@ -28,6 +28,7 @@
  */
 
 #include <gcli/curl.h>
+#include <gcli/gitlab/comments.h>
 #include <gcli/gitlab/config.h>
 #include <gcli/gitlab/issues.h>
 #include <gcli/gitlab/status.h>
@@ -86,4 +87,48 @@ gitlab_notification_get_issue(struct gcli_ctx *ctx,
 	free(url);
 
 	return rc;
+}
+
+static char const *const gitlab_target_type_names[MAX_GCLI_NOTIFICATION_TARGET] =
+{
+	[GCLI_NOTIFICATION_TARGET_ISSUE] = "issues",
+	[GCLI_NOTIFICATION_TARGET_PULL_REQUEST] = "merge_requests",
+};
+
+static int
+get_target_type(struct gcli_ctx *ctx,
+                struct gcli_notification const *const notification,
+                char const **out)
+{
+	if (notification->type <= GCLI_NOTIFICATION_TARGET_INVALID || notification->type > MAX_GCLI_NOTIFICATION_TARGET)
+		return gcli_error(ctx, "notification type is invalid");
+
+	*out = gitlab_target_type_names[notification->type];
+
+	if (*out == NULL) {
+		return gcli_error(ctx, "notification type %s is not supported",
+		                  gcli_notification_target_type_str(notification->type));
+	}
+
+	return 0;
+}
+
+int
+gitlab_notification_get_comments(struct gcli_ctx *ctx,
+                                 struct gcli_notification const *const notification,
+                                 struct gcli_comment_list *const out)
+{
+	int rc = 0;
+	char const *kind = NULL;
+	char *url;
+
+	rc = get_target_type(ctx, notification, &kind);
+	if (rc < 0)
+		return rc;
+
+	url = sn_asprintf("%s/projects/%"PRIid"/%s/%"PRIid"/notes",
+	                  gcli_get_apibase(ctx), notification->target.project_id,
+	                  kind, notification->target.id);
+
+	return gitlab_fetch_comments(ctx, url, out);
 }
