@@ -63,6 +63,7 @@ struct gcli_notification {
 	struct {
 		gcli_id id;   /* The internal ID of the target data */
 		gcli_id project_id;
+		char *url;
 	} target;
 };
 

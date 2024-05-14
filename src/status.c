@@ -45,6 +45,7 @@ gcli_free_notification(struct gcli_notification *const notification)
 	free(notification->reason);
 	free(notification->date);
 	free(notification->repository);
+	free(notification->target.url);
 }
 
 void
