@@ -186,5 +186,7 @@ out:
 	free(user_input);
 	user_input = NULL;
 
+	gcli_free_notifications(&list);
+
 	return 0;
 }
