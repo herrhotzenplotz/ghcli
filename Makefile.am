@@ -342,6 +342,8 @@ EXTRA_DIST += tests/samples/github_simple_comment.json	\
 	tests/samples/gitlab_simple_release.json	\
 	tests/samples/gitlab_simple_repo.json		\
 	tests/samples/gitlab_simple_snippet.json	\
+	tests/samples/gitlab_token_expired.json         \
+	tests/samples/gitlab_error_unauthorised.json    \
 	tests/samples/github_simple_check.json		\
 	tests/samples/gitea_simple_notification.json    \
 	tests/samples/bugzilla_attachments.json         \
