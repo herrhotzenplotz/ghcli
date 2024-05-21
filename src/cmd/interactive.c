@@ -27,6 +27,8 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <gcli/cmd/cmd.h>
+#include <gcli/cmd/cmdconfig.h>
 #include <gcli/cmd/interactive.h>
 
 #include <stdarg.h>
@@ -34,6 +36,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #if defined(HAVE_LIBEDIT)
 #   if HAVE_LIBEDIT
@@ -159,4 +163,83 @@ gcli_cmd_prompt(char const *const fmt, char const *const deflt, ...)
 		result = strdup(deflt);
 
 	return result;
+}
+
+static char const *
+find_pager_program(void)
+{
+	char const *pager = NULL;
+
+	pager = getenv("PAGER");
+	if (pager)
+		return pager;
+
+	pager = gcli_config_get_pager(g_clictx);
+	if (pager)
+		return pager;
+
+	/* Use less as a more or less sane default. */
+	return "less";
+}
+
+/* Run fn and pipe its output into a suitable pager */
+int
+gcli_cmd_into_pager(int (*fn)(void *), void *data)
+{
+	pid_t child;
+
+	child = fork();
+	if (child < 0)
+		err(1, "gcli: cannot fork");
+
+	/* Child process = fork again and run pager */
+	if (child == 0) {
+		int fds[2] = {0, 0};
+
+		if (pipe(fds) < 0)
+			err(1, "gcli: cannot pipe");
+
+		pid_t subchild = fork();
+		if (subchild < 0)
+			err(1, "gcli: cannot fork");
+
+		/* In this child we run the function, the parent runs the pager */
+		if (subchild == 0) {
+			if (dup2(fds[0], STDIN_FILENO) < 0)
+				err(1, "gcli: dup2");
+
+			close(fds[1]);
+			char const *pager = find_pager_program();
+			if (execlp(pager, pager, NULL) < 0)
+				err(1, "gcli: cannot run pager");
+
+		} else {
+			int status;
+
+			close(fds[0]);
+			if (dup2(fds[1], STDOUT_FILENO) < 0)
+				err(1, "gcli: dup2");
+
+			fn(data);
+
+			/* Unref both FDs such that the pipe gets closed. This
+			 * indicates to the pager that it has reached EOF */
+			close(STDOUT_FILENO);
+			close(fds[1]);
+
+			if (waitpid(subchild, &status, 0) < 0)
+				err(1, "gcli: cannot wait for pager to exit");
+
+			exit(0);
+		}
+
+	} else {
+		/* wait for printer to exit */
+		int status;
+
+		if (waitpid(child, &status, 0) < 0)
+			err(1, "gcli: cannot wait for child process");
+	}
+
+	return 0;
 }
