@@ -40,6 +40,13 @@ which may contain the following keys:
 Path to a default editor. This might be overridden by the environment
 variable
 .Ev EDITOR .
+.It pager
+Name of the default pager when interactively displaying large output.
+May be overridden by the environment variable
+.Ev PAGER .
+If none of the above are specified,
+.Xr less 1
+is used as a sane default pager.
 .It github-default-account
 Section name of a default GitHub account to use whenever the account
 is unspecified on the command line or in the environment. See
@@ -134,6 +141,7 @@ GitHub and a GitLab account:
 .Bd -literal
 defaults {
 	editor=/path/to/ganoooo/emacs
+	pager=less
 	github-default-account=herrhotzenplotz-gh
 	gitlab-default-account=herrhotzenplotz-gitlab
 }
@@ -170,7 +178,8 @@ pr.inhibit-delete-source-branch=yes
 .Ed
 .Sh SEE ALSO
 .Xr git 1 ,
-.Xr gcli 1
+.Xr gcli 1 ,
+.Xr less 1
 .Sh AUTHORS
 .An Nico Sonack aka. herrhotzenplotz Aq Mt nsonack@herrhotzenplotz.de
 and contributors.
