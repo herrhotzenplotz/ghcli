@@ -71,6 +71,16 @@ refresh_notifications(struct gcli_notification_list *list)
 		errx(1, "gcli: failed to fetch notifications: %s", gcli_get_error(g_clictx));
 }
 
+static int
+print_comment_list(void *_comments)
+{
+	struct gcli_comment_list *comments = _comments;
+
+	gcli_print_comment_list(comments);
+
+	return 0;
+}
+
 static void
 handle_issue_notification(struct gcli_notification const *const notif)
 {
@@ -81,6 +91,8 @@ handle_issue_notification(struct gcli_notification const *const notif)
 	rc = gcli_notification_get_issue(g_clictx, notif, &issue);
 	if (rc < 0)
 		errx(1, "gcli: failed to fetch issue: %s", gcli_get_error(g_clictx));
+
+	gcli_issue_print_summary(&issue);
 
 	for (;;) {
 		user_input = gcli_cmd_prompt( "[%s] What? (status, discussion, quit)", NULL, notif->repository);
@@ -100,7 +112,10 @@ handle_issue_notification(struct gcli_notification const *const notif)
 			if (rc < 0)
 				errx(1, "gcli: failed to fetch comments: %s", gcli_get_error(g_clictx));
 
-			gcli_print_comment_list(&comments);
+			rc = gcli_cmd_into_pager(print_comment_list, &comments);
+			if (rc < 0)
+				errx(1, "gcli: cannot print comments");
+
 			gcli_comments_free(&comments);
 		}
 
