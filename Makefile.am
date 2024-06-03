@@ -241,7 +241,7 @@ EXTRA_DIST += tests/gcli_tests.h
 check: do_test
 
 do_test: $(check_PROGRAMS) tests/Kyuafile
-	kyua test -k tests/Kyuafile
+	kyua test -k $(top_srcdir)/tests/Kyuafile --build-root=$(top_builddir)/tests
 
 tests_json_escape_SOURCES = \
 	tests/json-escape.c

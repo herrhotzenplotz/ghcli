@@ -227,6 +227,4 @@ if test "x$HAVE_TESTS" = "xyes"; then
 	AC_DEFINE_UNQUOTED([TESTSRCDIR], ["$TESTSRCDIR"], [Directory to the test sources])
 fi
 
-AC_CONFIG_FILES([tests/Kyuafile])
-
 AC_OUTPUT
