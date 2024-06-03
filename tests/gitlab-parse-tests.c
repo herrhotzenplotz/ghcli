@@ -321,7 +321,7 @@ ATF_TC_BODY(gitlab_error_token_expired, tc)
 	buffer.length = sn_read_file(TESTSRCDIR"/samples/gitlab_token_expired.json",
 	                             &buffer.data);
 
-	ATF_REQUIRE(buffer.length >= 0);
+	ATF_REQUIRE(buffer.length);
 	errmsg = gitlab_api_error_string(ctx, &buffer);
 
 	ATF_CHECK_STREQ(errmsg, "Token has expired.");
@@ -337,7 +337,7 @@ ATF_TC_BODY(gitlab_error_unauthorised, tc)
 	buffer.length = sn_read_file(TESTSRCDIR"/samples/gitlab_error_unauthorised.json",
 	                             &buffer.data);
 
-	ATF_REQUIRE(buffer.length >= 0);
+	ATF_REQUIRE(buffer.length);
 	errmsg = gitlab_api_error_string(ctx, &buffer);
 
 	ATF_CHECK_STREQ(errmsg, "401 Unauthorized");
