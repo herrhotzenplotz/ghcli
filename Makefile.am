@@ -324,7 +324,9 @@ tests_test_jsongen_LDADD = \
 	libgcli.la \
 	$(LIBATFC_LIBS)
 
-EXTRA_DIST += tests/samples/github_simple_comment.json	\
+EXTRA_DIST += \
+	tests/Kyuafile \
+	tests/samples/github_simple_comment.json	\
 	tests/samples/github_simple_fork.json		\
 	tests/samples/github_simple_issue.json		\
 	tests/samples/github_simple_issue.json		\
