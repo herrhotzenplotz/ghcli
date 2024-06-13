@@ -88,8 +88,8 @@ if test "x$OPT_LIBEDIT" = "xyes" || test "x$OPT_LIBEDIT" = "xcheck"; then
 elif ! test "x$OPT_LIBEDIT" = "xno"; then
 	HAVE_LIBEDIT=1
 
-	CPPFLAGS="-I$OPT_LIBEDIT/include $CPPFLAGS"
-	LDFLAGS="-L$OPT_LIBEDIT/lib $LDFLAGS"
+	CFLAGS="-I$OPT_LIBEDIT/include $CFLAGS"
+	LDFLAGS="-L$OPT_LIBEDIT/lib -ledit $LDFLAGS"
 fi
 
 if test $HAVE_LIBEDIT -eq 1; then
@@ -124,8 +124,8 @@ if ! test $HAVE_LIBEDIT -eq 1; then
 	elif ! test "x$OPT_READLINE" = "xno"; then
 		HAVE_READLINE=1
 
-		CPPFLAGS="-I$OPT_READLINE/include $CPPFLAGS"
-		LDFLAGS="-L$OPT_READLINE/lib $LDFLAGS"
+		CFLAGS="-I$OPT_READLINE/include $CFLAGS"
+		LDFLAGS="-L$OPT_READLINE/lib -lreadline $LDFLAGS"
 	fi
 
 	if test $HAVE_READLINE -eq 1; then
