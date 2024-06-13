@@ -100,7 +100,21 @@ int
 gitea_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
                gcli_id const pr_number, struct gcli_pull *const out)
 {
-	return github_get_pull(ctx, owner, repo, pr_number, out);
+	int const rc = github_get_pull(ctx, owner, repo, pr_number, out);
+
+	if (rc == 0) {
+		/* fix for https://gitlab.com/herrhotzenplotz/gcli/issues/222:
+		 *
+		 * Sometimes the "reviewers" array contains a single NULL value
+		 * that means that this pull request is to be reviewed by the
+		 * owners of the repository. */
+		for (size_t i = 0; i < out->reviewers_size; ++i) {
+			if (out->reviewers[i] == NULL)
+				out->reviewers[i] = sn_asprintf("%s/Owners", owner);
+		}
+	}
+
+	return rc;
 }
 
 int
