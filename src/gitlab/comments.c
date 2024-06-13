@@ -80,6 +80,19 @@ gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_o
 	return rc;
 }
 
+static void
+reverse_comment_list(struct gcli_comment_list *const list)
+{
+	struct gcli_comment *reversed =
+		calloc(list->comments_size, sizeof *list->comments);
+
+	for (size_t i = 0; i < list->comments_size; ++i)
+		reversed[i] = list->comments[list->comments_size - i - 1];
+
+	free(list->comments);
+	list->comments = reversed;
+}
+
 int
 gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
                        gcli_id const mr, struct gcli_comment_list *const out)
@@ -88,10 +101,10 @@ gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner, char const *repo
 	char *e_repo = gcli_urlencode(repo);
 
 	struct gcli_fetch_list_ctx fl = {
-			.listp = &out->comments,
-			.sizep = &out->comments_size,
-			.parse = (parsefn)parse_gitlab_comments,
-			.max = -1,
+		.listp = &out->comments,
+		.sizep = &out->comments_size,
+		.parse = (parsefn)parse_gitlab_comments,
+		.max = -1,
 	};
 
 	char *url = sn_asprintf(
@@ -102,7 +115,13 @@ gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner, char const *repo
 	free(e_owner);
 	free(e_repo);
 
-	return gcli_fetch_list(ctx, url, &fl);
+	/* Comments in the resulting list are in reverse on Gitlab
+	 * (most recent is first). */
+	int const rc = gcli_fetch_list(ctx, url, &fl);
+	if (rc == 0)
+		reverse_comment_list(out);
+
+	return rc;
 }
 
 int
@@ -127,5 +146,9 @@ gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
 	free(e_owner);
 	free(e_repo);
 
-	return gcli_fetch_list(ctx, url, &fl);
+	int const rc = gcli_fetch_list(ctx, url, &fl);
+	if (rc == 0)
+		reverse_comment_list(out);
+
+	return rc;
 }
