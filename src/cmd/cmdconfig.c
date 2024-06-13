@@ -64,6 +64,7 @@ struct gcli_config {
 	int override_forgetype;
 	int colours_disabled;       /* NO_COLOR set or output is not a TTY */
 	int force_colours;          /* -c option was given */
+	int no_spinner;            	/* don't show a progress spinner */
 
 	sn_sv  buffer;
 	void  *mmap_pointer;
@@ -472,6 +473,9 @@ readenv(struct gcli_config *cfg)
 	tmp = getenv("NO_COLOR");
 	if (tmp && tmp[0] != '\0')
 		cfg->colours_disabled = checkyes(tmp);
+
+	if ((tmp = getenv("GCLI_NOSPINNER")))
+		cfg->no_spinner = checkyes(tmp);
 }
 
 int
@@ -515,6 +519,10 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 		  .has_arg = no_argument,
 		  .flag    = &cfg->colours_disabled,
 		  .val     = 0 },
+		{ .name    = "no-spinner",
+		  .has_arg = no_argument,
+		  .flag    = &cfg->no_spinner,
+		  .val     = 1 },
 		{ .name    = "type",
 		  .has_arg = required_argument,
 		  .flag    = NULL,
@@ -973,4 +981,25 @@ gcli_config_have_colours(struct gcli_ctx *ctx)
 	tested_tty = 1;
 
 	return !cfg->colours_disabled;
+}
+
+int
+gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
+{
+	ensure_config(ctx);
+
+	struct gcli_config *cfg;
+	cfg = ctx_config(ctx);
+
+	if (cfg->no_spinner)
+		return 0;
+
+	sn_sv cfg_entry = gcli_config_find_by_key(ctx, "defaults", "disable-spinner");
+	if (sn_sv_null(cfg_entry))
+		return 1;
+
+	if (checkyes(sn_sv_to_cstr(cfg_entry)))
+		return 0;
+
+	return 1;
 }

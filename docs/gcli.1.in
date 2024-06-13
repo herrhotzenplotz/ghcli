@@ -103,6 +103,15 @@ unless stdout is not a tty. See
 .Xr isatty 3 .
 This is useful in combination with modern pagers such as
 .Xr less 1 .
+.It Fl -no-spinner
+Disable the animated spinner that is displayed when
+.Nm
+is making network requests. This is useful inside dumb terminals
+or in editors such as acme.
+See also
+.Ev GCLI_NOSPINNER
+in
+.Sx ENVIRONMENT .
 .It Fl q , -quiet
 Suppresses most output of
 .Nm .
@@ -181,6 +190,15 @@ If set to
 escape sequences. See
 .Sx OPTIONS
 (--colours).
+.It Ev GCLI_NOSPINNER
+If set to
+.Sq 1 ,
+.Sq y or
+.Sq yes
+(capitalization ignored) this will disable the animated spinnner when
+gcli is making requests. See
+.Sx OPTIONS
+(--disable-spinner)
 .El
 .Sh FILES
 .Bl -tag -width ${XDG_CONFIG_HOME}/gcli/config -compact

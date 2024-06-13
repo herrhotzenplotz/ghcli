@@ -55,6 +55,12 @@ Section name of a default Gitea account to use whenever the account
 is unspecified on the command line or in the environment. See
 .Ev GCLI_ACCOUNT in
 .Xr gcli 1 .
+.It disable-spinner
+Disable the progress spinner in the ui.
+.Nm
+uses this when making requests. This can also be set, and overridden with the
+.Ev GCLI_NOSPINNER
+environment variable.
 .El
 .Pp
 All other sections define accounts for forges. Each of these account

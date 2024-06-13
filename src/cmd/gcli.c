@@ -144,6 +144,7 @@ usage(void)
 	fprintf(stderr, "                      - gitea (default: codeberg.org)\n");
 	fprintf(stderr, "                      - bugzilla (default: bugs.freebsd.org)\n");
 	fprintf(stderr, "  -c               Force colour and text formatting.\n");
+	fprintf(stderr, "  --no-spinner     Disable the animated spinner.\n");
 	fprintf(stderr, "  -q               Be quiet. (Not implemented yet)\n");
 	fprintf(stderr, "  -v               Be verbose.\n");
 	fprintf(stderr, "  -V | --version   Print version and exit.\n\n");
@@ -344,8 +345,6 @@ main(int argc, char *argv[])
 	if (gcli_config_init_ctx(g_clictx) < 0)
 		errx(1, "gcli: error: failed to init context: %s", gcli_get_error(g_clictx));
 
-	gcli_set_progress_func(g_clictx, gcli_progress_func);
-
 	/* Initial setup */
 	setup_subcommand_table();
 
@@ -378,6 +377,9 @@ main(int argc, char *argv[])
 
 		return EXIT_FAILURE;
 	}
+
+	if(gcli_config_display_progress_spinner(g_clictx))
+		gcli_set_progress_func(g_clictx, gcli_progress_func);
 
 	return sc->fn(argc, argv);
 }
