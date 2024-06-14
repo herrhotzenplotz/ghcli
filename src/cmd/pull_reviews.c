@@ -108,10 +108,10 @@ fetch_patch(struct review_ctx *ctx)
 	/* diff does not exist, fetch it! */
 	FILE *f = fopen(ctx->diff_path, "w");
 	if (f == NULL)
-		err(1, "error: cannot open %s", ctx->diff_path);
+		err(1, "gcli: error: cannot open %s", ctx->diff_path);
 
 	if (gcli_pull_get_patch(g_clictx, f, ctx->details.owner, ctx->details.repo, ctx->details.pull_id) < 0) {
-		errx(1, "error: failed to get patch: %s",
+		errx(1, "gcli: error: failed to get patch: %s",
 		     gcli_get_error(g_clictx));
 	}
 
@@ -184,13 +184,13 @@ extract_patch_comments(struct review_ctx *ctx, struct gcli_diff_comments *out)
 	TAILQ_INIT(&series.patches);
 
 	if (gcli_diff_parser_from_file(f, ctx->diff_path, &p) < 0)
-		err(1, "error: failed to open diff");
+		err(1, "gcli: error: failed to open diff");
 
 	if (gcli_parse_patch_series(&p, &series) < 0)
-		errx(1, "error: failed to parse patch");
+		errx(1, "gcli: error: failed to parse patch");
 
 	if (gcli_patch_series_get_comments(&series, out) < 0)
-		errx(1, "error: failed to get comments");
+		errx(1, "gcli: error: failed to get comments");
 
 	process_series_prelude(series.prelude, &ctx->details);
 
@@ -258,7 +258,7 @@ ask_for_review_state(void)
 			state = -1;
 			break;
 		default:
-			fprintf(stderr, "error: unrecognised answer\n");
+			fprintf(stderr, "gcli: error: unrecognised answer\n");
 			break;
 		}
 	} while (!state);
@@ -291,7 +291,7 @@ do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
 	}
 
 	if (gcli_pull_create_review(g_clictx, &ctx.details) < 0)
-		errx(1, "error: failed to create review: %s", gcli_get_error(g_clictx));
+		errx(1, "gcli: error: failed to create review: %s", gcli_get_error(g_clictx));
 }
 
 int
@@ -330,7 +330,7 @@ subcommand_pull_review(int argc, char *argv[])
 			char *endptr;
 			pull_id = strtoul(optarg, &endptr, 10);
 			if (endptr != optarg + strlen(optarg))
-				errx(1, "error: bad PR id %s\n", optarg);
+				errx(1, "gcli: error: bad PR id %s\n", optarg);
 
 			have_id = true;
 		} break;
@@ -345,7 +345,7 @@ subcommand_pull_review(int argc, char *argv[])
 	argv += optind;
 
 	if (!have_id) {
-		fprintf(stderr, "error: missing PR id. use -i <id>.\n");
+		fprintf(stderr, "gcli: error: missing PR id. use -i <id>.\n");
 		usage();
 		return EXIT_FAILURE;
 	}
