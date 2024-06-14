@@ -33,7 +33,7 @@ various
 .Xr git 1
 forges such as GitLab, Gitea or GitHub. Without any action specified,
 .Nm
-will list open PRs in the given or autodetected repository.
+will list open PRs in the given or auto-detected repository.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl s , -sorted
@@ -91,7 +91,7 @@ on the specified
 .Sh SUBCOMMANDS
 .Bl -tag -width create
 .It Cm create
-Create a new PR in the given or autodetected repository. The editor
+Create a new PR in the given or auto-detected repository. The editor
 will come up and ask you to enter the PR message.
 .Pp
 When the title is omitted gcli will interactively prompt the various

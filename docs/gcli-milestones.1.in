@@ -20,7 +20,7 @@ The
 .Nm
 command can be used to work with milestones on various
 .Xr git 1
-forges. You can list, create, modify or delete milestons.
+forges. You can list, create, modify or delete milestones.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl i , -id Ar id
@@ -55,7 +55,7 @@ Print a list of issues attached to the milestone.
 Delete this milestone.
 .El
 .Sh EXAMPLES
-Print a list of milestones for the current autodetected forge:
+Print a list of milestones for the current auto-detected forge:
 .Bd -literal -offset indent
 $ gcli milestones
 .Ed

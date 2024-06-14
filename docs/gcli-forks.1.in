@@ -36,7 +36,7 @@ Do not ask for confirmation. Assume yes.
 .It Fl s , -sorted
 Reverse the output such that most recent items appear at the bottom.
 .It Fl i , -into Ar target-owner
-When forking a repository, this is the organization or user the
+When forking a repository, this is the organisation or user the
 repository is forked into.
 .It Fl n , -count Ar n
 Fetch at least

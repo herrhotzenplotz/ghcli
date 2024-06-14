@@ -31,7 +31,7 @@ to list, create or delete releases for repositories on
 forges such as GitLab, Gitea or GitHub. Without a subcommand
 specified,
 .Nm
-will list releases in the given or autodetected repository. If you are
+will list releases in the given or auto-detected repository. If you are
 the owner of that repo, you will also see draft releases. You will not
 see those if you are not the owner of that particular repository.
 .Sh OPTIONS
@@ -60,7 +60,7 @@ amount of time and may result in rate limiting by the GitHub API.
 .Sh SUBCOMMANDS
 .Bl -tag -width indent
 .It Cm create
-Create a new release on the given or autodetected repository. The
+Create a new release on the given or auto-detected repository. The
 editor will come up and ask you to enter a message for the release.
 .Pp
 The following flags can be specified:
@@ -82,7 +82,7 @@ already exists. Otherwise this defaults to the default branch from
 Operate on the repository of the specified owner. This option can only
 be used in combination with
 .Fl r .
-Use this if you want to e.g. create the release in an organization and
+Use this if you want to e.g. create the release in an organisation and
 not your own account.
 .It Fl r , -repo Ar repo
 Create the release in the given repository. This option can only be
@@ -108,7 +108,7 @@ used in combination with
 Delete the release in the repository of the given owner. This option
 can only be used in combination with
 .Fl r .
-Use this if you want to delete a release in a given organization and
+Use this if you want to delete a release in a given organisation and
 not your own account.
 .It Fl y , -yes
 Do not ask for confirmation before deleting the repository. Assume

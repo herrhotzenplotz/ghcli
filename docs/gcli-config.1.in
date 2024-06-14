@@ -23,7 +23,7 @@ it to e.g. add or delete SSH Public Keys used to push to forges.
 .It Fl t , -title Ar title
 Set the title of the SSH Key to be added. This is a short description
 of the key.
-.It Fl k , -key Pa keypath
+.It Fl k , -key Pa key-path
 Path to the file containing the SSH public key.
 .It Fl i , -id Ar id
 ID of the public key to delete.

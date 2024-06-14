@@ -19,7 +19,7 @@
 .Ar actions...
 .Sh DESCRIPTION
 .Nm
-can be used to list or manage your own or an organization's
+can be used to list or manage your own or an organisation's
 repositories on
 .Xr git 1
 forges such as GitHub, Gitea and GitLab. With no actions given,
@@ -27,7 +27,7 @@ forges such as GitHub, Gitea and GitLab. With no actions given,
 will list repositories, either of the through
 .Fl o
 specified owner or, if omitted, your own. Otherwise the given actions
-are executed on the specified or autodetected repository. See
+are executed on the specified or auto-detected repository. See
 .Sx ACTIONS .
 .Sh OPTIONS
 .Bl -tag -width indent
@@ -109,7 +109,7 @@ and contributors.
 .Sh BUGS
 Currently it is only possible to create repositories for authenticated
 users thus it is impossible to create a repository in another
-organization.
+organisations.
 .Pp
 Please report bugs via E-Mail to
 .Mt @PACKAGE_BUGREPORT@ .

@@ -29,7 +29,7 @@ Use
 to list, create, download or delete GitHub Gists.
 Without a subcommand specified,
 .Nm
-will list Gists of the given or autodetected user account.
+will list Gists of the given or auto-detected user account.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl l , -long
