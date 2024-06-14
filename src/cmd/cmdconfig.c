@@ -903,7 +903,7 @@ gcli_config_get_forge_type(struct gcli_ctx *ctx)
 		static int have_printed_forge_type = 0;
 		static char const *const ftype_name[] = {
 			[GCLI_FORGE_GITHUB] = "GitHub",
-			[GCLI_FORGE_GITLAB] = "Gitlab",
+			[GCLI_FORGE_GITLAB] = "GitLab",
 			[GCLI_FORGE_GITEA] = "Gitea",
 			[GCLI_FORGE_BUGZILLA] = "Bugzilla",
 		};
