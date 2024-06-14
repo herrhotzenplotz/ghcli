@@ -1,6 +1,6 @@
 # Commenting
 
-Discussions on Github and the like are done through comments. You can
+Discussions on GitHub and the like are done through comments. You can
 comment on issues and pull requests.
 
 ## Reviewing a discussion
