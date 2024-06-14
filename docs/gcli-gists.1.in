@@ -3,7 +3,7 @@
 .Os @PACKAGE_STRING@
 .Sh NAME
 .Nm gcli gists
-.Nd manage Github Gists
+.Nd manage GitHub Gists
 .Sh SYNOPSIS
 .Nm
 .Op Fl s
@@ -26,7 +26,7 @@
 .Sh DESCRIPTION
 Use
 .Nm
-to list, create, download or delete Github Gists.
+to list, create, download or delete GitHub Gists.
 Without a subcommand specified,
 .Nm
 will list Gists of the given or autodetected user account.

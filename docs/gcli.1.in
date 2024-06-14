@@ -46,11 +46,11 @@ Manage labels for issues and pull/merge requests on repositories. See
 Forking repositories. See
 .Xr gcli-forks 1 .
 .It Cm gists
-Github Gists are like paste bins to where you can dump code snippets
+GitHub Gists are like paste bins to where you can dump code snippets
 etc. See
 .Xr gcli-gists 1 .
 .It Cm snippets
-Support for Gitlab snippets. See
+Support for GitLab snippets. See
 .Xr gcli-snippets 1 .
 .It Cm repos
 Manage your own or other repositories. See
@@ -62,7 +62,7 @@ Submit comments under issues and PRs. See
 Print a list of TODOs and/or notifications. See
 .Xr gcli-status 1 .
 .It Cm pipelines
-Inspect and manage Gitlab Pipelines. See
+Inspect and manage GitLab Pipelines. See
 .Xr gcli-pipelines 1 .
 .It Cm releases
 Create and manage releases. See
@@ -140,7 +140,7 @@ this parameter allows to fetch more than that. Setting
 .Ar n
 to -1 will result in all pages being queried and all items being read.
 However, be careful with that, since if there is a lot of data to be
-fetched, it may result in rate limiting by the Github API, aside from
+fetched, it may result in rate limiting by the GitHub API, aside from
 the fact that it may also take a considerable amount of time to
 process.
 .It Fl a , -all

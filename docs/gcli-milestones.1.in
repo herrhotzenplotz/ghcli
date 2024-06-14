@@ -70,7 +70,7 @@ Create a new milestone with the title foobar:
 $ gcli milestones create -t foobar
 .Ed
 .Pp
-Delete milestone number 420 in vim/vim on Github:
+Delete milestone number 420 in vim/vim on GitHub:
 .Bd -literal -offset indent
 $ gcli -t github milestones -i 420 delete
 .Ed

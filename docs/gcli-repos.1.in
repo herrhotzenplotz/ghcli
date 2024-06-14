@@ -22,7 +22,7 @@
 can be used to list or manage your own or an organization's
 repositories on
 .Xr git 1
-forges such as Github, Gitea and GitLab. With no actions given,
+forges such as GitHub, Gitea and GitLab. With no actions given,
 .Nm
 will list repositories, either of the through
 .Fl o

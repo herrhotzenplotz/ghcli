@@ -234,7 +234,7 @@ List pull requests that are associated with the milestone
 $ gcli pulls -M version420
 .Ed
 .Pp
-Change the title of pull request #42 on Github to
+Change the title of pull request #42 on GitHub to
 .Dq "This is the new title" :
 .Bd -literal -offset indent
 $ gcli -t github pulls -i 42 title "This is the new title"

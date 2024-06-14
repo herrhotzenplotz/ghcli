@@ -89,7 +89,7 @@ Create the release in the given repository. This option can only be
 used in combination with
 .Fl o .
 .It Fl a , -asset Pa asset
-Attach the given asset to the release. It will be uploaded to Github
+Attach the given asset to the release. It will be uploaded to GitHub
 and be made available for download. You can specify this option
 multiple times to attach more than one asset to the release.
 .It Fl y , -yes
