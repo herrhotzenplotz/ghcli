@@ -71,3 +71,17 @@ object of struct gitlab_diff with
 
 parser gitlab_diffs is
 array of struct gitlab_diff use parse_gitlab_diff;
+
+parser gitlab_mr_version is
+object of struct gitlab_mr_version with
+	("id"               => id as id,
+	 "base_commit_sha"  => base_commit as string,
+	 "head_commit_sha"  => head_commit as string,
+	 "start_commit_sha" => start_commit as string);
+
+parser gitlab_mr_version_list is
+array of struct gitlab_mr_version use parse_gitlab_mr_version;
+
+parser gitlab_mr_version_diffs is
+object of struct gitlab_diff_list with
+	("diffs" => diffs as array of gitlab_diff use parse_gitlab_diff);

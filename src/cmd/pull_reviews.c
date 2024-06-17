@@ -110,7 +110,7 @@ fetch_patch(struct review_ctx *ctx)
 	if (f == NULL)
 		err(1, "gcli: error: cannot open %s", ctx->diff_path);
 
-	if (gcli_pull_get_patch(g_clictx, f, ctx->details.owner, ctx->details.repo, ctx->details.pull_id) < 0) {
+	if (gcli_pull_get_diff(g_clictx, f, ctx->details.owner, ctx->details.repo, ctx->details.pull_id) < 0) {
 		errx(1, "gcli: error: failed to get patch: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -179,22 +179,20 @@ extract_patch_comments(struct review_ctx *ctx, struct gcli_diff_comments *out)
 {
 	FILE *f = fopen(ctx->diff_path, "r");
 	struct gcli_diff_parser p = {0};
-	struct gcli_patch_series series = {0};
-
-	TAILQ_INIT(&series.patches);
+	struct gcli_patch patch = {0};
 
 	if (gcli_diff_parser_from_file(f, ctx->diff_path, &p) < 0)
 		err(1, "gcli: error: failed to open diff");
 
-	if (gcli_parse_patch_series(&p, &series) < 0)
+	if (gcli_parse_patch(&p, &patch) < 0)
 		errx(1, "gcli: error: failed to parse patch");
 
-	if (gcli_patch_series_get_comments(&series, out) < 0)
+	if (gcli_patch_get_comments(&patch, out) < 0)
 		errx(1, "gcli: error: failed to get comments");
 
-	process_series_prelude(series.prelude, &ctx->details);
+	process_series_prelude(patch.prelude, &ctx->details);
 
-	gcli_free_patch_series(&series);
+	gcli_free_patch(&patch);
 	gcli_free_diff_parser(&p);
 	fclose(f);
 }
@@ -277,6 +275,8 @@ do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
 		},
 		.diff_path = get_review_diff_file_name(owner, repo, pull_id),
 	};
+
+	TAILQ_INIT(&ctx.details.comments);
 
 	edit_diff(&ctx);
 	printf("\nThese are your comments:\n");

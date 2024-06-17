@@ -59,6 +59,16 @@ struct gitlab_diff_list {
 	size_t diffs_size;
 };
 
+struct gitlab_mr_version {
+	gcli_id id;
+	char *head_commit, *base_commit, *start_commit;
+};
+
+struct gitlab_mr_version_list {
+	struct gitlab_mr_version *versions;
+	size_t versions_size;
+};
+
 int gitlab_fetch_mrs(struct gcli_ctx *ctx, char *url, int max,
                      struct gcli_pull_list *list);
 
@@ -117,5 +127,9 @@ int gitlab_mr_set_title(struct gcli_ctx *ctx, char const *const owner,
 
 int gitlab_mr_create_review(struct gcli_ctx *ctx,
                             struct gcli_pull_create_review_details const *details);
+
+void gitlab_mr_version_free(struct gitlab_mr_version *);
+
+void gitlab_mr_version_list_free(struct gitlab_mr_version_list *);
 
 #endif /* GITLAB_MERGE_REQUESTS_H */

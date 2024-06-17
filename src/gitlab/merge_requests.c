@@ -278,26 +278,125 @@ err_get_pull:
 	return rc;
 }
 
+static int
+gitlab_mr_get_diff_versions(struct gcli_ctx *ctx, char const *const e_owner,
+                            char const *const e_repo, gcli_id const mr_number,
+                            struct gitlab_mr_version_list *const out)
+{
+	char *url;
+	struct gcli_fetch_list_ctx fl_ctx = {
+		.listp = &out->versions,
+		.sizep = &out->versions_size,
+		.max = -1,
+		.parse = (parsefn)parse_gitlab_mr_version_list,
+	};
+
+	url = sn_asprintf("%s/projects/%s%%2F%s/merge_requests/%"PRIid"/versions",
+	                  gcli_get_apibase(ctx), e_owner, e_repo, mr_number);
+
+	return gcli_fetch_list(ctx, url, &fl_ctx);
+}
+
+static int
+gitlab_mr_get_diff_version(struct gcli_ctx *ctx, char const *const e_owner,
+                           char const *const e_repo, gcli_id const mr_number,
+                           gcli_id const version_id,
+                           struct gitlab_diff_list *const out)
+{
+	char *url;
+	int rc;
+	struct gcli_fetch_buffer buffer = {0};
+
+	url = sn_asprintf("%s/projects/%s%%2F%s/merge_requests/%"PRIid"/versions/%"PRIid,
+	                  gcli_get_apibase(ctx), e_owner, e_repo, mr_number,
+	                  version_id);
+
+	rc = gcli_fetch(ctx, url, NULL, &buffer);
+	if (rc == 0) {
+		struct json_stream stream = {0};
+
+		json_open_buffer(&stream, buffer.data, buffer.length);
+		rc = parse_gitlab_mr_version_diffs(ctx, &stream, out);
+		json_close(&stream);
+	}
+
+	free(url);
+	free(buffer.data);
+
+	return rc;
+}
+
 int
 gitlab_mr_get_diff(struct gcli_ctx *ctx, FILE *stream, char const *owner,
                    char const *repo, gcli_id mr_number)
 {
-	char *url = NULL;
+	char *e_owner, *e_repo;
 	int rc;
-	struct gcli_pull pull_data = {0};
+	struct gitlab_diff_list diff_list = {0};
+	struct gitlab_mr_version_list version_list = {0};
+	struct gitlab_mr_version const *version;
 
-	/* Hack: The Gitlab API itself does not provide a documented endpoint
-	 * to grab the diff of the merge request. Instead we fetch the web_url
-	 * and append ».diff« to it which gives us the diff in plain-text. */
-	rc = gitlab_get_pull(ctx, owner, repo, mr_number, &pull_data);
+	e_owner = gcli_urlencode(owner);
+	e_repo = gcli_urlencode(repo);
+
+	/* Grab a list of diff versions available for this MR.
+	 * The list is sorted numerically decending. Thus we need
+	 * to just grab the very first version in the array and use
+	 * it. */
+	rc = gitlab_mr_get_diff_versions(ctx, e_owner, e_repo, mr_number, &version_list);
 	if (rc < 0)
-		return rc;
+		goto err_get_mr_diff_version;
 
-	url = sn_asprintf("%s.diff", pull_data.web_url);
-	gcli_pull_free(&pull_data);
+	if (!version_list.versions_size) {
+		rc = gcli_error(ctx, "no diffs available for the merge request");
+		goto err_get_mr_diff_version;
+	}
 
-	rc = gcli_curl(ctx, stream, url, "application/text"); /* @@@ */
-	free(url);
+	version = &version_list.versions[0];
+
+	rc = gitlab_mr_get_diff_version(ctx, e_owner, e_repo, mr_number,
+	                                version->id, &diff_list);
+
+	if (rc < 0)
+		goto err_get_diffs;
+
+	fprintf(stream, "GCLI: Below is metadata for this diff. Do not remove or alter\n");
+	fprintf(stream, "GCLI: in case you're using this for a review.\n");
+	fprintf(stream, "GCLI: base_sha %s\n", version->base_commit);
+	fprintf(stream, "GCLI: start_sha %s\n", version->start_commit);
+	fprintf(stream, "GCLI: head_sha %s\n", version->head_commit);
+
+	for (size_t i = 0; i < diff_list.diffs_size; ++i) {
+		struct gitlab_diff const *const diff = &diff_list.diffs[i];
+
+		fprintf(stream, "diff --git a/%s b/%s\n", diff->old_path, diff->new_path);
+		if (diff->new_file) {
+			fprintf(stream, "new file mode %s\n", diff->b_mode);
+			fprintf(stream, "index 0000000..%s\n", version->head_commit);
+		} else {
+			fprintf(stream, "index %s..%s %s\n",
+			        version->base_commit, version->head_commit,
+			        diff->b_mode);
+		}
+
+		fprintf(stream, "--- %s%s\n",
+		        diff->new_file ? "" : "a/",
+		        diff->new_file ? "/dev/null" : diff->old_path);
+		fprintf(stream, "+++ %s%s\n",
+		        diff->deleted_file ? "" : "b/",
+		        diff->deleted_file ? "/dev/null" : diff->new_path);
+		fputs(diff->diff, stream);
+	}
+
+	gitlab_free_diffs(&diff_list);
+
+err_get_diffs:
+	gitlab_mr_version_list_free(&version_list);
+
+
+err_get_mr_diff_version:
+	free(e_owner);
+	free(e_repo);
 
 	return rc;
 }
@@ -1060,4 +1159,25 @@ gitlab_mr_create_review(struct gcli_ctx *ctx,
 	}
 
 	return gcli_error(ctx, "not yet implemented");
+}
+
+void
+gitlab_mr_version_free(struct gitlab_mr_version *version)
+{
+	free(version->base_commit);
+	free(version->start_commit);
+	free(version->head_commit);
+}
+
+void
+gitlab_mr_version_list_free(struct gitlab_mr_version_list *list)
+{
+	for (size_t i = 0; i < list->versions_size; ++i) {
+		gitlab_mr_version_free(&list->versions[i]);
+	}
+
+	free(list->versions);
+
+	list->versions = NULL;
+	list->versions_size = 0;
 }
