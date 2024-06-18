@@ -64,7 +64,8 @@ struct gcli_config {
 	int override_forgetype;
 	int colours_disabled;       /* NO_COLOR set or output is not a TTY */
 	int force_colours;          /* -c option was given */
-	int no_spinner;            	/* don't show a progress spinner */
+	int no_spinner;             /* don't show a progress spinner */
+	int enable_experimental;    /* enable experimental features */
 
 	sn_sv  buffer;
 	void  *mmap_pointer;
@@ -476,6 +477,9 @@ readenv(struct gcli_config *cfg)
 
 	if ((tmp = getenv("GCLI_NOSPINNER")))
 		cfg->no_spinner = checkyes(tmp);
+
+	if ((tmp = getenv("GCLI_ENABLE_EXPERIMENTAL")))
+		cfg->enable_experimental = checkyes(tmp);
 }
 
 int
@@ -1010,4 +1014,22 @@ gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
 		return 0;
 
 	return 1;
+}
+
+bool
+gcli_config_enable_experimental(struct gcli_ctx *ctx)
+{
+	ensure_config(ctx);
+
+	struct gcli_config *cfg;
+	cfg = ctx_config(ctx);
+
+	if (cfg->enable_experimental)
+		return true;
+
+	sn_sv cfg_entry = gcli_config_find_by_key(ctx, "defaults", "enable-experimental");
+	if (sn_sv_null(cfg_entry))
+		return false;
+
+	return checkyes(sn_sv_to_cstr(cfg_entry));
 }
