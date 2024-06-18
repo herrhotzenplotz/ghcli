@@ -62,7 +62,6 @@ usage(void)
 	fprintf(stderr, "       gcli pulls [-o owner -r repo] [-a] [-A author] [-n number]\n");
 	fprintf(stderr, "                  [-L label] [-M milestone] [-s] [search-terms...]\n");
 	fprintf(stderr, "       gcli pulls [-o owner -r repo] -i pull-id actions...\n");
-	fprintf(stderr, "       gcli pulls review [-o owner -r repo] -i id\n");
 	fprintf(stderr, "OPTIONS:\n");
 	fprintf(stderr, "  -o owner        The repository owner\n");
 	fprintf(stderr, "  -r repo         The repository name\n");
@@ -99,6 +98,8 @@ usage(void)
 	fprintf(stderr, "  patch                  Display changes as patch series\n");
 	fprintf(stderr, "  title <new-title>      Change the title of the pull request\n");
 	fprintf(stderr, "  request-review <user>  Add <user> as a reviewer of the PR\n");
+	if (gcli_config_enable_experimental(g_clictx))
+		fprintf(stderr, "  review                 Start a review of this PR\n");
 
 	fprintf(stderr, "\n");
 	version();
@@ -639,12 +640,6 @@ subcommand_pulls(int argc, char *argv[])
 		return subcommand_pull_create(argc, argv);
 	}
 
-	/* Or do we wish to review a PR */
-	if (argc > 1 && (strcmp(argv[1], "review") == 0)) {
-		shift(&argc, &argv);
-		return subcommand_pull_review(argc, argv);
-	}
-
 	struct option const options[] = {
 		{ .name    = "all",
 		  .has_arg = no_argument,
@@ -1080,6 +1075,22 @@ action_title(struct action_ctx *const ctx)
 	ctx->argv += 1;
 }
 
+static void
+action_review(struct action_ctx *ctx)
+{
+	if (gcli_config_enable_experimental(g_clictx) == false) {
+		errx(1, "gcli: error: review is not available because it is "
+		     "considered experimental. To enable this feature set "
+		     "enable-experimental in your gcli config file or "
+		     "set GCLI_ENABLE_EXPERIMENTAL in your environment.");
+	}
+
+	ctx->argc -= 1;
+	ctx->argv += 1;
+
+	do_review_session(ctx->owner, ctx->repo, ctx->pr);
+}
+
 static struct action {
 	char const *name;
 	void (*fn)(struct action_ctx *ctx);
@@ -1100,6 +1111,7 @@ static struct action {
 	{ .name = "milestone",      .fn = action_milestone      },
 	{ .name = "request-review", .fn = action_request_review },
 	{ .name = "title",          .fn = action_title          },
+	{ .name = "review",         .fn = action_review         },
 };
 
 static size_t const actions_size = ARRAY_SIZE(actions);

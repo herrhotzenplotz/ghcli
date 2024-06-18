@@ -34,6 +34,6 @@
 #include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-int subcommand_pull_review(int argc, char *argv[]);
+void do_review_session(char const *owner, char const *repo, gcli_id pull_id);
 
 #endif /* GCLI_CMD_PULL_REVIEWS_H */

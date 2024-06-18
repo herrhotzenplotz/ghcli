@@ -39,18 +39,6 @@
 #include <gcli/diffutil.h>
 #include <gcli/pulls.h>
 
-static void
-usage(void)
-{
-	fprintf(stderr, "usage: gcli pulls review [-o owner -r repo] -i id\n");
-	fprintf(stderr, "OPTIONS:\n");
-	fprintf(stderr, "   -o owner         Operate on a repository by the given owner\n");
-	fprintf(stderr, "   -r repo          Operate on the given repository\n");
-	fprintf(stderr, "   -i id            Operate on the given PR id\n");
-	fprintf(stderr, "\n");
-	version();
-}
-
 static char *
 get_review_file_cache_dir(void)
 {
@@ -264,7 +252,7 @@ ask_for_review_state(void)
 	return state;
 }
 
-static void
+void
 do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
 {
 	struct review_ctx ctx = {
@@ -292,66 +280,4 @@ do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
 
 	if (gcli_pull_create_review(g_clictx, &ctx.details) < 0)
 		errx(1, "gcli: error: failed to create review: %s", gcli_get_error(g_clictx));
-}
-
-int
-subcommand_pull_review(int argc, char *argv[])
-{
-	int ch;
-	char const *owner = NULL, *repo = NULL;
-	gcli_id pull_id;
-	bool have_id = false;
-
-	struct option options[] = {
-		{ .name = "owner",
-		  .has_arg = required_argument,
-		  .flag = NULL,
-		  .val = 'o', },
-		{ .name = "repo",
-		  .has_arg = required_argument,
-		  .flag = NULL,
-		  .val = 'r', },
-		{ .name = "id",
-		  .has_arg = required_argument,
-		  .flag = NULL,
-		  .val = 'i', },
-		{0},
-	};
-
-	while ((ch = getopt_long(argc, argv, "+o:r:i:", options, NULL)) != -1) {
-		switch (ch) {
-		case 'o': {
-			owner = optarg;
-		} break;
-		case 'r': {
-			repo = optarg;
-		} break;
-		case 'i': {
-			char *endptr;
-			pull_id = strtoul(optarg, &endptr, 10);
-			if (endptr != optarg + strlen(optarg))
-				errx(1, "gcli: error: bad PR id %s\n", optarg);
-
-			have_id = true;
-		} break;
-		default: {
-			usage();
-			return EXIT_FAILURE;
-		} break;
-		}
-	}
-
-	argc -= optind;
-	argv += optind;
-
-	if (!have_id) {
-		fprintf(stderr, "gcli: error: missing PR id. use -i <id>.\n");
-		usage();
-		return EXIT_FAILURE;
-	}
-
-	check_owner_and_repo(&owner, &repo);
-	do_review_session(owner, repo, pull_id);
-
-	return EXIT_SUCCESS;
 }

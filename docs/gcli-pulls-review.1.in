@@ -8,18 +8,29 @@
 .Nm
 .Op Fl o Ar owner Fl r Ar repo
 .Fl i Ar id
+.Cm review
 .Sh DESCRIPTION
 .Sy WARNING!
 This feature is rather new. Expect bugs and broken features. Please
-report in case you hit any of them. This also applies to this manual
-page.
+report bugs if you hit any. The same also applies to this manual
+page. Please suggest improvements that can be made to this feature
+too. To enable this experimental action you must either set
+.Dq enable-experimental
+in your gcli config file (see
+.Xr gcli 5 )
+to
+.Dq yes
+or set the environment variable
+.Ev GCLI_ENABLE_EXPERIMENTAL
+to
+.Dq yes .
 .Pp
 The
 .Nm
-subcommand can be used to perform code review tasks for pull requests
+action can be used to perform code review tasks for pull requests
 on Git forges supported by gcli.
 .Pp
-Running this subcommand will drop you into your editor and lets you
+Running this action will drop you into your editor and lets you
 annotate the diff of the PR.
 Comments are always above the change they refer to. A change is
 either a single diff line or multiple lines wrapped in curly braces
@@ -70,12 +81,12 @@ Review pull request
 .Sh EXAMPLES
 Review PR #69 in the current inferred forge and remote:
 .Bd -literal -offset indent
-$ gcli pulls review -i 69
+$ gcli pulls -i 69 review
 .Ed
 .Pp
 Review PR #12 in curl/curl on Github:
 .Bd -literal -offset indent
-$ gcli -t github pulls review -o curl -r curl -i 12
+$ gcli -t github pulls -o curl -r curl -i 12 review
 .Ed
 .Sh SEE ALSO
 .Xr git 1 ,
@@ -90,8 +101,7 @@ and contributors.
 At the moment the diff cache directory is not created automagically.
 You have to manually create it in case gcli complains.
 .Pp
-This feature is not implemented (but in active development) on
-Gitlab and Gitea.
+This feature is not implemented (but in active development) on Gitea.
 .Pp
 Please report bugs at @PACKAGE_URL@, via E-Mail to @PACKAGE_BUGREPORT@
 or on Github.

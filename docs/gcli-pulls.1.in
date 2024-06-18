@@ -25,10 +25,6 @@
 .Op Fl f Ar owner:branch
 .Op Fl y
 .Op Ar "PR title..."
-.Nm
-.Cm review
-.Op Fl o Ar owner Fl r Ar repo
-.Fl i Ar id
 .Sh DESCRIPTION
 Use
 .Nm
@@ -194,6 +190,10 @@ Remove the given label from the pull request.
 .It Cm title Ar new-title
 Change the title of the pull request to
 .Ar new-title .
+.It Cm review
+Review the pull request. See
+.Xr gcli-pulls-review 1
+for more details on this action.
 .El
 .Sh EXAMPLES
 Print a list of open PRs in the current project:
