@@ -35,8 +35,7 @@
 #include <templates/gitlab/comments.h>
 
 int
-gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_opts opts,
-                              struct gcli_fetch_buffer *const out)
+gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_opts opts)
 {
 	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL;
 	char const *type = NULL;
@@ -70,7 +69,7 @@ gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_o
 	                  gcli_get_apibase(ctx), e_owner, e_repo, type,
 	                  opts.target_id);
 
-	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, out);
+	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 
 	free(payload);
 	free(url);
