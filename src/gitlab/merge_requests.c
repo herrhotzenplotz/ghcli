@@ -29,12 +29,13 @@
 
 #include <gcli/curl.h>
 #include <gcli/gitlab/api.h>
+#include <gcli/gitlab/comments.h>
 #include <gcli/gitlab/config.h>
 #include <gcli/gitlab/merge_requests.h>
 #include <gcli/gitlab/repos.h>
 #include <gcli/json_gen.h>
-#include <gcli/json_util.h>
 #include <gcli/json_gen.h>
+#include <gcli/json_util.h>
 
 #include <templates/gitlab/merge_requests.h>
 
@@ -1131,7 +1132,6 @@ post_diff_comment(struct gcli_ctx *ctx,
 	gcli_jsongen_end_object(&gen);
 
 	payload = gcli_jsongen_to_string(&gen);
-	puts(payload);
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 
@@ -1158,7 +1158,41 @@ gitlab_mr_create_review(struct gcli_ctx *ctx,
 			return rc;
 	}
 
-	return gcli_error(ctx, "not yet implemented");
+	/* Abort on failure */
+	if (rc < 0)
+		return rc;
+
+	/* Check whether we wish to submit a general comment */
+	if (details->body && *details->body) {
+		struct gcli_submit_comment_opts opts = {
+			.owner = details->owner,
+			.repo = details->repo,
+			.target_id = details->pull_id,
+			.target_type = PR_COMMENT,
+			.message = details->body,
+		};
+
+		rc = gitlab_perform_submit_comment(ctx, opts);
+		if (rc < 0)
+			return rc;
+	}
+
+	/* Check whether to approve or unapprove the MR */
+	switch (details->review_state) {
+	case GCLI_REVIEW_ACCEPT_CHANGES:
+		rc = gitlab_mr_approve(ctx, details->owner, details->repo,
+		                       details->pull_id);
+		break;
+	case GCLI_REVIEW_REQUEST_CHANGES:
+		rc = gitlab_mr_unapprove(ctx, details->owner, details->repo,
+		                         details->pull_id);
+		break;
+	default:
+		/* commenting only implies no change to the merge request */
+		break;
+	}
+
+	return rc;
 }
 
 void
@@ -1180,4 +1214,42 @@ gitlab_mr_version_list_free(struct gitlab_mr_version_list *list)
 
 	list->versions = NULL;
 	list->versions_size = 0;
+}
+
+static int
+gitlab_mr_request_update_approval(struct gcli_ctx *ctx, char const *const owner,
+                                  char const *const repo, gcli_id const mr,
+                                  char const *const action)
+{
+	int rc = 0;
+	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
+
+	e_owner = gcli_urlencode(owner);
+	e_repo = gcli_urlencode(repo);
+
+	url = sn_asprintf("%s/projects/%s%%2F%s/merge_requests/%"PRIid"/%s",
+	                  gcli_get_apibase(ctx), e_owner, e_repo, mr, action);
+
+	free(e_owner);
+	free(e_repo);
+
+	rc = gcli_fetch_with_method(ctx, "POST", url, "{}", NULL, NULL);
+
+	free(url);
+
+	return rc;
+}
+
+int
+gitlab_mr_approve(struct gcli_ctx *ctx, char const *const owner,
+                  char const *const repo, gcli_id const mr)
+{
+	return gitlab_mr_request_update_approval(ctx, owner, repo, mr, "approve");
+}
+
+int
+gitlab_mr_unapprove(struct gcli_ctx *ctx, char const *const owner,
+                    char const *const repo, gcli_id const mr)
+{
+	return gitlab_mr_request_update_approval(ctx, owner, repo, mr, "unapprove");
 }

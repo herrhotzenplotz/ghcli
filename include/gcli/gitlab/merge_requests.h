@@ -128,6 +128,12 @@ int gitlab_mr_set_title(struct gcli_ctx *ctx, char const *const owner,
 int gitlab_mr_create_review(struct gcli_ctx *ctx,
                             struct gcli_pull_create_review_details const *details);
 
+int gitlab_mr_approve(struct gcli_ctx *ctx, char const *owner,
+                      char const *repo, gcli_id const mr);
+
+int gitlab_mr_unapprove(struct gcli_ctx *ctx, char const *owner,
+                        char const *repo, gcli_id const mr);
+
 void gitlab_mr_version_free(struct gitlab_mr_version *);
 
 void gitlab_mr_version_list_free(struct gitlab_mr_version_list *);
