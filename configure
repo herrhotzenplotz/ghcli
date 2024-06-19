@@ -1,0 +1,87 @@
+#!/bin/sh
+
+# set -o pipefail
+
+srcdir=$(dirname $0)
+
+version="2.4.0-devel"
+
+echo "Configuring gcli $version" >&2
+echo "  srcdir = $srcdir"
+echo "  objdir = ${PWD}"
+
+toupper() {
+	tr '[[:upper:]]' '[[:lower:]]'
+}
+
+die() {
+	printf "%s\n" "${*}"
+	exit 1
+}
+
+compiler_type() {
+	if ${CC:-cc} -v 2>&1 | grep clang > /dev/null; then
+		echo "clang"
+	elif ${CC:-cc} -v 2>&1 | grep gcc > /dev/null; then
+		echo "gcc"
+	else
+		# TODO: implement studio and xlc
+		echo "unknown"
+	fi
+}
+
+# args= pkgconfig-name variable-name is-mandatory
+find_package() {
+	printf "Checking for $1 ..." >&2
+	if ! pkg-config --exists $1; then
+		if [ $3 -eq 0 ]; then
+			printf " not found\n"
+			export ${2}_FOUND=0
+			return
+		else
+			die "not found"
+		fi
+	fi
+	export ${2}_CFLAGS="$(pkg-config --cflags $1)"
+	export ${2}_LIBS="$(pkg-config --libs $1)"
+	export ${2}_FOUND=1
+	printf " found\n" >&2
+}
+
+# Detect the compiler type and enable dependency tracking
+printf "Checking compiler type ..."
+CCOM=$(compiler_type)
+printf " $CCOM\n"
+
+find_package libcurl LIBCURL 1
+find_package atf-c LIBATFC 0
+
+CC=${CC:-cc}
+AR=${AR:-ar}
+RANLIB=${RANLIB:-ranlib}
+RM=${RM:-rm}
+
+sed \
+	-e "s|@SRCDIR@|$srcdir|g" \
+	-e "s|@VERSION@|$version|g" \
+	-e "s|@LIBCURL_CFLAGS@|$LIBCURL_CFLAGS|g" \
+	-e "s|@LIBCURL_LIBS@|$LIBCURL_LIBS|g" \
+	-e "s|@LIBATFC_CFLAGS@|$LIBATFC_CFLAGS|g" \
+	-e "s|@LIBATFC_LIBS@|$LIBATFC_LIBS|g" \
+	-e "s|@CCOM@|$CCOM|g" \
+	-e "s|@CONFIGURE_CMD_ARGS@|$@|g" \
+	-e "s|@CC@|$CC|g" \
+	-e "s|@AR@|$AR|g" \
+	-e "s|@RANLIB@|$RANLIB|g" \
+	-e "s|@RM@|$RM|g" \
+	< $srcdir/Makefile.in > Makefile
+
+cat > config.h <<EOF
+#define PACKAGE_STRING "gcli $version"
+#define PACKAGE_URL "https://sr.ht/~herrhotzenplotz/gcli"
+#define PACKAGE_VERSION "$version"
+#define PACKAGE_BUGREPORT "https://lists.sr.ht/~herrhotzenplotz/gcli-discuss"
+#define HOSTOS "$(uname -m)-unknown-$(uname | toupper)"
+EOF
+
+echo "Configuration done. You may now run make."

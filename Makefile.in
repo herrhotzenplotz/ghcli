@@ -1,0 +1,241 @@
+GCLI_VERSION = @VERSION@
+
+# Sort of compatibility for GNU make and BSD make
+.PATH: @SRCDIR@
+VPATH=@SRCDIR@
+
+CFLAGS=\
+	-I@SRCDIR@/include \
+	-I@SRCDIR@/thirdparty \
+	-I.
+
+# CFLAGS for dependency tracking for various compilers
+CCDEPFLAGS_gcc= -MD -MF ${@:.o=.d}
+CCDEPFLAGS_clang= -MD -MF ${@:.o=.d}
+CCDEPFLAGS_unknown=
+CCDEPFLAGS=$(CCDEPFLAGS_@CCOM@)
+
+CPPFLAGS=\
+	-DHAVE_CONFIG_H \
+	-DHAVE_SYS_QUEUE_H \
+	-DHAVE_GETOPT_H \
+	-DYY_NO_UNPUT \
+	-DYY_NO_INPUT \
+	-D_XOPEN_SOURCE=600
+
+LIBCURL_CFLAGS=	@LIBCURL_CFLAGS@
+LIBCURL_LIBS=	@LIBCURL_LIBS@
+
+# These are detected by the configure script and kept here so we
+# can have a consistent build configuration.
+RM =		@RM@
+AR =		@AR@
+CC =		@CC@
+RANLIB =	@RANLIB@
+
+.PHONY: all all-auto clean
+all: Makefile
+	@$(MAKE) all-auto
+
+clean: Makefile
+	@$(MAKE) clean-auto
+
+all-auto: gcli
+
+LIBGCLI_SRCS = \
+	src/bugzilla/api.c \
+	src/bugzilla/attachments.c \
+	src/bugzilla/bugs-parser.c \
+	src/bugzilla/bugs.c \
+	src/bugzilla/config.c \
+	src/gitea/comments.c \
+	src/gitea/config.c \
+	src/gitea/forks.c \
+	src/gitea/issues.c \
+	src/gitea/labels.c \
+	src/gitea/milestones.c \
+	src/gitea/pulls.c \
+	src/gitea/releases.c \
+	src/gitea/repos.c \
+	src/gitea/sshkeys.c \
+	src/gitea/status.c \
+	src/github/api.c \
+	src/github/checks.c \
+	src/github/comments.c \
+	src/github/config.c \
+	src/github/forks.c \
+	src/github/gists.c \
+	src/github/issues.c \
+	src/github/labels.c \
+	src/github/milestones.c \
+	src/github/pulls.c \
+	src/github/releases.c \
+	src/github/repos.c \
+	src/github/sshkeys.c \
+	src/github/status.c \
+	src/gitlab/api.c \
+	src/gitlab/comments.c \
+	src/gitlab/config.c \
+	src/gitlab/forks.c \
+	src/gitlab/issues.c \
+	src/gitlab/labels.c \
+	src/gitlab/merge_requests.c \
+	src/gitlab/milestones.c \
+	src/gitlab/pipelines.c \
+	src/gitlab/releases.c \
+	src/gitlab/repos.c \
+	src/gitlab/snippets.c \
+	src/gitlab/sshkeys.c \
+	src/gitlab/status.c \
+	src/attachments.c \
+	src/base64.c \
+	src/comments.c \
+	src/ctx.c \
+	src/curl.c \
+	src/date_time.c \
+	src/forges.c \
+	src/forks.c \
+	src/gcli.c \
+	src/issues.c \
+	src/json_gen.c \
+	src/json_util.c \
+	src/labels.c \
+	src/milestones.c \
+	src/nvlist.c \
+	src/pulls.c \
+	src/releases.c \
+	src/repos.c \
+	src/sshkeys.c \
+	src/status.c \
+	thirdparty/pdjson/pdjson.c \
+	thirdparty/sn/sn.c
+
+GCLI_SRCS= \
+	src/cmd/api.c \
+	src/cmd/attachments.c \
+	src/cmd/ci.c \
+	src/cmd/cmd.c \
+	src/cmd/cmdconfig.c \
+	src/cmd/colour.c \
+	src/cmd/comment.c \
+	src/cmd/config.c \
+	src/cmd/editor.c \
+	src/cmd/forks.c \
+	src/cmd/gcli.c \
+	src/cmd/gists.c \
+	src/cmd/gitconfig.c \
+	src/cmd/interactive.c \
+	src/cmd/issues.c \
+	src/cmd/labels.c \
+	src/cmd/milestones.c \
+	src/cmd/pipelines.c \
+	src/cmd/pulls.c \
+	src/cmd/releases.c \
+	src/cmd/repos.c \
+	src/cmd/snippets.c \
+	src/cmd/status.c \
+	src/cmd/status_interactive.c \
+	src/cmd/table.c
+
+TEMPLATES= \
+	templates/bugzilla/api.t \
+	templates/bugzilla/bugs.t \
+	templates/gitea/milestones.t \
+	templates/gitea/status.t \
+	templates/github/api.t \
+	templates/github/checks.t \
+	templates/github/comments.t \
+	templates/github/forks.t \
+	templates/github/gists.t \
+	templates/github/issues.t \
+	templates/github/labels.t \
+	templates/github/milestones.t \
+	templates/github/pulls.t \
+	templates/github/releases.t \
+	templates/github/repos.t \
+	templates/github/status.t \
+	templates/gitlab/api.t \
+	templates/gitlab/comments.t \
+	templates/gitlab/forks.t \
+	templates/gitlab/issues.t \
+	templates/gitlab/labels.t \
+	templates/gitlab/merge_requests.t \
+	templates/gitlab/milestones.t \
+	templates/gitlab/pipelines.t \
+	templates/gitlab/releases.t \
+	templates/gitlab/repos.t \
+	templates/gitlab/snippets.t \
+	templates/gitlab/sshkeys.t \
+	templates/gitlab/status.t
+
+PGEN_SRCS= \
+	src/pgen/dump_c.c \
+	src/pgen/dump_h.c \
+	src/pgen/dump_plain.c \
+	lex.yy.c \
+	y.tab.c
+
+TEMPLATE_HEADERS=	${TEMPLATES:.t=.h}
+TEMPLATE_SRCS=		${TEMPLATES:.t=.c}
+
+Makefile: @SRCDIR@/configure @SRCDIR@/Makefile.in
+	@echo "Reconfiguring Makefile"
+	sh @SRCDIR@/configure @CONFIGURE_CMD_ARGS@
+
+LIBGCLI_OBJS=	${LIBGCLI_SRCS:.c=.libgcli.o} ${TEMPLATE_SRCS:.c=.libgcli.o}
+GCLI_OBJS=	${GCLI_SRCS:.c=.gcli.o}
+PGEN_OBJS=	${PGEN_SRCS:.c=.pgen.o}
+
+# Dependencies
+DEPS=	${LIBGCLI_OBJS:.o=.d} ${GCLI_OBJS:.o=.d} ${PGEN_OBJS:.o=.d}
+-include $(DEPS)
+
+pgen: $(PGEN_OBJS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o pgen $(PGEN_OBJS)
+
+y.tab.c y.tab.h: @SRCDIR@/src/pgen/parser.y
+	$(YACC) -d @SRCDIR@/src/pgen/parser.y
+
+lex.yy.c: y.tab.h @SRCDIR@/src/pgen/lexer.l
+	$(LEX) @SRCDIR@/src/pgen/lexer.l
+
+.SUFFIXES: .h .t .c
+
+# Hack to make GNU make shut up
+$(TEMPLATE_HEADERS) $(TEMPLATE_SRCS): pgen
+.t.h:
+	@mkdir -p $$(dirname $@)
+	./pgen -th -o $@ $<
+
+.t.c:
+	@mkdir -p $$(dirname $@)
+	./pgen -tc -o $@ $<
+
+gcli: libgcli.a $(GCLI_OBJS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli $(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS)
+
+libgcli.a: $(LIBGCLI_OBJS)
+	$(AR) -rc libgcli.a $(LIBGCLI_OBJS)
+	$(RANLIB) libgcli.a
+
+$(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
+
+.SUFFIXES: .c .libgcli.o .gcli.o .pgen.o
+.c.libgcli.o:
+	@mkdir -p $$(dirname $@)
+	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -DIN_LIBGCLI=1 -c -o $@ $<
+
+.c.gcli.o:
+	@mkdir -p $$(dirname $@)
+	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -DIN_LIBGCLI=1 -c -o $@ $<
+
+.c.pgen.o:
+	@mkdir -p $$(dirname $@)
+	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+clean-auto:
+	$(RM) -f pgen gcli libgcli.a \
+		$(LIBGCLI_OBJS) $(GCLI_OBJS) \
+		$(TEMPLATE_HEADERS) $(TEMPLATE_SRCS) \
+		$(PGEN_OBJS) $(DEPS) \
+		lex.yy.c y.tab.c y.tab.h
