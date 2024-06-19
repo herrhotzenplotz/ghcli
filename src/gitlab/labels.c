@@ -110,7 +110,7 @@ gitlab_create_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	free(payload);
 	free(url);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return rc;
 }

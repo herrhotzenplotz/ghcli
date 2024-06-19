@@ -65,7 +65,7 @@ github_get_checks(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		}
 
 		free(url);
-		free(buffer.data);
+		gcli_fetch_buffer_free(&buffer);
 
 		if (rc < 0)
 			break;

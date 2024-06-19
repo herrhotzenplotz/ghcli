@@ -90,7 +90,7 @@ gitlab_get_milestone(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		json_close(&stream);
 	}
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(url);
 	free(e_owner);
 	free(e_repo);

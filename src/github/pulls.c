@@ -153,7 +153,7 @@ search_pulls(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	rc = parse_github_pull_search_result(ctx, &stream, out);
 
 	json_close(&stream);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 error_fetch:
 	free(url);
@@ -409,7 +409,7 @@ github_perform_submit_pull(struct gcli_ctx *ctx,
                            struct gcli_submit_pull_options *opts)
 {
 	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL;
-	struct gcli_fetch_buffer fetch_buffer = {0};
+	struct gcli_fetch_buffer buffer = {0};
 	struct gcli_jsongen gen = {0};
 	int rc = 0;
 
@@ -444,7 +444,7 @@ github_perform_submit_pull(struct gcli_ctx *ctx,
 	free(e_owner);
 	free(e_repo);
 
-	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, &fetch_buffer);
+	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, &buffer);
 
 	/* Add labels if requested. GitHub doesn't allow us to do this all
 	 * with one request. */
@@ -452,7 +452,7 @@ github_perform_submit_pull(struct gcli_ctx *ctx,
 		struct json_stream json = {0};
 		struct gcli_pull pull = {0};
 
-		json_open_buffer(&json, fetch_buffer.data, fetch_buffer.length);
+		json_open_buffer(&json, buffer.data, buffer.length);
 		parse_github_pull(ctx, &json, &pull);
 
 		if (opts->labels_size) {
@@ -471,7 +471,7 @@ github_perform_submit_pull(struct gcli_ctx *ctx,
 	}
 
 
-	free(fetch_buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(payload);
 	free(url);
 
@@ -521,7 +521,7 @@ github_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
                 gcli_id const pr, struct gcli_pull *const out)
 {
 	int rc = 0;
-	struct gcli_fetch_buffer json_buffer = {0};
+	struct gcli_fetch_buffer buffer = {0};
 	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
 
 	e_owner = gcli_urlencode(owner);
@@ -533,17 +533,17 @@ github_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	free(e_owner);
 	free(e_repo);
 
-	rc = gcli_fetch(ctx, url, NULL, &json_buffer);
+	rc = gcli_fetch(ctx, url, NULL, &buffer);
 	if (rc == 0) {
 		struct json_stream stream = {0};
 
-		json_open_buffer(&stream, json_buffer.data, json_buffer.length);
+		json_open_buffer(&stream, buffer.data, buffer.length);
 		parse_github_pull(ctx, &stream, out);
 		json_close(&stream);
 	}
 
 	free(url);
-	free(json_buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return rc;
 }

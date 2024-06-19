@@ -338,7 +338,7 @@ gitlab_mr_merge(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	rc = gcli_fetch_with_method(ctx, "PUT", url, data, NULL, &buffer);
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(url);
 	free(e_owner);
 	free(e_repo);
@@ -350,7 +350,7 @@ int
 gitlab_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
                 gcli_id const pr_number, struct gcli_pull *const out)
 {
-	struct gcli_fetch_buffer json_buffer = {0};
+	struct gcli_fetch_buffer buffer = {0};
 	char *url = NULL;
 	char *e_owner = NULL;
 	char *e_repo = NULL;
@@ -366,16 +366,16 @@ gitlab_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	free(e_owner);
 	free(e_repo);
 
-	rc = gcli_fetch(ctx, url, NULL, &json_buffer);
+	rc = gcli_fetch(ctx, url, NULL, &buffer);
 	if (rc == 0) {
 		struct json_stream stream = {0};
-		json_open_buffer(&stream, json_buffer.data, json_buffer.length);
+		json_open_buffer(&stream, buffer.data, buffer.length);
 		parse_gitlab_mr(ctx, &stream, out);
 		json_close(&stream);
 	}
 
 	free(url);
-	free(json_buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return rc;
 }
@@ -500,7 +500,7 @@ gitlab_mr_wait_until_mergeable(struct gcli_ctx *ctx, char const *const e_owner,
 		is_mergeable = pull.mergeable;
 
 		gcli_pull_free(&pull);
-		free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 		if (is_mergeable)
 			break;
@@ -611,9 +611,9 @@ gitlab_perform_submit_mr(struct gcli_ctx *ctx, struct gcli_submit_pull_options *
 	}
 
 	/* cleanup */
+	gcli_fetch_buffer_free(&buffer);
 	free(e_owner);
 	free(e_repo);
-	free(buffer.data);
 	free(source_owner);
 	free(payload);
 	free(url);
@@ -741,21 +741,21 @@ gitlab_mr_get_reviewers(struct gcli_ctx *ctx, char const *e_owner,
 {
 	char *url;
 	int rc;
-	struct gcli_fetch_buffer json_buffer = {0};
+	struct gcli_fetch_buffer buffer = {0};
 
 	url = sn_asprintf("%s/projects/%s%%2F%s/merge_requests/%"PRIid,
 	                  gcli_get_apibase(ctx), e_owner, e_repo, mr);
 
-	rc = gcli_fetch(ctx, url, NULL, &json_buffer);
+	rc = gcli_fetch(ctx, url, NULL, &buffer);
 	if (rc == 0) {
 		struct json_stream stream = {0};
-		json_open_buffer(&stream, json_buffer.data, json_buffer.length);
+		json_open_buffer(&stream, buffer.data, buffer.length);
 		parse_gitlab_reviewer_ids(ctx, &stream, out);
 		json_close(&stream);
 	}
 
 	free(url);
-	free(json_buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return rc;
 }

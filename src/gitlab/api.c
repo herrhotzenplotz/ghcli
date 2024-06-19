@@ -107,7 +107,7 @@ gitlab_user_id(struct gcli_ctx *ctx, char const *user_name)
 
 	free(e_username);
 	free(url);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return uid;
 }

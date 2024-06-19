@@ -62,6 +62,8 @@ struct gcli_fetch_list_ctx {
 	void const *userdata;
 };
 
+void gcli_fetch_buffer_free(struct gcli_fetch_buffer *buffer);
+
 int gcli_fetch(struct gcli_ctx *ctx, char const *url, char **pagination_next,
                struct gcli_fetch_buffer *out);
 
