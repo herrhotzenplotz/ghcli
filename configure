@@ -2,13 +2,28 @@
 
 # set -o pipefail
 
-srcdir=$(dirname $0)
-
 version="2.4.0-devel"
-
 echo "Configuring gcli $version" >&2
-echo "  srcdir = $srcdir"
-echo "  objdir = ${PWD}"
+
+find_program() {
+	varname=$1
+	shift
+
+	printf "Checking for $varname ..." >&2
+	for x in $*; do
+		if [ -x $(command -v $x) ]; then
+			printf " $x\n" >&2
+			echo $x
+			return
+		fi
+	done
+	printf " not found\n" >&2
+	exit 1
+
+}
+
+REALPATH=${REALPATH:-$(find_program realpath realpath grealpath)}
+srcdir=$($REALPATH $(dirname $0))
 
 toupper() {
 	tr '[[:upper:]]' '[[:lower:]]'
@@ -60,6 +75,7 @@ CC=${CC:-cc}
 AR=${AR:-ar}
 RANLIB=${RANLIB:-ranlib}
 RM=${RM:-rm}
+KYUA=${KYUA:-$(find_program kyua kyua)}
 
 sed \
 	-e "s|@SRCDIR@|$srcdir|g" \
@@ -74,6 +90,7 @@ sed \
 	-e "s|@AR@|$AR|g" \
 	-e "s|@RANLIB@|$RANLIB|g" \
 	-e "s|@RM@|$RM|g" \
+	-e "s|@KYUA@|$KYUA|g" \
 	< $srcdir/Makefile.in > Makefile
 
 cat > config.h <<EOF

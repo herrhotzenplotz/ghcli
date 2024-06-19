@@ -26,19 +26,26 @@ CPPFLAGS=\
 LIBCURL_CFLAGS=	@LIBCURL_CFLAGS@
 LIBCURL_LIBS=	@LIBCURL_LIBS@
 
+LIBATFC_CFLAGS=	@LIBATFC_CFLAGS@
+LIBATFC_LIBS=	@LIBATFC_LIBS@
+
 # These are detected by the configure script and kept here so we
 # can have a consistent build configuration.
 RM =		@RM@
 AR =		@AR@
 CC =		@CC@
 RANLIB =	@RANLIB@
+KYUA =		@KYUA@
 
-.PHONY: all all-auto clean
+.PHONY: all all-auto clean clean-auto check check-auto
 all: Makefile
 	@$(MAKE) all-auto
 
 clean: Makefile
 	@$(MAKE) clean-auto
+
+check: Makefile
+	@$(MAKE) check-auto
 
 all-auto: gcli
 
@@ -220,7 +227,7 @@ libgcli.a: $(LIBGCLI_OBJS)
 
 $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 
-.SUFFIXES: .c .libgcli.o .gcli.o .pgen.o
+.SUFFIXES: .c .libgcli.o .gcli.o .pgen.o .tests.o
 .c.libgcli.o:
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -DIN_LIBGCLI=1 -c -o $@ $<
@@ -238,4 +245,34 @@ clean-auto:
 		$(LIBGCLI_OBJS) $(GCLI_OBJS) \
 		$(TEMPLATE_HEADERS) $(TEMPLATE_SRCS) \
 		$(PGEN_OBJS) $(DEPS) \
-		lex.yy.c y.tab.c y.tab.h
+		lex.yy.c y.tab.c y.tab.h \
+		$(TEST_PROGRAMS:=.tests.o) \
+		$(TEST_PROGRAMS)
+
+TEST_PROGRAMS = \
+	tests/json-escape \
+	tests/github-parse \
+	tests/gitlab-parse \
+	tests/gitea-parse \
+	tests/bugzilla-parse \
+	tests/url-encode \
+	tests/pretty-print \
+	tests/jsongen \
+	tests/base64
+
+$(TEST_PROGRAMS): libgcli.a $(TEST_PROGRAMS:=.tests.o)
+	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
+		$(LIBATFC_CFLAGS) $(LDFLAGS) -o $@ \
+		$(@:=.tests.o) libgcli.a \
+		$(LIBATFC_LIBS) $(LIBCURL_LIBS)
+
+.c.tests.o:
+	@mkdir -p $$(dirname $@)
+	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
+		$(LIBATFC_CFLAGS) $(LIBCURL_CFLAGS) \
+		-DTESTSRCDIR="\"@SRCDIR@/tests/\"" -c -o $@ $<
+
+$(TEST_PROGRAMS:=.c): $(TEMPLATE_HEADERS)
+
+check-auto: $(TEST_PROGRAMS)
+	$(KYUA) test --build-root ./tests --kyuafile @SRCDIR@/tests/Kyuafile
