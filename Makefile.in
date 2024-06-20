@@ -4,31 +4,44 @@ GCLI_VERSION = @VERSION@
 .PATH: @SRCDIR@
 VPATH=@SRCDIR@
 
-ENV_CFLAGS = @ENV_CFLAGS@
-CFLAGS = -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS)
+################ Enviroment and values saved by the configure script ##########################
+AR                  = @AR@
+CC_FOR_BUILD        = @CC_FOR_BUILD@
+CC                  = @CC@
+CCOM_FOR_BUILD      = @CCOM_FOR_BUILD@
+CCOM                = @CCOM@
+ENV_PKG_CONFIG_PATH = @ENV_PKG_CONFIG_PATH@
+KYUA                = @KYUA@
+RANLIB              = @RANLIB@
+RM                  = @RM@
+################################################################################################
+
+############## CFLAGS ########################
+ENV_CFLAGS=	@ENV_CFLAGS@
+CFLAGS=		-I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS)
+
+ENV_CFLAGS_FOR_BUILD=	@ENV_CFLAGS_FOR_BUILD@
+CFLAGS_FOR_BUILD=	-I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS_FOR_BUILD)
+
+############## CPPFLAGS ######################
+ENV_CPPFLAGS=	@ENV_CPPFLAGS@
+CPPFLAGS=	-DHAVE_CONFIG_H=1 -DHAVE_SYS_QUEUE_H=1 -DHAVE_GETOPT_H=1 -D_XOPEN_SOURCE=600 $(ENV_CPPFLAGS)
+
+ENV_CPPFLAGS_FOR_BUILD=	@ENV_CPPFLAGS_FOR_BUILD@
+CPPFLAGS_FOR_BUILD=	-DHAVE_CONFIG_H -DYY_NO_UNPUT -DYY_NO_INPUT -D_XOPEN_SOURCE=600 $(ENV_CPPFLAGS_FOR_BUILD)
 
 # CFLAGS for dependency tracking for various compilers
-CCDEPFLAGS_gcc= -MD -MF ${@:.o=.d}
-CCDEPFLAGS_clang= -MD -MF ${@:.o=.d}
+CCDEPFLAGS_gcc=		-MD -MF ${@:.o=.d}
+CCDEPFLAGS_clang=	-MD -MF ${@:.o=.d}
 CCDEPFLAGS_unknown=
-CCDEPFLAGS=$(CCDEPFLAGS_@CCOM@)
-
-ENV_CPPFLAGS = @ENV_CPPFLAGS@
-CPPFLAGS=-DHAVE_CONFIG_H -DHAVE_SYS_QUEUE_H -DHAVE_GETOPT_H -DYY_NO_UNPUT -DYY_NO_INPUT -D_XOPEN_SOURCE=600 $(ENV_CPPFLAGS)
+CCDEPFLAGS=		$(CCDEPFLAGS_$(CCOM))
+CCDEPFLAGS_FOR_BUILD=	$(CCDEPFLAGS_$(CCOM_FOR_BUILD))
 
 LIBCURL_CFLAGS=	@LIBCURL_CFLAGS@
 LIBCURL_LIBS=	@LIBCURL_LIBS@
 
 LIBATFC_CFLAGS=	@LIBATFC_CFLAGS@
 LIBATFC_LIBS=	@LIBATFC_LIBS@
-
-# These are detected by the configure script and kept here so we
-# can have a consistent build configuration.
-RM =		@RM@
-AR =		@AR@
-CC =		@CC@
-RANLIB =	@RANLIB@
-KYUA =		@KYUA@
 
 .PHONY: all all-auto clean clean-auto check check-auto
 all: Makefile
@@ -182,6 +195,8 @@ Makefile: @SRCDIR@/configure @SRCDIR@/Makefile.in
 	@echo "Reconfiguring Makefile"
 	env CC="${CC}" YACC="${YACC}" LEX="${LEX}" RM="${RM}" RANLIB="${RANLIB}" \
 		KYUA="${KYUA}" CFLAGS="${ENV_CFLAGS}" CPPFLAGS="${ENV_CPPFLAGS}" \
+		CC_FOR_BUILD="${CC_FOR_BUILD}" CFLAGS_FOR_BUILD="${ENV_CFLAGS_FOR_BUILD}" \
+		CPPFLAGS_FOR_BUILD="${ENV_CPPFLAGS_FOR_BUILD}" PKG_CONFIG_PATH="${ENV_PKG_CONFIG_PATH}" \
 		sh @SRCDIR@/configure @CONFIGURE_CMD_ARGS@
 
 LIBGCLI_OBJS=	${LIBGCLI_SRCS:.c=.libgcli.o} ${TEMPLATE_SRCS:.c=.libgcli.o}
@@ -193,7 +208,7 @@ DEPS=	${LIBGCLI_OBJS:.o=.d} ${GCLI_OBJS:.o=.d} ${PGEN_OBJS:.o=.d}
 -include $(DEPS)
 
 pgen: $(PGEN_OBJS)
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o pgen $(PGEN_OBJS)
+	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) -o pgen $(PGEN_OBJS)
 
 y.tab.c y.tab.h: @SRCDIR@/src/pgen/parser.y
 	$(YACC) -d @SRCDIR@/src/pgen/parser.y
@@ -229,11 +244,11 @@ $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 
 .c.gcli.o:
 	@mkdir -p $$(dirname $@)
-	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -DIN_LIBGCLI=1 -c -o $@ $<
+	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -c -o $@ $<
 
 .c.pgen.o:
 	@mkdir -p $$(dirname $@)
-	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(CCDEPFLAGS_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) -c -o $@ $<
 
 clean-auto:
 	$(RM) -f pgen gcli libgcli.a \

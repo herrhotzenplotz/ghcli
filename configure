@@ -35,9 +35,9 @@ die() {
 }
 
 compiler_type() {
-	if ${CC:-cc} -v 2>&1 | grep clang > /dev/null; then
+	if ${1} -v 2>&1 | grep clang > /dev/null; then
 		echo "clang"
-	elif ${CC:-cc} -v 2>&1 | grep gcc > /dev/null; then
+	elif ${1} -v 2>&1 | grep gcc > /dev/null; then
 		echo "gcc"
 	else
 		# TODO: implement studio and xlc
@@ -63,15 +63,38 @@ find_package() {
 	printf " found\n" >&2
 }
 
+# Host Compiler
+printf "Checking host compiler ..."
+CC=${CC:-cc}
+printf " $CC\n"
+
 # Detect the compiler type and enable dependency tracking
-printf "Checking compiler type ..."
-CCOM=$(compiler_type)
+printf "Checking host compiler type ..."
+CCOM=$(compiler_type "${CC}")
 printf " $CCOM\n"
+
+# Build compiler
+printf "Checking for cross-compilation setup ..."
+is_cross=0
+CC_FOR_BUILD=${CC_FOR_BUILD:-${CC}}
+if ! [ "${CC_FOR_BUILD}" = "${CC}" ]; then
+	is_cross=1
+	printf " yes\n"
+else
+	printf " no\n"
+fi
+
+if [ $is_cross -eq 1 ]; then
+	printf "Checking build compiler type..."
+	CCOM_FOR_BUILD=$(compiler_type "${CC_FOR_BUILD}")
+	printf " ${CCOM_FOR_BUILD}\n"
+else
+	CCOM_FOR_BUILD="${CCOM}"
+fi
 
 find_package libcurl LIBCURL 1
 find_package atf-c LIBATFC 0
 
-CC=${CC:-cc}
 AR=${AR:-ar}
 RANLIB=${RANLIB:-ranlib}
 RM=${RM:-rm}
@@ -84,15 +107,20 @@ sed \
 	-e "s|@LIBCURL_LIBS@|$LIBCURL_LIBS|g" \
 	-e "s|@LIBATFC_CFLAGS@|$LIBATFC_CFLAGS|g" \
 	-e "s|@LIBATFC_LIBS@|$LIBATFC_LIBS|g" \
-	-e "s|@CCOM@|$CCOM|g" \
 	-e "s|@CONFIGURE_CMD_ARGS@|$@|g" \
 	-e "s|@CC@|$CC|g" \
+	-e "s|@CCOM@|$CCOM|g" \
+	-e "s|@ENV_CFLAGS@|$CFLAGS|g" \
+	-e "s|@ENV_CPPFLAGS@|$CPPFLAGS|g" \
+	-e "s|@CC_FOR_BUILD@|$CC_FOR_BUILD|g" \
+	-e "s|@CCOM_FOR_BUILD@|$CCOM_FOR_BUILD|g" \
+	-e "s|@ENV_CFLAGS_FOR_BUILD@|$CFLAGS_FOR_BUILD|g" \
+	-e "s|@ENV_CPPFLAGS_FOR_BUILD@|$CPPFLAGS_FOR_BUILD|g" \
+	-e "s|@ENV_PKG_CONFIG_PATH@|$PKG_CONFIG_PATH|g" \
 	-e "s|@AR@|$AR|g" \
 	-e "s|@RANLIB@|$RANLIB|g" \
 	-e "s|@RM@|$RM|g" \
 	-e "s|@KYUA@|$KYUA|g" \
-	-e "s|@ENV_CFLAGS@|$CFLAGS|g" \
-	-e "s|@ENV_CPPFLAGS@|$CPPFLAGS|g" \
 	< $srcdir/Makefile.in > Makefile
 
 cat > config.h <<EOF
