@@ -185,6 +185,7 @@ sed \
 	-e "s|@PACKAGE_VERSION@|$PACKAGE_VERSION|g" \
 	< $srcdir/Makefile.in > Makefile
 
+echo "Writing config.h"
 cat > config.h <<EOF
 #define PACKAGE_STRING "$PACKAGE_STRING"
 #define PACKAGE_URL "$PACKAGE_URL"
@@ -194,4 +195,17 @@ cat > config.h <<EOF
 #define HOSTOS "$HOST"
 EOF
 
+echo "Configuration Summary:"
+echo ""
+echo "Build system type: ${BUILD}"
+echo " Host system type: ${HOST}"
+echo "               CC: ${CC}"
+echo "     CC_FOR_BUILD: ${CC_FOR_BUILD}"
+echo "           CFLAGS: ${CFLAGS}"
+echo " CFLAGS_FOR_BUILD: ${CFLAGS_FOR_BUILD}"
+echo "   LIBCURL_CFLAGS: ${LIBCURL_CFLAGS}"
+echo "     LIBCURL_LIBS: ${LIBCURL_LIBS}"
+echo "   LIBATFC_CFLAGS: ${LIBATFC_CFLAGS}"
+echo "     LIBATFC_LIBS: ${LIBATFC_LIBS}"
+echo ""
 echo "Configuration done. You may now run make."
