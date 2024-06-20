@@ -49,6 +49,26 @@ compiler_type() {
 	fi
 }
 
+normalise_compiler_target() {
+	sed -e 's|x86_64|amd64|g' -e 's| ||g'
+}
+
+compiler_target() {
+	ccom=$1
+	cc=$2
+
+	case $ccom in
+		gcc|clang)
+			$cc -v 2>&1 \
+				| grep '^Target' \
+				| cut -d: -f2
+			;;
+		*)
+			echo "unknown-unknown-unknown"
+			;;
+	esac | normalise_compiler_target
+}
+
 # args= pkgconfig-name variable-name is-mandatory
 find_package() {
 	printf "Checking for $1 ..." >&2
@@ -97,6 +117,10 @@ printf "Checking host compiler type ..."
 CCOM=$(compiler_type "${CC}")
 printf " $CCOM\n"
 
+printf "Checking host compiler target ..."
+HOST=$(compiler_target $CCOM $CC)
+printf " $HOST\n"
+
 # Build compiler
 printf "Checking for cross-compilation setup ..."
 is_cross=0
@@ -112,8 +136,13 @@ if [ $is_cross -eq 1 ]; then
 	printf "Checking build compiler type..."
 	CCOM_FOR_BUILD=$(compiler_type "${CC_FOR_BUILD}")
 	printf " ${CCOM_FOR_BUILD}\n"
+
+	printf "Checking build compiler target ..."
+	BUILD=$(compiler_target $CCOM_FOR_BUILD $CC_FOR_BUILD)
+	printf " $BUILD\n"
 else
 	CCOM_FOR_BUILD="${CCOM}"
+	BUILD="${HOST}"
 fi
 
 PKG_CONFIG=${PKG_CONFIG:-$(find_program pkg-config pkg-config pkgconf)}
@@ -162,7 +191,7 @@ cat > config.h <<EOF
 #define PACKAGE_VERSION "$PACKAGE_VERSION"
 #define PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT"
 #define PACKAGE_DATE "$PACKAGE_DATE"
-#define HOSTOS "$(uname -m)-unknown-$(uname | toupper)"
+#define HOSTOS "$HOST"
 EOF
 
 echo "Configuration done. You may now run make."
