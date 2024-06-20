@@ -52,7 +52,7 @@ compiler_type() {
 # args= pkgconfig-name variable-name is-mandatory
 find_package() {
 	printf "Checking for $1 ..." >&2
-	if ! pkg-config --exists $1; then
+	if ! $PKG_CONFIG --exists $1; then
 		if [ $3 -eq 0 ]; then
 			printf " not found\n"
 			export ${2}_FOUND=0
@@ -61,8 +61,8 @@ find_package() {
 			die "not found"
 		fi
 	fi
-	export ${2}_CFLAGS="$(pkg-config --cflags $1)"
-	export ${2}_LIBS="$(pkg-config --libs $1)"
+	export ${2}_CFLAGS="$($PKG_CONFIG --cflags $1)"
+	export ${2}_LIBS="$($PKG_CONFIG --libs $1)"
 	export ${2}_FOUND=1
 	printf " found\n" >&2
 }
@@ -116,6 +116,7 @@ else
 	CCOM_FOR_BUILD="${CCOM}"
 fi
 
+PKG_CONFIG=${PKG_CONFIG:-$(find_program pkg-config pkg-config pkgconf)}
 find_package libcurl LIBCURL 1
 find_package atf-c LIBATFC 0
 
@@ -140,6 +141,7 @@ sed \
 	-e "s|@CCOM_FOR_BUILD@|$CCOM_FOR_BUILD|g" \
 	-e "s|@ENV_CFLAGS_FOR_BUILD@|$CFLAGS_FOR_BUILD|g" \
 	-e "s|@ENV_CPPFLAGS_FOR_BUILD@|$CPPFLAGS_FOR_BUILD|g" \
+	-e "s|@ENV_PKG_CONFIG@|$PKG_CONFIG|g" \
 	-e "s|@ENV_PKG_CONFIG_PATH@|$PKG_CONFIG_PATH|g" \
 	-e "s|@AR@|$AR|g" \
 	-e "s|@RANLIB@|$RANLIB|g" \
