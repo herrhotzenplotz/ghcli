@@ -91,6 +91,8 @@ sed \
 	-e "s|@RANLIB@|$RANLIB|g" \
 	-e "s|@RM@|$RM|g" \
 	-e "s|@KYUA@|$KYUA|g" \
+	-e "s|@ENV_CFLAGS@|$CFLAGS|g" \
+	-e "s|@ENV_CPPFLAGS@|$CPPFLAGS|g" \
 	< $srcdir/Makefile.in > Makefile
 
 cat > config.h <<EOF

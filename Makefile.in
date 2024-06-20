@@ -4,10 +4,8 @@ GCLI_VERSION = @VERSION@
 .PATH: @SRCDIR@
 VPATH=@SRCDIR@
 
-CFLAGS=\
-	-I@SRCDIR@/include \
-	-I@SRCDIR@/thirdparty \
-	-I.
+ENV_CFLAGS = @ENV_CFLAGS@
+CFLAGS = -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS)
 
 # CFLAGS for dependency tracking for various compilers
 CCDEPFLAGS_gcc= -MD -MF ${@:.o=.d}
@@ -15,13 +13,8 @@ CCDEPFLAGS_clang= -MD -MF ${@:.o=.d}
 CCDEPFLAGS_unknown=
 CCDEPFLAGS=$(CCDEPFLAGS_@CCOM@)
 
-CPPFLAGS=\
-	-DHAVE_CONFIG_H \
-	-DHAVE_SYS_QUEUE_H \
-	-DHAVE_GETOPT_H \
-	-DYY_NO_UNPUT \
-	-DYY_NO_INPUT \
-	-D_XOPEN_SOURCE=600
+ENV_CPPFLAGS = @ENV_CPPFLAGS@
+CPPFLAGS=-DHAVE_CONFIG_H -DHAVE_SYS_QUEUE_H -DHAVE_GETOPT_H -DYY_NO_UNPUT -DYY_NO_INPUT -D_XOPEN_SOURCE=600 $(ENV_CPPFLAGS)
 
 LIBCURL_CFLAGS=	@LIBCURL_CFLAGS@
 LIBCURL_LIBS=	@LIBCURL_LIBS@
@@ -187,7 +180,9 @@ TEMPLATE_SRCS=		${TEMPLATES:.t=.c}
 
 Makefile: @SRCDIR@/configure @SRCDIR@/Makefile.in
 	@echo "Reconfiguring Makefile"
-	sh @SRCDIR@/configure @CONFIGURE_CMD_ARGS@
+	env CC="${CC}" YACC="${YACC}" LEX="${LEX}" RM="${RM}" RANLIB="${RANLIB}" \
+		KYUA="${KYUA}" CFLAGS="${ENV_CFLAGS}" CPPFLAGS="${ENV_CPPFLAGS}" \
+		sh @SRCDIR@/configure @CONFIGURE_CMD_ARGS@
 
 LIBGCLI_OBJS=	${LIBGCLI_SRCS:.c=.libgcli.o} ${TEMPLATE_SRCS:.c=.libgcli.o}
 GCLI_OBJS=	${GCLI_SRCS:.c=.gcli.o}
