@@ -2,8 +2,12 @@
 
 # set -o pipefail
 
-version="2.4.0-devel"
-echo "Configuring gcli $version" >&2
+PACKAGE_VERSION="2.4.0-devel"
+PACKAGE_DATE="UNRELEASED"
+PACKAGE_STRING="gcli $PACKAGE_VERSION"
+PACKAGE_BUGREPORT="https://lists.sr.ht/~herrhotzenplotz/gcli-discuss"
+PACKAGE_URL="https://sr.ht/~herrhotzenplotz/gcli"
+echo "Configuring gcli $PACKAGE_VERSION" >&2
 
 find_program() {
 	varname=$1
@@ -63,6 +67,26 @@ find_package() {
 	printf " found\n" >&2
 }
 
+# Install options
+#
+PREFIX=/usr/local
+
+# Parse flags
+if [ $# -gt 0 ]; then
+	case "$1" in
+		--prefix=*)
+			PREFIX=${1##--prefix=}
+			;;
+		--prefix)
+			PREFIX=${2}
+			;;
+		*)
+			die "error: unknown flag: $1"
+			;;
+	esac
+fi
+
+
 # Host Compiler
 printf "Checking host compiler ..."
 CC=${CC:-cc}
@@ -99,10 +123,10 @@ AR=${AR:-ar}
 RANLIB=${RANLIB:-ranlib}
 RM=${RM:-rm}
 KYUA=${KYUA:-$(find_program kyua kyua)}
+INSTALL=${INSTALL:-$(find_program install install ginstall)}
 
 sed \
 	-e "s|@SRCDIR@|$srcdir|g" \
-	-e "s|@VERSION@|$version|g" \
 	-e "s|@LIBCURL_CFLAGS@|$LIBCURL_CFLAGS|g" \
 	-e "s|@LIBCURL_LIBS@|$LIBCURL_LIBS|g" \
 	-e "s|@LIBATFC_CFLAGS@|$LIBATFC_CFLAGS|g" \
@@ -121,13 +145,21 @@ sed \
 	-e "s|@RANLIB@|$RANLIB|g" \
 	-e "s|@RM@|$RM|g" \
 	-e "s|@KYUA@|$KYUA|g" \
+	-e "s|@INSTALL@|$INSTALL|g" \
+	-e "s|@PREFIX@|$PREFIX|g" \
+	-e "s|@PACKAGE_STRING@|$PACKAGE_STRING|g" \
+	-e "s|@PACKAGE_DATE@|$PACKAGE_DATE|g" \
+	-e "s|@PACKAGE_BUGREPORT@|$PACKAGE_BUGREPORT|g" \
+	-e "s|@PACKAGE_URL@|$PACKAGE_URL|g" \
+	-e "s|@PACKAGE_VERSION@|$PACKAGE_VERSION|g" \
 	< $srcdir/Makefile.in > Makefile
 
 cat > config.h <<EOF
-#define PACKAGE_STRING "gcli $version"
-#define PACKAGE_URL "https://sr.ht/~herrhotzenplotz/gcli"
-#define PACKAGE_VERSION "$version"
-#define PACKAGE_BUGREPORT "https://lists.sr.ht/~herrhotzenplotz/gcli-discuss"
+#define PACKAGE_STRING "$PACKAGE_STRING"
+#define PACKAGE_URL "$PACKAGE_URL"
+#define PACKAGE_VERSION "$PACKAGE_VERSION"
+#define PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT"
+#define PACKAGE_DATE "$PACKAGE_DATE"
 #define HOSTOS "$(uname -m)-unknown-$(uname | toupper)"
 EOF
 

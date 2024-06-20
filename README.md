@@ -47,14 +47,7 @@ Required dependencies:
 - lex (flex is preferred)
 - C99 Compiler and linker
 - make
-
-Optional dependencies:
 - pkg-config
-
-If you are building from Git you will also need:
-- m4
-- autoconf
-- automake
 
 The test suite requires:
 - [Kyua](https://github.com/jmmv/kyua)
@@ -73,12 +66,6 @@ value. The final installation destination is `$DESTDIR/$PREFIX/...`.
 
 If you are unsure, consult the builtin configure help by running
 `./configure --help`.
-
-Also, if you are building from Git you need to generate the configure script
-first:
-```console
-$ ./autogen.sh
-```
 
 For more details also see [HACKING.md](HACKING.md).
 

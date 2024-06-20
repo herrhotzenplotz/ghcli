@@ -1,4 +1,4 @@
-GCLI_VERSION = @VERSION@
+GCLI_VERSION = @PACKAGE_VERSION@
 
 # Sort of compatibility for GNU make and BSD make
 .PATH: @SRCDIR@
@@ -11,9 +11,11 @@ CC                  = @CC@
 CCOM_FOR_BUILD      = @CCOM_FOR_BUILD@
 CCOM                = @CCOM@
 ENV_PKG_CONFIG_PATH = @ENV_PKG_CONFIG_PATH@
+INSTALL             = @INSTALL@
 KYUA                = @KYUA@
 RANLIB              = @RANLIB@
 RM                  = @RM@
+PREFIX              = @PREFIX@
 ################################################################################################
 
 ############## CFLAGS ########################
@@ -43,7 +45,7 @@ LIBCURL_LIBS=	@LIBCURL_LIBS@
 LIBATFC_CFLAGS=	@LIBATFC_CFLAGS@
 LIBATFC_LIBS=	@LIBATFC_LIBS@
 
-.PHONY: all all-auto clean clean-auto check check-auto
+.PHONY: all all-auto clean clean-auto check check-auto install install-auto
 all: Makefile
 	@$(MAKE) all-auto
 
@@ -53,7 +55,10 @@ clean: Makefile
 check: Makefile
 	@$(MAKE) check-auto
 
-all-auto: gcli
+install: Makefile
+	@$(MAKE) install-auto
+
+all-auto: gcli manpages
 
 LIBGCLI_SRCS = \
 	src/bugzilla/api.c \
@@ -195,8 +200,9 @@ Makefile: @SRCDIR@/configure @SRCDIR@/Makefile.in
 	@echo "Reconfiguring Makefile"
 	env CC="${CC}" YACC="${YACC}" LEX="${LEX}" RM="${RM}" RANLIB="${RANLIB}" \
 		KYUA="${KYUA}" CFLAGS="${ENV_CFLAGS}" CPPFLAGS="${ENV_CPPFLAGS}" \
-		CC_FOR_BUILD="${CC_FOR_BUILD}" CFLAGS_FOR_BUILD="${ENV_CFLAGS_FOR_BUILD}" \
-		CPPFLAGS_FOR_BUILD="${ENV_CPPFLAGS_FOR_BUILD}" PKG_CONFIG_PATH="${ENV_PKG_CONFIG_PATH}" \
+		INSTALL="${INSTALL}" CC_FOR_BUILD="${CC_FOR_BUILD}" \
+		CFLAGS_FOR_BUILD="${ENV_CFLAGS_FOR_BUILD}" CPPFLAGS_FOR_BUILD="${ENV_CPPFLAGS_FOR_BUILD}" \
+		PKG_CONFIG_PATH="${ENV_PKG_CONFIG_PATH}" \
 		sh @SRCDIR@/configure @CONFIGURE_CMD_ARGS@
 
 LIBGCLI_OBJS=	${LIBGCLI_SRCS:.c=.libgcli.o} ${TEMPLATE_SRCS:.c=.libgcli.o}
@@ -257,7 +263,8 @@ clean-auto:
 		$(PGEN_OBJS) $(DEPS) \
 		lex.yy.c y.tab.c y.tab.h \
 		$(TEST_PROGRAMS:=.tests.o) \
-		$(TEST_PROGRAMS)
+		$(TEST_PROGRAMS) \
+		$(MANPAGES)
 
 TEST_PROGRAMS = \
 	tests/json-escape \
@@ -286,3 +293,53 @@ $(TEST_PROGRAMS:=.c): $(TEMPLATE_HEADERS)
 
 check-auto: $(TEST_PROGRAMS)
 	$(KYUA) test --build-root ./tests --kyuafile @SRCDIR@/tests/Kyuafile
+
+#################### install target ########################################
+MANPAGES= \
+	docs/gcli-api.1 \
+	docs/gcli-comment.1 \
+	docs/gcli-config.1 \
+	docs/gcli-forks.1 \
+	docs/gcli-gists.1 \
+	docs/gcli-issues.1 \
+	docs/gcli-labels.1 \
+	docs/gcli-milestones.1 \
+	docs/gcli-pipelines.1 \
+	docs/gcli-pulls.1 \
+	docs/gcli-releases.1 \
+	docs/gcli-repos.1 \
+	docs/gcli-snippets.1 \
+	docs/gcli-status.1 \
+	docs/gcli.1 \
+	docs/gcli.5
+
+bindir=	/bin
+mandir=	/share/man
+
+BINDIR=	$(DESTDIR)$(PREFIX)$(bindir)
+MANDIR=	$(DESTDIR)$(PREFIX)$(mandir)
+
+.SUFFIXES: .in
+.PHONY: manpages
+
+# phony target to ensure the makefile is updated with the correct
+# sed substitions.
+manpages: Makefile @SRCDIR@/configure
+	@$(MAKE) $(MANPAGES)
+
+$(MANPAGES): @SRCDIR@/configure Makefile @SRCDIR@/${@:=.in}
+	@mkdir -p $$(dirname $@)
+	sed \
+		-e 's|\@PACKAGE_DATE\@|@PACKAGE_DATE@|g' \
+		-e 's|\@PACKAGE_STRING\@|@PACKAGE_STRING@|g' \
+		-e 's|\@PACKAGE_BUGREPORT\@|@PACKAGE_BUGREPORT@|g' \
+		-e 's|\@PACKAGE_URL\@|@PACKAGE_URL@|g' \
+		-e 's|\@PACKAGE_VERSION\@|@PACKAGE_VERSION@|g' \
+		< @SRCDIR@/${@:=.in} > $@
+
+install-auto: manpages gcli
+	$(INSTALL) -d $(BINDIR)
+	$(INSTALL) -m 0755 gcli $(BINDIR)
+	$(INSTALL) -d $(MANDIR)
+	# TODO: compress manual pages
+	$(INSTALL) -m 644 $(MANPAGES) $(MANDIR)
