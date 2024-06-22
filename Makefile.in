@@ -8,6 +8,7 @@ VPATH=@SRCDIR@
 AR                  = @AR@
 CC_FOR_BUILD        = @CC_FOR_BUILD@
 CC                  = @CC@
+CCACHE              = @CCACHE@
 CCOM_FOR_BUILD      = @CCOM_FOR_BUILD@
 CCOM                = @CCOM@
 ENV_PKG_CONFIG      = @ENV_PKG_CONFIG@
@@ -203,7 +204,7 @@ Makefile: @SRCDIR@/configure @SRCDIR@/Makefile.in
 		KYUA="${KYUA}" CFLAGS="${ENV_CFLAGS}" CPPFLAGS="${ENV_CPPFLAGS}" \
 		INSTALL="${INSTALL}" CC_FOR_BUILD="${CC_FOR_BUILD}" \
 		CFLAGS_FOR_BUILD="${ENV_CFLAGS_FOR_BUILD}" CPPFLAGS_FOR_BUILD="${ENV_CPPFLAGS_FOR_BUILD}" \
-		PKG_CONFIG="${ENV_PKG_CONFIG}" PKG_CONFIG_PATH="${ENV_PKG_CONFIG_PATH}" \
+		PKG_CONFIG="${ENV_PKG_CONFIG}" PKG_CONFIG_PATH="${ENV_PKG_CONFIG_PATH}" CCACHE="${CCACHE}" \
 		sh @SRCDIR@/configure @CONFIGURE_CMD_ARGS@
 
 LIBGCLI_OBJS=	${LIBGCLI_SRCS:.c=.libgcli.o} ${TEMPLATE_SRCS:.c=.libgcli.o}
@@ -215,7 +216,7 @@ DEPS=	${LIBGCLI_OBJS:.o=.d} ${GCLI_OBJS:.o=.d} ${PGEN_OBJS:.o=.d}
 -include $(DEPS)
 
 pgen: $(PGEN_OBJS)
-	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) -o pgen $(PGEN_OBJS)
+	$(CCACHE) $(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) -o pgen $(PGEN_OBJS)
 
 y.tab.c y.tab.h: @SRCDIR@/src/pgen/parser.y
 	$(YACC) -d @SRCDIR@/src/pgen/parser.y
@@ -236,7 +237,7 @@ $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS): pgen
 	./pgen -tc -o $@ $<
 
 gcli: libgcli.a $(GCLI_OBJS)
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli $(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS)
+	$(CCACHE) $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli $(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS)
 
 libgcli.a: $(LIBGCLI_OBJS)
 	$(AR) -rc libgcli.a $(LIBGCLI_OBJS)
@@ -247,11 +248,11 @@ $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 .SUFFIXES: .c .libgcli.o .gcli.o .pgen.o .tests.o
 .c.libgcli.o:
 	@mkdir -p $$(dirname $@)
-	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -DIN_LIBGCLI=1 -c -o $@ $<
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -DIN_LIBGCLI=1 -c -o $@ $<
 
 .c.gcli.o:
 	@mkdir -p $$(dirname $@)
-	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -c -o $@ $<
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -c -o $@ $<
 
 .c.pgen.o:
 	@mkdir -p $$(dirname $@)
@@ -279,14 +280,14 @@ TEST_PROGRAMS = \
 	tests/base64
 
 $(TEST_PROGRAMS): libgcli.a $(TEST_PROGRAMS:=.tests.o)
-	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
 		$(LIBATFC_CFLAGS) $(LDFLAGS) -o $@ \
 		$(@:=.tests.o) libgcli.a \
 		$(LIBATFC_LIBS) $(LIBCURL_LIBS)
 
 .c.tests.o:
 	@mkdir -p $$(dirname $@)
-	$(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
 		$(LIBATFC_CFLAGS) $(LIBCURL_CFLAGS) \
 		-DTESTSRCDIR="\"@SRCDIR@/tests/\"" -c -o $@ $<
 

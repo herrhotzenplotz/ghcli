@@ -12,21 +12,23 @@ echo "Configuring gcli $PACKAGE_VERSION" >&2
 find_program() {
 	varname=$1
 	shift
+	should_fail=$1
+	shift
 
 	printf "Checking for $varname ..." >&2
 	for x in $*; do
-		if [ -x $(command -v $x) ]; then
+		if (command -v $x >/dev/null 2>&1) && [ -x $(command -v $x) ]; then
 			printf " $x\n" >&2
 			echo $x
 			return
 		fi
 	done
 	printf " not found\n" >&2
-	exit 1
+	[ $should_fail -eq 1 ] && exit 1
 
 }
 
-REALPATH=${REALPATH:-$(find_program realpath realpath grealpath)}
+REALPATH=${REALPATH:-$(find_program realpath 1 realpath grealpath)}
 srcdir=$($REALPATH $(dirname $0))
 
 toupper() {
@@ -145,15 +147,16 @@ else
 	BUILD="${HOST}"
 fi
 
-PKG_CONFIG=${PKG_CONFIG:-$(find_program pkg-config pkg-config pkgconf)}
+PKG_CONFIG=${PKG_CONFIG:-$(find_program pkg-config 1 pkg-config pkgconf)}
 find_package libcurl LIBCURL 1
 find_package atf-c LIBATFC 0
 
 AR=${AR:-ar}
 RANLIB=${RANLIB:-ranlib}
 RM=${RM:-rm}
-KYUA=${KYUA:-$(find_program kyua kyua)}
-INSTALL=${INSTALL:-$(find_program install install ginstall)}
+KYUA=${KYUA:-$(find_program kyua 0 kyua)}
+CCACHE=${CCACHE:-$(find_program ccache 0 ccache)}
+INSTALL=${INSTALL:-$(find_program install 1 install ginstall)}
 
 sed \
 	-e "s|@SRCDIR@|$srcdir|g" \
@@ -173,6 +176,7 @@ sed \
 	-e "s|@ENV_PKG_CONFIG@|$PKG_CONFIG|g" \
 	-e "s|@ENV_PKG_CONFIG_PATH@|$PKG_CONFIG_PATH|g" \
 	-e "s|@AR@|$AR|g" \
+	-e "s|@CCACHE@|$CCACHE|g" \
 	-e "s|@RANLIB@|$RANLIB|g" \
 	-e "s|@RM@|$RM|g" \
 	-e "s|@KYUA@|$KYUA|g" \
