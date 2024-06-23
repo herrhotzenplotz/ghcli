@@ -104,9 +104,46 @@ find_package() {
 	printf " found\n" >&2
 }
 
+usage() {
+	cat >&2 <<EOF
+usage: ./configure [options]
+
+Configure build directory of gcli.
+
+OPTIONS:
+    --prefix=PREFIX         Set installation prefix to PREFIX [DEFAULT: /usr/local]
+    --enable-libedit        Search and use libedit for interactive editing [DEFAULT: yes]
+    --disable-libedit       Do not use libedit
+    --enable-libreadline    Search and use libreadline for interactive editing [DEFAULT: yes]
+    --disable-libreadline   Disable use of libreadline
+    --debug                 Compile without optimisations, generate code with
+                            debug information and enable additional compiler-specific
+                            warnings and portability checks.
+    --release               Optimise for release
+    --help                  Print this help
+
+ENVIRONMENT:
+    CC                      Host system compiler to use [DEFAULT: cc]
+    CC_FOR_BUILD            Build system compiler [DEFAULT: \$CC]
+    CFLAGS                  Host system C compiler flags
+    CFLAGS_FOR_BUILD        Build system compiler flags
+    CPPFLAGS                C Preprocessor flags for host system compiler
+    CPPFLAGS_FOR_BUILD      C Preprocessor flags for build system compiler
+    PKG_CONFIG              pkg-config to use [DEFAULT: autodetect]
+    AR                      Archiver to use [DEFAULT: autodetect]
+    RANLIB                  Ranlib to use [DEFAULT: autodetect]
+    RM                      rm to use [DEFAULT: autodetect]
+    KYUA                    Path to Kyua [DEFAULT: autodetect]
+    CCACHE                  Path to ccache [DEFAULT: autodetect]
+    INSTALL                 Path to install [DEFAULT: autodetect]
+EOF
+	exit 1
+}
+
 # Install options
 #
 PREFIX=/usr/local
+OPTIMISE=
 ENABLE_LIBEDIT=1
 ENABLE_LIBREADLINE=1
 
@@ -130,6 +167,15 @@ if [ $# -gt 0 ]; then
 			;;
 		--disable-libreadline)
 			ENABLE_LIBREADLINE=0
+			;;
+		--debug)
+			OPTIMISE=debug
+			;;
+		--release)
+			OPTIMISE=release
+			;;
+		--help)
+			usage
 			;;
 		*)
 			die "error: unknown flag: $1"
@@ -218,6 +264,7 @@ INSTALL=${INSTALL:-$(find_program install 1 install ginstall)}
 ###################################################################
 sed \
 	-e "s|@SRCDIR@|$srcdir|g" \
+	-e "s|@OPTIMISE@|$OPTIMISE|g" \
 	-e "s|@LIBCURL_CFLAGS@|$LIBCURL_CFLAGS|g" \
 	-e "s|@LIBCURL_LIBS@|$LIBCURL_LIBS|g" \
 	-e "s|@LIBATFC_CFLAGS@|$LIBATFC_CFLAGS|g" \
@@ -267,6 +314,7 @@ echo "Configuration Summary:"
 echo ""
 echo "    Build system type: ${BUILD}"
 echo "     Host system type: ${HOST}"
+echo "         optimise for: ${OPTIMISE:-none}"
 echo "                   CC: ${CC}"
 echo "         CC_FOR_BUILD: ${CC_FOR_BUILD}"
 echo "               CFLAGS: ${CFLAGS}"
