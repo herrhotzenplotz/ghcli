@@ -37,6 +37,7 @@ CPPFLAGS_FOR_BUILD=	-DHAVE_CONFIG_H -DYY_NO_UNPUT -DYY_NO_INPUT -D_XOPEN_SOURCE=
 # CFLAGS for dependency tracking for various compilers
 CCDEPFLAGS_gcc=		-MD -MF ${@:.o=.d}
 CCDEPFLAGS_clang=	-MD -MF ${@:.o=.d}
+CCDEPFLAGS_xlc=		-qmakedep=gcc -MF ${@:.o=.d}
 CCDEPFLAGS_unknown=
 CCDEPFLAGS=		$(CCDEPFLAGS_$(CCOM))
 CCDEPFLAGS_FOR_BUILD=	$(CCDEPFLAGS_$(CCOM_FOR_BUILD))

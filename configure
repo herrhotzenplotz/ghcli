@@ -43,10 +43,12 @@ die() {
 compiler_type() {
 	if ${1} -v 2>&1 | grep clang > /dev/null; then
 		echo "clang"
-	elif ${1} -v 2>&1 | grep gcc > /dev/null; then
+	elif ${1} -v 2>&1 | grep '^gcc' > /dev/null; then
 		echo "gcc"
+	elif ${1} -qversion 2>&1 | grep 'IBM XL C' >/dev/null; then
+		echo "xlc"
 	else
-		# TODO: implement studio and xlc
+		# TODO: implement studio
 		echo "unknown"
 	fi
 }
@@ -64,6 +66,19 @@ compiler_target() {
 			$cc -v 2>&1 \
 				| grep '^Target' \
 				| cut -d: -f2
+			;;
+		xlc)
+			# for xlc we can't easily get its target. instead we ask its
+			# configured assembler for the target. Right now I assume it
+			# is a GNU assembler. If this doesn't work for you please fix!
+			# I don't have access to any equipment running anything else
+			# and I will not beg IBM for giving me access.
+			xlc_config=$($cc -v 2>&1 | grep XL_CONFIG | sed 's|.*XL_CONFIG=\([^:]*\):.*|\1|')
+			[ -z "${xlc_config}" ] && die "xlc config file not detected"
+			xlc_as=$(cat $xlc_config | grep -E 'as[\t ]+.*=[ ]+' | sed 1q | cut -d= -f2 | sed 's| ||g')
+			[ -z "${xlc_as}" ] && die "failed to figure out assembler used by XL C"
+			$xlc_as --version 2>&1 | grep 'GNU assembler' >/dev/null || die "Can only derive compiler target from GNU assembler, please submit fix for your assembler"
+			$xlc_as --version 2>&1 | grep target | sed "s|.*\`\([^']*\)'.*|\1|"
 			;;
 		*)
 			echo "unknown-unknown-unknown"
@@ -120,7 +135,7 @@ CCOM=$(compiler_type "${CC}")
 printf " $CCOM\n"
 
 printf "Checking host compiler target ..."
-HOST=$(compiler_target $CCOM $CC)
+HOST=$(compiler_target $CCOM "$CC $CFLAGS $CPPFLAGS")
 printf " $HOST\n"
 
 # Build compiler
