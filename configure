@@ -31,7 +31,7 @@ find_program() {
 REALPATH=${REALPATH:-$(find_program realpath 1 realpath grealpath)}
 srcdir=$($REALPATH $(dirname $0))
 
-toupper() {
+tolower() {
 	tr '[[:upper:]]' '[[:lower:]]'
 }
 
@@ -54,7 +54,7 @@ compiler_type() {
 }
 
 normalise_compiler_target() {
-	sed -e 's|x86_64|amd64|g' -e 's| ||g'
+	tolower | sed -e 's|x86_64|amd64|g' -e 's| ||g'
 }
 
 compiler_target() {
@@ -107,6 +107,8 @@ find_package() {
 # Install options
 #
 PREFIX=/usr/local
+ENABLE_LIBEDIT=1
+ENABLE_LIBREADLINE=1
 
 # Parse flags
 if [ $# -gt 0 ]; then
@@ -117,12 +119,27 @@ if [ $# -gt 0 ]; then
 		--prefix)
 			PREFIX=${2}
 			;;
+		--enable-libedit)
+			ENABLE_LIBEDIT=1
+			;;
+		--disable-libedit)
+			ENABLE_LIBEDIT=0
+			;;
+		--enable-libreadline)
+			ENABLE_LIBREADLINE=1
+			;;
+		--disable-libreadline)
+			ENABLE_LIBREADLINE=0
+			;;
 		*)
 			die "error: unknown flag: $1"
 			;;
 	esac
 fi
 
+###############################################################
+# COMPILERS
+###############################################################
 
 # Host Compiler
 printf "Checking host compiler ..."
@@ -162,10 +179,33 @@ else
 	BUILD="${HOST}"
 fi
 
+############################################################################
+# LIBRARIES
+############################################################################
 PKG_CONFIG=${PKG_CONFIG:-$(find_program pkg-config 1 pkg-config pkgconf)}
 find_package libcurl LIBCURL 1
 find_package atf-c LIBATFC 0
 
+# Look for libedit if not disabled
+if [ $ENABLE_LIBEDIT -eq 1 ]; then
+	find_package libedit LIBEDIT 0
+else
+	LIBEDIT_FOUND=0
+fi
+
+# Now only look for readline if libedit hasn't been found/enabled
+# and readline support hasn't been disabled.
+if [ $LIBEDIT_FOUND -eq 1 ]; then
+	LIBREADLINE_FOUND=0
+elif [ $ENABLE_LIBREADLINE -eq 1 ]; then
+	find_package readline LIBREADLINE 0
+else
+	LIBREADLINE_FOUND=0
+fi
+
+###################################################################
+# TESTS and other programs
+###################################################################
 AR=${AR:-ar}
 RANLIB=${RANLIB:-ranlib}
 RM=${RM:-rm}
@@ -173,13 +213,22 @@ KYUA=${KYUA:-$(find_program kyua 0 kyua)}
 CCACHE=${CCACHE:-$(find_program ccache 0 ccache)}
 INSTALL=${INSTALL:-$(find_program install 1 install ginstall)}
 
+###################################################################
+# Configure Makefile
+###################################################################
 sed \
 	-e "s|@SRCDIR@|$srcdir|g" \
 	-e "s|@LIBCURL_CFLAGS@|$LIBCURL_CFLAGS|g" \
 	-e "s|@LIBCURL_LIBS@|$LIBCURL_LIBS|g" \
 	-e "s|@LIBATFC_CFLAGS@|$LIBATFC_CFLAGS|g" \
 	-e "s|@LIBATFC_LIBS@|$LIBATFC_LIBS|g" \
-	-e "s|@CONFIGURE_CMD_ARGS@|$@|g" \
+	-e "s|@LIBEDIT_FOUND@|$LIBEDIT_FOUND|g" \
+	-e "s|@LIBEDIT_CFLAGS@|$LIBEDIT_CFLAGS|g" \
+	-e "s|@LIBEDIT_LIBS@|$LIBEDIT_LIBS|g" \
+	-e "s|@LIBREADLINE_FOUND@|$LIBREADLINE_FOUND|g" \
+	-e "s|@LIBREADLINE_CFLAGS@|$LIBREADLINE_CFLAGS|g" \
+	-e "s|@LIBREADLINE_LIBS@|$LIBREADLINE_LIBS|g" \
+	-e "s|@CONFIGURE_CMD_ARGS@|$*|g" \
 	-e "s|@CC@|$CC|g" \
 	-e "s|@CCOM@|$CCOM|g" \
 	-e "s|@ENV_CFLAGS@|$CFLAGS|g" \
@@ -216,15 +265,24 @@ EOF
 
 echo "Configuration Summary:"
 echo ""
-echo "Build system type: ${BUILD}"
-echo " Host system type: ${HOST}"
-echo "               CC: ${CC}"
-echo "     CC_FOR_BUILD: ${CC_FOR_BUILD}"
-echo "           CFLAGS: ${CFLAGS}"
-echo " CFLAGS_FOR_BUILD: ${CFLAGS_FOR_BUILD}"
-echo "   LIBCURL_CFLAGS: ${LIBCURL_CFLAGS}"
-echo "     LIBCURL_LIBS: ${LIBCURL_LIBS}"
-echo "   LIBATFC_CFLAGS: ${LIBATFC_CFLAGS}"
-echo "     LIBATFC_LIBS: ${LIBATFC_LIBS}"
+echo "    Build system type: ${BUILD}"
+echo "     Host system type: ${HOST}"
+echo "                   CC: ${CC}"
+echo "         CC_FOR_BUILD: ${CC_FOR_BUILD}"
+echo "               CFLAGS: ${CFLAGS}"
+echo "     CFLAGS_FOR_BUILD: ${CFLAGS_FOR_BUILD}"
+echo "       LIBCURL_CFLAGS: ${LIBCURL_CFLAGS}"
+echo "         LIBCURL_LIBS: ${LIBCURL_LIBS}"
+echo "       LIBATFC_CFLAGS: ${LIBATFC_CFLAGS}"
+echo "         LIBATFC_LIBS: ${LIBATFC_LIBS}"
+if [ $LIBEDIT_FOUND -eq 1 ]; then
+echo " Using libedit:"
+echo "       LIBEDIT_CFLAGS: ${LIBEDIT_CFLAGS}"
+echo "         LIBEDIT_LIBS: ${LIBEDIT_LIBS}"
+elif [ $LIBREADLINE_FOUND -eq 1 ]; then
+echo " Using libreadline:"
+echo "   LIBREADLINE_CFLAGS: ${LIBREADLINE_CFLAGS}"
+echo "     LIBREADLINE_LIBS: ${LIBREADLINE_LIBS}"
+fi
 echo ""
 echo "Configuration done. You may now run make."
