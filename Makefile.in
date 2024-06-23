@@ -26,11 +26,14 @@ COPTFLAGS_gcc_debug=	-O0 -g3 -pipe -Wall -Wextra -Werror -fPIC
 COPTFLAGS_gcc_release=	-O2 -pipe -fPIC
 COPTFLAGS_clang_debug=	-O0 -g3 -pipe -Wall -Wextra -Wno-gnu-zero-variadic-macro-arguments -Werror -fPIC
 COPTFLAGS_clang_release=-O2 -pipe -fPIC
+COPTFLAGS_xlc_debug=	-qpic -qcheck=all -qfulldebug -qnoopt -g -qhalt=w
+COPTFLAGS_xlc_release=	-qpic -qoptimize=4
 COPTFLAGS=		$(COPTFLAGS_$(CCOM)_$(OPTIMISE))
 COPTFLAGS_FOR_BUILD=	$(COPTFLAGS_$(CCOM_FOR_BUILD)_$(OPTIMISE))
 
 CSTDFLAGS_gcc=		-std=c99 -pedantic
 CSTDFLAGS_clang=	-std=c99 -pedantic
+CSTDFLAGS_xlc=		-qlanglvl=stdc99
 CSTDFLAGS=		$(CSTDFLAGS_$(CCOM))
 CSTDFLAGS_FOR_BUILD=	$(CSTDFLAGS_$(CCOM_FOR_BUILD))
 
