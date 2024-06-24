@@ -2,6 +2,8 @@
 
 # set -o pipefail
 
+CONFIGURE_CMD_ARGS="${*}"
+
 PACKAGE_VERSION="2.4.0-devel"
 PACKAGE_DATE="UNRELEASED"
 PACKAGE_STRING="gcli $PACKAGE_VERSION"
@@ -29,7 +31,8 @@ find_program() {
 }
 
 REALPATH=${REALPATH:-$(find_program realpath 1 realpath grealpath)}
-srcdir=$($REALPATH $(dirname $0))
+rel_srcdir="$(dirname ${0})"
+srcdir="$(${REALPATH} ${rel_srcdir})"
 
 tolower() {
 	tr '[[:upper:]]' '[[:lower:]]'
@@ -148,31 +151,39 @@ ENABLE_LIBEDIT=1
 ENABLE_LIBREADLINE=1
 
 # Parse flags
-if [ $# -gt 0 ]; then
+while [ $# -gt 0 ]; do
 	case "$1" in
 		--prefix=*)
 			PREFIX=${1##--prefix=}
+			shift
 			;;
 		--prefix)
 			PREFIX=${2}
+			shift; shift
 			;;
 		--enable-libedit)
 			ENABLE_LIBEDIT=1
+			shift
 			;;
 		--disable-libedit)
 			ENABLE_LIBEDIT=0
+			shift
 			;;
 		--enable-libreadline)
 			ENABLE_LIBREADLINE=1
+			shift
 			;;
 		--disable-libreadline)
 			ENABLE_LIBREADLINE=0
+			shift
 			;;
 		--debug)
 			OPTIMISE=debug
+			shift
 			;;
 		--release)
 			OPTIMISE=release
+			shift
 			;;
 		--help)
 			usage
@@ -181,7 +192,7 @@ if [ $# -gt 0 ]; then
 			die "error: unknown flag: $1"
 			;;
 	esac
-fi
+done
 
 ###############################################################
 # COMPILERS
@@ -262,8 +273,16 @@ INSTALL=${INSTALL:-$(find_program install 1 install ginstall)}
 ###################################################################
 # Configure Makefile
 ###################################################################
+#
+# FIXME: this escapes the source directory in case it contains
+#        spaces. however, both GNU and BSD make are incapable of
+#        handling hese situations in combination with VPATH. On
+#        NetBSD we get a bug where it hard-splits the path on spaces
+#        in a prerequisite no matter whether it is escaped or not.
+ESC_SRCDIR="$(echo ${srcdir} | sed -e 's| |\\\\ |g')"
+
 sed \
-	-e "s|@SRCDIR@|$srcdir|g" \
+	-e "s|@SRCDIR@|${ESC_SRCDIR}|g" \
 	-e "s|@OPTIMISE@|$OPTIMISE|g" \
 	-e "s|@LIBCURL_CFLAGS@|$LIBCURL_CFLAGS|g" \
 	-e "s|@LIBCURL_LIBS@|$LIBCURL_LIBS|g" \
@@ -275,7 +294,7 @@ sed \
 	-e "s|@LIBREADLINE_FOUND@|$LIBREADLINE_FOUND|g" \
 	-e "s|@LIBREADLINE_CFLAGS@|$LIBREADLINE_CFLAGS|g" \
 	-e "s|@LIBREADLINE_LIBS@|$LIBREADLINE_LIBS|g" \
-	-e "s|@CONFIGURE_CMD_ARGS@|$*|g" \
+	-e "s|@CONFIGURE_CMD_ARGS@|$CONFIGURE_CMD_ARGS|g" \
 	-e "s|@CC@|$CC|g" \
 	-e "s|@CCOM@|$CCOM|g" \
 	-e "s|@ENV_CFLAGS@|$CFLAGS|g" \
@@ -298,7 +317,7 @@ sed \
 	-e "s|@PACKAGE_BUGREPORT@|$PACKAGE_BUGREPORT|g" \
 	-e "s|@PACKAGE_URL@|$PACKAGE_URL|g" \
 	-e "s|@PACKAGE_VERSION@|$PACKAGE_VERSION|g" \
-	< $srcdir/Makefile.in > Makefile
+	< "${srcdir}/Makefile.in" > Makefile
 
 echo "Writing config.h"
 cat > config.h <<EOF
