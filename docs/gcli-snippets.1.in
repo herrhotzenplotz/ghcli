@@ -3,7 +3,7 @@
 .Os @PACKAGE_STRING@
 .Sh NAME
 .Nm gcli snippets
-.Nd manage Gitlab snippets
+.Nd manage GitLab snippets
 .Sh SYNOPSIS
 .Nm
 .Op Fl l
@@ -68,7 +68,7 @@ and contributors.
 .Sh BUGS
 .Bl -dash
 .It
-This subcommand only works on Gitlab. It is not implemented for
+This subcommand only works on GitLab. It is not implemented for
 GitHub, as GitHub Gists work differently.
 .It
 Creating snippets is currently unimplemented.

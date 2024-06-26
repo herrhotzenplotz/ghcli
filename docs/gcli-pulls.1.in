@@ -33,7 +33,7 @@ various
 .Xr git 1
 forges such as GitLab, Gitea or GitHub. Without any action specified,
 .Nm
-will list open PRs in the given or autodetected repository.
+will list open PRs in the given or auto-detected repository.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl s , -sorted
@@ -91,7 +91,7 @@ on the specified
 .Sh SUBCOMMANDS
 .Bl -tag -width create
 .It Cm create
-Create a new PR in the given or autodetected repository. The editor
+Create a new PR in the given or auto-detected repository. The editor
 will come up and ask you to enter the PR message.
 .Pp
 When the title is omitted gcli will interactively prompt the various
@@ -234,7 +234,7 @@ List pull requests that are associated with the milestone
 $ gcli pulls -M version420
 .Ed
 .Pp
-Change the title of pull request #42 on Github to
+Change the title of pull request #42 on GitHub to
 .Dq "This is the new title" :
 .Bd -literal -offset indent
 $ gcli -t github pulls -i 42 title "This is the new title"

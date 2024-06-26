@@ -130,7 +130,7 @@ possible values see the equivalent definition in
 .Sh EXAMPLES
 .Ss User Configuration File
 An example for the user configuration file consisting of both a
-Github and a Gitlab account:
+GitHub and a GitLab account:
 .Bd -literal
 defaults {
 	editor=/path/to/ganoooo/emacs
@@ -154,7 +154,7 @@ herrhotzenplotz-gl {
 .Ed
 .Pp
 Notice that this allows you to run gcli and force it to use a
-specific Gitlab account. E.g.:
+specific GitLab account. E.g.:
 .Bd -literal
 $ gcli -a herrhotzenplotz-gl issues -a
 .Ed

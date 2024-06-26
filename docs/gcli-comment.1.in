@@ -15,7 +15,7 @@
 can be used to add comments in the discussion under issues and pull
 requests on
 .Xr git 1
-forges such as Github, Gitlab and Gitea. Note that PRs are treated as
+forges such as GitHub, GitLab and Gitea. Note that PRs are treated as
 issues on GitHub and Gitea, making the
 .Fl i
 and

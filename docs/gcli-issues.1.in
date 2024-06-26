@@ -30,7 +30,7 @@ to search, list, create, edit or delete issues in repositories in various
 .Xr git 1
 forges such as GitHub, GitLab and Gitea. Without any action specified,
 .Nm
-will list issues in the given or autodetected repository.
+will list issues in the given or auto-detected repository.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl s , -sorted
@@ -73,7 +73,7 @@ for the specified
 .Sh SUBCOMMANDS
 .Bl -tag -width indent
 .It Cm create
-Create a new issue in the given or autodetected repository. The
+Create a new issue in the given or auto-detected repository. The
 editor will come up and ask you to enter an issue message.
 .Pp
 When the issue title is omitted gcli will interactively prompt you
