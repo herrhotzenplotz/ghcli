@@ -58,6 +58,7 @@ sn_sv gcli_config_find_by_key(struct gcli_ctx *ctx, char const *section_name,
 
 char *gcli_config_get_editor(struct gcli_ctx *ctx);
 char *gcli_config_get_token(struct gcli_ctx *ctx);
+char *gcli_config_get_pager(struct gcli_ctx *ctx);
 char *gcli_config_get_account_name(struct gcli_ctx *ctx);
 sn_sv gcli_config_get_upstream(struct gcli_ctx *ctx);
 sn_sv gcli_config_get_base(struct gcli_ctx *ctx);

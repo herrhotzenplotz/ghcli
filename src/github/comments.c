@@ -71,12 +71,9 @@ github_perform_submit_comment(struct gcli_ctx *ctx,
 }
 
 int
-github_get_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id const issue, struct gcli_comment_list *const out)
+github_fetch_comments(struct gcli_ctx *ctx, char *url,
+                      struct gcli_comment_list *const out)
 {
-	char *e_owner = NULL;
-	char *e_repo = NULL;
-	char *url = NULL;
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &out->comments,
 		.sizep = &out->comments_size,
@@ -84,8 +81,19 @@ github_get_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		.max = -1,
 	};
 
+	return gcli_fetch_list(ctx, url, &fl);
+}
+
+int
+github_get_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
+                    gcli_id const issue, struct gcli_comment_list *const out)
+{
+	char *e_owner = NULL;
+	char *e_repo = NULL;
+	char *url = NULL;
+
 	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
+	e_repo = gcli_urlencode(repo);
 
 	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid"/comments",
 	                  gcli_get_apibase(ctx),
@@ -93,5 +101,5 @@ github_get_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	free(e_owner);
 	free(e_repo);
 
-	return gcli_fetch_list(ctx, url, &fl);
+	return github_fetch_comments(ctx, url, out);
 }

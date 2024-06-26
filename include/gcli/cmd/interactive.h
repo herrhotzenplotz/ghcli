@@ -35,5 +35,6 @@
 #endif
 
 char *gcli_cmd_prompt(char const *const fmt, char const *const deflt, ...);
+int gcli_cmd_into_pager(int (*fn)(void *), void *data);
 
 #endif /* GCLI_CMD_INTERACTIVE_H */

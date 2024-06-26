@@ -93,26 +93,15 @@ reverse_comment_list(struct gcli_comment_list *const list)
 }
 
 int
-gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                       gcli_id const mr, struct gcli_comment_list *const out)
+gitlab_fetch_comments(struct gcli_ctx *ctx, char *url,
+                      struct gcli_comment_list *const out)
 {
-	char *e_owner = gcli_urlencode(owner);
-	char *e_repo = gcli_urlencode(repo);
-
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &out->comments,
 		.sizep = &out->comments_size,
 		.parse = (parsefn)parse_gitlab_comments,
 		.max = -1,
 	};
-
-	char *url = sn_asprintf(
-		"%s/projects/%s%%2F%s/merge_requests/%"PRIid"/notes",
-		gcli_get_apibase(ctx),
-		e_owner, e_repo, mr);
-
-	free(e_owner);
-	free(e_repo);
 
 	/* Comments in the resulting list are in reverse on Gitlab
 	 * (most recent is first). */
@@ -124,6 +113,24 @@ gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner, char const *repo
 }
 
 int
+gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
+                       gcli_id const mr, struct gcli_comment_list *const out)
+{
+	char *e_owner = gcli_urlencode(owner);
+	char *e_repo = gcli_urlencode(repo);
+
+	char *url = sn_asprintf(
+		"%s/projects/%s%%2F%s/merge_requests/%"PRIid"/notes",
+		gcli_get_apibase(ctx),
+		e_owner, e_repo, mr);
+
+	free(e_owner);
+	free(e_repo);
+
+	return gitlab_fetch_comments(ctx, url, out);
+}
+
+int
 gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
                           char const *repo, gcli_id const issue,
                           struct gcli_comment_list *const out)
@@ -131,23 +138,13 @@ gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
 	char *e_owner = gcli_urlencode(owner);
 	char *e_repo = gcli_urlencode(repo);
 
-	struct gcli_fetch_list_ctx fl = {
-		.listp = &out->comments,
-		.sizep = &out->comments_size,
-		.parse = (parsefn)parse_gitlab_comments,
-		.max = -1,
-	};
-
 	char *url = sn_asprintf(
 		"%s/projects/%s%%2F%s/issues/%"PRIid"/notes",
 		gcli_get_apibase(ctx),
 		e_owner, e_repo, issue);
+
 	free(e_owner);
 	free(e_repo);
 
-	int const rc = gcli_fetch_list(ctx, url, &fl);
-	if (rc == 0)
-		reverse_comment_list(out);
-
-	return rc;
+	return gitlab_fetch_comments(ctx, url, out);
 }
