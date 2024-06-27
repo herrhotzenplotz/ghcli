@@ -306,7 +306,7 @@ $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 
 .c.pgen.o:
 	@mkdir -p $$(dirname $@)
-	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(CCDEPFLAGS_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) -c -o $@ $<
+	$(CCACHE) $(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(CCDEPFLAGS_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) -c -o $@ $<
 
 clean-auto:
 	$(RM) -f pgen gcli libgcli.a \
