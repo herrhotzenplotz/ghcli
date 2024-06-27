@@ -13,8 +13,9 @@ parser gitlab_reviewer is object of char* select "username" as string;
 
 parser gitlab_diff_refs is
 object of struct gcli_pull with
-	("base_sha" => base_sha as string,
-	 "head_sha" => head_sha as string);
+	("base_sha"  => base_sha as string,
+	 "head_sha"  => head_sha as string,
+	 "start_sha" => start_sha as string);
 
 parser gitlab_mr is
 object of struct gcli_pull with
@@ -35,6 +36,7 @@ object of struct gcli_pull with
 	 "head_pipeline"                => use parse_gitlab_mr_head_pipeline,
 	 "reviewers"                    => reviewers as array of char* use parse_gitlab_reviewer,
 	 "diff_refs"                    => use parse_gitlab_diff_refs,
+	 "web_url"                      => web_url as string,
 	 "merge_when_pipeline_succeeds" => automerge as bool);
 
 parser gitlab_mrs is array of struct gcli_pull use parse_gitlab_mr;
@@ -69,3 +71,17 @@ object of struct gitlab_diff with
 
 parser gitlab_diffs is
 array of struct gitlab_diff use parse_gitlab_diff;
+
+parser gitlab_mr_version is
+object of struct gitlab_mr_version with
+	("id"               => id as id,
+	 "base_commit_sha"  => base_commit as string,
+	 "head_commit_sha"  => head_commit as string,
+	 "start_commit_sha" => start_commit as string);
+
+parser gitlab_mr_version_list is
+array of struct gitlab_mr_version use parse_gitlab_mr_version;
+
+parser gitlab_mr_version_diffs is
+object of struct gitlab_diff_list with
+	("diffs" => diffs as array of gitlab_diff use parse_gitlab_diff);

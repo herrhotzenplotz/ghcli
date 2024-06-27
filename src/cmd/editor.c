@@ -50,14 +50,12 @@ sv_append(sn_sv this, sn_sv const that)
 	return this;
 }
 
-char *
-gcli_editor_get_user_message(
-	struct gcli_ctx *ctx,
-	void (*file_initializer)(struct gcli_ctx *, FILE *, void *),
-	void *user_data)
+static void
+edit(struct gcli_ctx *ctx, char const *filename)
 {
-	char *editor     = getenv("EDITOR");
+	char *editor = getenv("EDITOR");
 	char *env_editor = editor;
+
 	if (!editor) {
 		editor = gcli_config_get_editor(ctx);
 		if (!editor)
@@ -66,16 +64,8 @@ gcli_editor_get_user_message(
 			     "file or set the EDITOR environment variable.");
 	}
 
-	char filename[31] = "/tmp/gcli_message.XXXXXXX\0";
-	int fd = mkstemp(filename);
-
-	FILE *file = fdopen(fd, "w");
-	file_initializer(ctx, file, user_data);
-	fclose(file);
-
 	pid_t pid = fork();
 	if (pid == 0) {
-
 		if (execlp(editor, editor, filename, NULL) < 0)
 			err(1, "execlp");
 	} else {
@@ -93,6 +83,22 @@ gcli_editor_get_user_message(
 
 	if (!env_editor)
 		free(editor);
+}
+
+char *
+gcli_editor_get_user_message(
+	struct gcli_ctx *ctx,
+	void (*file_initializer)(struct gcli_ctx *, FILE *, void *),
+	void *user_data)
+{
+	char filename[31] = "/tmp/gcli_message.XXXXXXX\0";
+	int fd = mkstemp(filename);
+	FILE *file = fdopen(fd, "w");
+
+	file_initializer(ctx, file, user_data);
+	fclose(file);
+
+	edit(ctx, filename);
 
 	void *file_content = NULL;
 	int len = sn_mmap_file(filename, &file_content);
@@ -127,4 +133,11 @@ gcli_editor_get_user_message(
 		result.data[result.length] = '\0';
 
 	return result.data;
+}
+
+int
+gcli_editor_open_file(struct gcli_ctx *ctx, char const *const path)
+{
+	edit(ctx, path);
+	return 0;
 }

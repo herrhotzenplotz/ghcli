@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,20 +27,13 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCLI_CMD_EDITOR_H
-#define GCLI_CMD_EDITOR_H
+#ifndef GCLI_CMD_PULL_REVIEWS_H
+#define GCLI_CMD_PULL_REVIEWS_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
+#endif /* HAVE_CONFIG_H */
 
-#include <gcli/gcli.h>
+void do_review_session(char const *owner, char const *repo, gcli_id pull_id);
 
-char *gcli_editor_get_user_message(
-	struct gcli_ctx *ctx,
-	void (*initializer)(struct gcli_ctx *, FILE *, void *),
-	void *user_data);
-
-int gcli_editor_open_file(struct gcli_ctx *ctx, char const *const path);
-
-#endif /* GCLI_CMD_EDITOR_H */
+#endif /* GCLI_CMD_PULL_REVIEWS_H */

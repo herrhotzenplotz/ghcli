@@ -43,7 +43,7 @@ debian-amd64:
   image: debian:bullseye
   script:
     - apt-get update
-    - apt-get install -y --no-install-recommends build-essential libcurl4-openssl-dev pkgconf autotools-dev bison flex make autoconf automake libtool libbsd-dev libatf-dev kyua libreadline-dev
+    - apt-get install -y --no-install-recommends build-essential libcurl4-openssl-dev pkgconf autotools-dev bison flex make autoconf automake libtool libbsd-dev libatf-dev kyua libreadline-dev libssl-dev
     - ./autogen.sh
     - ./configure CFLAGS='-std=c99 -pedantic -Wall -Wextra -Werror -Wno-misleading-indentation' CPPFLAGS='-D_XOPEN_SOURCE=600' --disable-silent-rules --with-readline || (cat config.log && exit 42)
     - make -j

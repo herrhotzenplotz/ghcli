@@ -28,10 +28,12 @@
  */
 
 #include <gcli/curl.h>
+#include <gcli/diffutil.h>
 #include <gcli/github/checks.h>
 #include <gcli/github/config.h>
 #include <gcli/github/issues.h>
 #include <gcli/github/pulls.h>
+#include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 #include <gcli/json_gen.h>
 
@@ -209,6 +211,31 @@ github_pull_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
 
 	url = sn_asprintf(
 		"%s/repos/%s/%s/pulls/%"PRIid,
+		gcli_get_apibase(ctx),
+		e_owner, e_repo, pr_number);
+	rc = gcli_curl(ctx, stream, url, "Accept: application/vnd.github.v3.patch");
+
+	free(e_owner);
+	free(e_repo);
+	free(url);
+
+	return rc;
+}
+
+int
+github_print_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
+                       char const *repo, gcli_id pr_number)
+{
+	char *url = NULL;
+	char *e_owner = NULL;
+	char *e_repo = NULL;
+	int rc = 0;
+
+	e_owner = gcli_urlencode(owner);
+	e_repo  = gcli_urlencode(repo);
+
+	url = sn_asprintf(
+		"%s/repos/%s/%s/pulls/%lu",
 		gcli_get_apibase(ctx),
 		e_owner, e_repo, pr_number);
 	rc = gcli_curl(ctx, stream, url, "Accept: application/vnd.github.v3.patch");
@@ -639,6 +666,92 @@ github_pull_set_title(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	/* Cleanup */
 	free(payload);
+	free(url);
+
+	return rc;
+}
+
+int
+github_pull_create_review(struct gcli_ctx *ctx,
+                          struct gcli_pull_create_review_details const *details)
+{
+	int rc = 0;
+	char *url = NULL, *e_owner = NULL, *e_repo = NULL, *payload = NULL;
+	struct gcli_jsongen gen = {0};
+
+	e_owner = gcli_urlencode(details->owner);
+	e_repo = gcli_urlencode(details->repo);
+
+	url = sn_asprintf("%s/repos/%s/%s/pulls/%lu/reviews",
+	                  gcli_get_apibase(ctx), e_owner, e_repo,
+	                  details->pull_id);
+
+	if (gcli_jsongen_init(&gen) < 0) {
+		rc = gcli_error(ctx, "failed to init JSON generator");
+		goto bail;
+	}
+
+	gcli_jsongen_begin_object(&gen);
+	{
+		gcli_jsongen_objmember(&gen, "body");
+		gcli_jsongen_string(&gen, details->body);
+
+		gcli_jsongen_objmember(&gen, "event");
+		switch (details->review_state) {
+		case GCLI_REVIEW_ACCEPT_CHANGES:
+			gcli_jsongen_string(&gen, "APPROVE");
+			break;
+		case GCLI_REVIEW_REQUEST_CHANGES:
+			gcli_jsongen_string(&gen, "REQUEST_CHANGES");
+			break;
+		case GCLI_REVIEW_COMMENT:
+			gcli_jsongen_string(&gen, "COMMENT");
+			break;
+		default:
+			rc = gcli_error(ctx, "bad review state: %d",
+			                details->review_state);
+			goto bail;
+		}
+
+		gcli_jsongen_objmember(&gen, "comments");
+		gcli_jsongen_begin_array(&gen);
+		{
+			struct gcli_diff_comment *comment;
+
+			TAILQ_FOREACH(comment, &details->comments, next) {
+				gcli_jsongen_begin_object(&gen);
+				{
+					gcli_jsongen_objmember(&gen, "path");
+					gcli_jsongen_string(&gen, comment->after.filename);
+
+					gcli_jsongen_objmember(&gen, "body");
+					gcli_jsongen_string(&gen, comment->comment);
+
+					gcli_jsongen_objmember(&gen, "line");
+					gcli_jsongen_number(&gen, comment->after.end_row);
+
+					if (comment->after.start_row != comment->after.end_row) {
+						gcli_jsongen_objmember(&gen, "start_line");
+						gcli_jsongen_number(&gen, comment->after.start_row);
+					}
+				}
+				gcli_jsongen_end_object(&gen);
+			}
+		}
+		gcli_jsongen_end_array(&gen);
+	}
+	gcli_jsongen_end_object(&gen);
+
+	payload = gcli_jsongen_to_string(&gen);
+
+	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
+
+	gcli_jsongen_free(&gen);
+
+bail:
+	free(payload);
+	free(e_owner);
+	free(e_repo);
 	free(url);
 
 	return rc;

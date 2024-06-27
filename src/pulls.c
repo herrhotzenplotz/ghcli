@@ -232,3 +232,26 @@ gcli_pull_set_title(struct gcli_ctx *ctx, char const *const owner,
 {
 	gcli_null_check_call(pull_set_title, ctx, owner, repo, pull, new_title);
 }
+
+int
+gcli_pull_create_review(struct gcli_ctx *ctx,
+                        struct gcli_pull_create_review_details const *details)
+{
+	gcli_null_check_call(pull_create_review, ctx, details);
+}
+
+char const *
+gcli_pull_get_meta_by_key(struct gcli_pull_create_review_details const *details,
+                          char const *key)
+{
+	size_t const key_len = strlen(key);
+	struct gcli_review_meta_line *l;
+
+	TAILQ_FOREACH(l, &details->meta_lines, next) {
+		if (strncmp(l->entry, key, key_len) == 0 &&
+		    l->entry[key_len] == ' ')
+			return l->entry + key_len + 1;
+	}
+
+	return NULL;
+}

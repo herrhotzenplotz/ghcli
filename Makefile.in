@@ -83,6 +83,10 @@ LIBREADLINE_LIBS=	${LIBREADLINE_LIBS_$(LIBREADLINE_FOUND)}
 LIBREADLINE_CPPFLAGS_1=	-DHAVE_LIBREADLINE=1
 LIBREADLINE_CPPFLAGS=	${LIBREADLINE_CPPFLAGS_$(LIBREADLINE_FOUND)}
 
+############## LIBCRYPTO ########################################
+LIBCRYPTO_CFLAGS=	@LIBCRYPTO_CFLAGS@
+LIBCRYPTO_LIBS=		@LIBCRYPTO_LIBS@
+
 .PHONY: all all-auto clean clean-auto check check-auto install install-auto
 all: Makefile
 	@$(MAKE) all-auto
@@ -149,6 +153,7 @@ LIBGCLI_SRCS = \
 	src/ctx.c \
 	src/curl.c \
 	src/date_time.c \
+	src/diffutil.c \
 	src/forges.c \
 	src/forks.c \
 	src/gcli.c \
@@ -186,6 +191,7 @@ GCLI_SRCS= \
 	src/cmd/milestones.c \
 	src/cmd/pipelines.c \
 	src/cmd/pulls.c \
+	src/cmd/pull_reviews.c \
 	src/cmd/releases.c \
 	src/cmd/repos.c \
 	src/cmd/snippets.c \
@@ -273,7 +279,9 @@ $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS): pgen
 	./pgen -tc -o $@ $<
 
 gcli: libgcli.a $(GCLI_OBJS)
-	$(CCACHE) $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli $(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS) $(LIBEDIT_LIBS) $(LIBREADLINE_LIBS)
+	$(CCACHE) $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli \
+		$(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS) $(LIBEDIT_LIBS) \
+		$(LIBREADLINE_LIBS) $(LIBCRYPTO_LIBS)
 
 libgcli.a: $(LIBGCLI_OBJS)
 	$(AR) -rc libgcli.a $(LIBGCLI_OBJS)
@@ -284,13 +292,16 @@ $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 .SUFFIXES: .c .libgcli.o .gcli.o .pgen.o .tests.o
 .c.libgcli.o:
 	@mkdir -p $$(dirname $@)
-	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -DIN_LIBGCLI=1 -c -o $@ $<
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
+		$(LIBCURL_CFLAGS) $(LIBCRYPTO_CFLAGS) \
+		-DIN_LIBGCLI=1 -c -o $@ $<
 
 .c.gcli.o:
 	@mkdir -p $$(dirname $@)
 	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
 		$(LIBEDIT_CPPFLAGS) $(LIBREADLINE_CPPFLAGS) \
-		$(LIBCURL_CFLAGS) $(LIBEDIT_CFLAGS) $(LIBREADLINE_CFLAGS) \
+		$(LIBCURL_CFLAGS) $(LIBEDIT_CFLAGS) \
+		$(LIBREADLINE_CFLAGS) $(LIBCRYPTO_CFLAGS) \
 		-c -o $@ $<
 
 .c.pgen.o:
@@ -316,13 +327,14 @@ TEST_PROGRAMS = \
 	tests/url-encode \
 	tests/pretty-print \
 	tests/jsongen \
-	tests/base64
+	tests/base64 \
+	tests/difftests
 
 $(TEST_PROGRAMS): libgcli.a $(TEST_PROGRAMS:=.tests.o)
 	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
-		$(LIBATFC_CFLAGS) $(LDFLAGS) -o $@ \
-		$(@:=.tests.o) libgcli.a \
-		$(LIBATFC_LIBS) $(LIBCURL_LIBS)
+		$(LIBATFC_CFLAGS) $(LIBCURL_CFLAGS) $(LIBCRYPTO_CFLAGS) \
+		$(LDFLAGS) -o $@ $(@:=.tests.o) libgcli.a \
+		$(LIBATFC_LIBS) $(LIBCURL_LIBS) $(LIBCRYPTO_LIBS)
 
 .c.tests.o:
 	@mkdir -p $$(dirname $@)
@@ -347,6 +359,7 @@ MANPAGES= \
 	docs/gcli-milestones.1 \
 	docs/gcli-pipelines.1 \
 	docs/gcli-pulls.1 \
+	docs/gcli-pulls-review.1 \
 	docs/gcli-releases.1 \
 	docs/gcli-repos.1 \
 	docs/gcli-snippets.1 \

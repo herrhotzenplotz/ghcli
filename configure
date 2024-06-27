@@ -242,6 +242,7 @@ fi
 PKG_CONFIG=${PKG_CONFIG:-$(find_program pkg-config 1 pkg-config pkgconf)}
 find_package libcurl LIBCURL 1
 find_package atf-c LIBATFC 0
+find_package libcrypto LIBCRYPTO 1
 
 # Look for libedit if not disabled
 if [ $ENABLE_LIBEDIT -eq 1 ]; then
@@ -286,6 +287,8 @@ sed \
 	-e "s|@OPTIMISE@|$OPTIMISE|g" \
 	-e "s|@LIBCURL_CFLAGS@|$LIBCURL_CFLAGS|g" \
 	-e "s|@LIBCURL_LIBS@|$LIBCURL_LIBS|g" \
+	-e "s|@LIBCRYPTO_CFLAGS@|$LIBCRYPTO_CFLAGS|g" \
+	-e "s|@LIBCRYPTO_LIBS@|$LIBCRYPTO_LIBS|g" \
 	-e "s|@LIBATFC_CFLAGS@|$LIBATFC_CFLAGS|g" \
 	-e "s|@LIBATFC_LIBS@|$LIBATFC_LIBS|g" \
 	-e "s|@LIBEDIT_FOUND@|$LIBEDIT_FOUND|g" \
