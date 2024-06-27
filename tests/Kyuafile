@@ -7,23 +7,23 @@ atf_test_program{
 }
 
 atf_test_program{
-        name = 'github-parse-tests',
+        name = 'github-parse',
 }
 
 atf_test_program{
-        name = 'gitlab-parse-tests',
+        name = 'gitlab-parse',
 }
 
 atf_test_program{
-        name = 'gitea-parse-tests',
+        name = 'gitea-parse',
 }
 
 atf_test_program{
-        name = 'bugzilla-parse-tests',
+        name = 'bugzilla-parse',
 }
 
 atf_test_program{
-        name = 'base64-tests'
+        name = 'base64'
 }
 
 atf_test_program{
@@ -31,9 +31,9 @@ atf_test_program{
 }
 
 atf_test_program{
-        name = 'pretty_print_test'
+        name = 'pretty-print'
 }
 
 atf_test_program{
-        name = 'test-jsongen'
+        name = 'jsongen'
 }

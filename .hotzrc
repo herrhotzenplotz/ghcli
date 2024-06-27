@@ -1,7 +1,7 @@
 # local kakrc for gcli
 
 # We build inside the build directory
-cd build
+# cd build
 
 set-option global ctagscmd "uctags -R --fields=+S"
 set-option global ctagspaths "../include ../src ../thirdparty"
@@ -14,9 +14,9 @@ evaluate-commands %sh{
 		T=$(($N - 1))
 		S=$(($T / 2))
 
-		echo "set-option global makecmd \"cpuset -l${S}-${T} make -j${T}\""
+		echo "set-option global makecmd \"cpuset -l${S}-${T} make -j${T} -C build\""
 	else
-		echo "set-option global makecmd \"nice make\""
+		echo "set-option global makecmd \"nice make -C build\""
 	fi
 }
 

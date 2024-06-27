@@ -1,0 +1,386 @@
+GCLI_VERSION = @PACKAGE_VERSION@
+
+# Sort of compatibility for GNU make and BSD make
+.PATH: @SRCDIR@
+VPATH=@SRCDIR@
+
+################ Enviroment and values saved by the configure script ##########################
+AR                  = @AR@
+CC_FOR_BUILD        = @CC_FOR_BUILD@
+CC                  = @CC@
+CCACHE              = @CCACHE@
+CCOM_FOR_BUILD      = @CCOM_FOR_BUILD@
+CCOM                = @CCOM@
+OPTIMISE            = @OPTIMISE@
+ENV_PKG_CONFIG      = @ENV_PKG_CONFIG@
+ENV_PKG_CONFIG_PATH = @ENV_PKG_CONFIG_PATH@
+INSTALL             = @INSTALL@
+KYUA                = @KYUA@
+RANLIB              = @RANLIB@
+RM                  = @RM@
+PREFIX              = @PREFIX@
+################################################################################################
+
+############## Optimiser / Warning flags #####
+COPTFLAGS_gcc_debug=	-O0 -g3 -pipe -Wall -Wextra -Werror -fPIC
+COPTFLAGS_gcc_release=	-O2 -pipe -fPIC
+COPTFLAGS_clang_debug=	-O0 -g3 -pipe -Wall -Wextra -Wno-gnu-zero-variadic-macro-arguments -Werror -fPIC
+COPTFLAGS_clang_release=-O2 -pipe -fPIC
+COPTFLAGS_xlc_debug=	-qpic -qcheck=all -qfulldebug -qnoopt -g -qhalt=w
+COPTFLAGS_xlc_release=	-qpic -qoptimize=4
+COPTFLAGS=		$(COPTFLAGS_$(CCOM)_$(OPTIMISE))
+COPTFLAGS_FOR_BUILD=	$(COPTFLAGS_$(CCOM_FOR_BUILD)_$(OPTIMISE))
+
+CSTDFLAGS_gcc=		-std=c99 -pedantic
+CSTDFLAGS_clang=	-std=c99 -pedantic
+CSTDFLAGS_xlc=		-qlanglvl=stdc99
+CSTDFLAGS=		$(CSTDFLAGS_$(CCOM))
+CSTDFLAGS_FOR_BUILD=	$(CSTDFLAGS_$(CCOM_FOR_BUILD))
+
+############## CFLAGS ########################
+ENV_CFLAGS=		@ENV_CFLAGS@
+CFLAGS=			$(CSTDFLAGS) $(COPTFLAGS) -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS)
+
+ENV_CFLAGS_FOR_BUILD=	@ENV_CFLAGS_FOR_BUILD@
+CFLAGS_FOR_BUILD=	$(CSTDFLAGS_FOR_BUILD) $(COPTFLAGS_FOR_BUILD) -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS_FOR_BUILD)
+
+############## CPPFLAGS ######################
+ENV_CPPFLAGS=		@ENV_CPPFLAGS@
+CPPFLAGS=		-DHAVE_CONFIG_H=1 -DHAVE_SYS_QUEUE_H=1 -DHAVE_GETOPT_H=1 -D_XOPEN_SOURCE=600 $(ENV_CPPFLAGS)
+
+ENV_CPPFLAGS_FOR_BUILD=	@ENV_CPPFLAGS_FOR_BUILD@
+CPPFLAGS_FOR_BUILD=	-DHAVE_CONFIG_H -DYY_NO_UNPUT -DYY_NO_INPUT -D_XOPEN_SOURCE=600 $(ENV_CPPFLAGS_FOR_BUILD)
+
+# CFLAGS for dependency tracking for various compilers
+CCDEPFLAGS_gcc=		-MD -MF ${@:.o=.d}
+CCDEPFLAGS_clang=	-MD -MF ${@:.o=.d}
+CCDEPFLAGS_xlc=		-qmakedep=gcc -MF ${@:.o=.d}
+CCDEPFLAGS_unknown=
+CCDEPFLAGS=		$(CCDEPFLAGS_$(CCOM))
+CCDEPFLAGS_FOR_BUILD=	$(CCDEPFLAGS_$(CCOM_FOR_BUILD))
+
+LIBCURL_CFLAGS=		@LIBCURL_CFLAGS@
+LIBCURL_LIBS=		@LIBCURL_LIBS@
+
+LIBATFC_CFLAGS=		@LIBATFC_CFLAGS@
+LIBATFC_LIBS=		@LIBATFC_LIBS@
+
+############## LIBEDIT ##########################################
+LIBEDIT_FOUND=		@LIBEDIT_FOUND@
+LIBEDIT_CFLAGS_1=	@LIBEDIT_CFLAGS@
+LIBEDIT_LIBS_1=		@LIBEDIT_LIBS@
+LIBEDIT_CFLAGS=		${LIBEDIT_CFLAGS_$(LIBEDIT_FOUND)}
+LIBEDIT_LIBS=		${LIBEDIT_LIBS_$(LIBEDIT_FOUND)}
+LIBEDIT_CPPFLAGS_1=	-DHAVE_LIBEDIT=1
+LIBEDIT_CPPFLAGS=	${LIBEDIT_CPPFLAGS_$(LIBEDIT_FOUND)}
+
+############## READLINE #########################################
+LIBREADLINE_FOUND=	@LIBREADLINE_FOUND@
+LIBREADLINE_CFLAGS_1=	@LIBREADLINE_CFLAGS@
+LIBREADLINE_LIBS_1=	@LIBREADLINE_LIBS@
+LIBREADLINE_CFLAGS=	${LIBREADLINE_CFLAGS_$(LIBREADLINE_FOUND)}
+LIBREADLINE_LIBS=	${LIBREADLINE_LIBS_$(LIBREADLINE_FOUND)}
+LIBREADLINE_CPPFLAGS_1=	-DHAVE_LIBREADLINE=1
+LIBREADLINE_CPPFLAGS=	${LIBREADLINE_CPPFLAGS_$(LIBREADLINE_FOUND)}
+
+.PHONY: all all-auto clean clean-auto check check-auto install install-auto
+all: Makefile
+	@$(MAKE) all-auto
+
+clean: Makefile
+	@$(MAKE) clean-auto
+
+check: Makefile
+	@$(MAKE) check-auto
+
+install: Makefile
+	@$(MAKE) install-auto
+
+all-auto: gcli manpages
+
+LIBGCLI_SRCS = \
+	src/bugzilla/api.c \
+	src/bugzilla/attachments.c \
+	src/bugzilla/bugs-parser.c \
+	src/bugzilla/bugs.c \
+	src/bugzilla/config.c \
+	src/gitea/comments.c \
+	src/gitea/config.c \
+	src/gitea/forks.c \
+	src/gitea/issues.c \
+	src/gitea/labels.c \
+	src/gitea/milestones.c \
+	src/gitea/pulls.c \
+	src/gitea/releases.c \
+	src/gitea/repos.c \
+	src/gitea/sshkeys.c \
+	src/gitea/status.c \
+	src/github/api.c \
+	src/github/checks.c \
+	src/github/comments.c \
+	src/github/config.c \
+	src/github/forks.c \
+	src/github/gists.c \
+	src/github/issues.c \
+	src/github/labels.c \
+	src/github/milestones.c \
+	src/github/pulls.c \
+	src/github/releases.c \
+	src/github/repos.c \
+	src/github/sshkeys.c \
+	src/github/status.c \
+	src/gitlab/api.c \
+	src/gitlab/comments.c \
+	src/gitlab/config.c \
+	src/gitlab/forks.c \
+	src/gitlab/issues.c \
+	src/gitlab/labels.c \
+	src/gitlab/merge_requests.c \
+	src/gitlab/milestones.c \
+	src/gitlab/pipelines.c \
+	src/gitlab/releases.c \
+	src/gitlab/repos.c \
+	src/gitlab/snippets.c \
+	src/gitlab/sshkeys.c \
+	src/gitlab/status.c \
+	src/attachments.c \
+	src/base64.c \
+	src/comments.c \
+	src/ctx.c \
+	src/curl.c \
+	src/date_time.c \
+	src/forges.c \
+	src/forks.c \
+	src/gcli.c \
+	src/issues.c \
+	src/json_gen.c \
+	src/json_util.c \
+	src/labels.c \
+	src/milestones.c \
+	src/nvlist.c \
+	src/pulls.c \
+	src/releases.c \
+	src/repos.c \
+	src/sshkeys.c \
+	src/status.c \
+	thirdparty/pdjson/pdjson.c \
+	thirdparty/sn/sn.c
+
+GCLI_SRCS= \
+	src/cmd/api.c \
+	src/cmd/attachments.c \
+	src/cmd/ci.c \
+	src/cmd/cmd.c \
+	src/cmd/cmdconfig.c \
+	src/cmd/colour.c \
+	src/cmd/comment.c \
+	src/cmd/config.c \
+	src/cmd/editor.c \
+	src/cmd/forks.c \
+	src/cmd/gcli.c \
+	src/cmd/gists.c \
+	src/cmd/gitconfig.c \
+	src/cmd/interactive.c \
+	src/cmd/issues.c \
+	src/cmd/labels.c \
+	src/cmd/milestones.c \
+	src/cmd/pipelines.c \
+	src/cmd/pulls.c \
+	src/cmd/releases.c \
+	src/cmd/repos.c \
+	src/cmd/snippets.c \
+	src/cmd/status.c \
+	src/cmd/status_interactive.c \
+	src/cmd/table.c
+
+TEMPLATES= \
+	templates/bugzilla/api.t \
+	templates/bugzilla/bugs.t \
+	templates/gitea/milestones.t \
+	templates/gitea/status.t \
+	templates/github/api.t \
+	templates/github/checks.t \
+	templates/github/comments.t \
+	templates/github/forks.t \
+	templates/github/gists.t \
+	templates/github/issues.t \
+	templates/github/labels.t \
+	templates/github/milestones.t \
+	templates/github/pulls.t \
+	templates/github/releases.t \
+	templates/github/repos.t \
+	templates/github/status.t \
+	templates/gitlab/api.t \
+	templates/gitlab/comments.t \
+	templates/gitlab/forks.t \
+	templates/gitlab/issues.t \
+	templates/gitlab/labels.t \
+	templates/gitlab/merge_requests.t \
+	templates/gitlab/milestones.t \
+	templates/gitlab/pipelines.t \
+	templates/gitlab/releases.t \
+	templates/gitlab/repos.t \
+	templates/gitlab/snippets.t \
+	templates/gitlab/sshkeys.t \
+	templates/gitlab/status.t
+
+PGEN_SRCS= \
+	src/pgen/dump_c.c \
+	src/pgen/dump_h.c \
+	src/pgen/dump_plain.c \
+	lex.yy.c \
+	y.tab.c
+
+TEMPLATE_HEADERS=	${TEMPLATES:.t=.h}
+TEMPLATE_SRCS=		${TEMPLATES:.t=.c}
+
+Makefile: @SRCDIR@/configure @SRCDIR@/Makefile.in
+	@echo "Reconfiguring Makefile"
+	env CC="${CC}" YACC="${YACC}" LEX="${LEX}" RM="${RM}" RANLIB="${RANLIB}" \
+		KYUA="${KYUA}" CFLAGS="${ENV_CFLAGS}" CPPFLAGS="${ENV_CPPFLAGS}" \
+		INSTALL="${INSTALL}" CC_FOR_BUILD="${CC_FOR_BUILD}" \
+		CFLAGS_FOR_BUILD="${ENV_CFLAGS_FOR_BUILD}" CPPFLAGS_FOR_BUILD="${ENV_CPPFLAGS_FOR_BUILD}" \
+		PKG_CONFIG="${ENV_PKG_CONFIG}" PKG_CONFIG_PATH="${ENV_PKG_CONFIG_PATH}" CCACHE="${CCACHE}" \
+		sh @SRCDIR@/configure @CONFIGURE_CMD_ARGS@
+
+LIBGCLI_OBJS=	${LIBGCLI_SRCS:.c=.libgcli.o} ${TEMPLATE_SRCS:.c=.libgcli.o}
+GCLI_OBJS=	${GCLI_SRCS:.c=.gcli.o}
+PGEN_OBJS=	${PGEN_SRCS:.c=.pgen.o}
+
+# Dependencies
+DEPS=	${LIBGCLI_OBJS:.o=.d} ${GCLI_OBJS:.o=.d} ${PGEN_OBJS:.o=.d}
+-include $(DEPS)
+
+pgen: $(PGEN_OBJS)
+	$(CCACHE) $(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) -o pgen $(PGEN_OBJS)
+
+y.tab.c y.tab.h: @SRCDIR@/src/pgen/parser.y
+	$(YACC) -d @SRCDIR@/src/pgen/parser.y
+
+lex.yy.c: y.tab.h @SRCDIR@/src/pgen/lexer.l
+	$(LEX) @SRCDIR@/src/pgen/lexer.l
+
+.SUFFIXES: .h .t .c
+
+# Hack to make GNU make shut up
+$(TEMPLATE_HEADERS) $(TEMPLATE_SRCS): pgen
+.t.h:
+	@mkdir -p $$(dirname $@)
+	./pgen -th -o $@ $<
+
+.t.c:
+	@mkdir -p $$(dirname $@)
+	./pgen -tc -o $@ $<
+
+gcli: libgcli.a $(GCLI_OBJS)
+	$(CCACHE) $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli $(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS) $(LIBEDIT_LIBS) $(LIBREADLINE_LIBS)
+
+libgcli.a: $(LIBGCLI_OBJS)
+	$(AR) -rc libgcli.a $(LIBGCLI_OBJS)
+	$(RANLIB) libgcli.a
+
+$(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
+
+.SUFFIXES: .c .libgcli.o .gcli.o .pgen.o .tests.o
+.c.libgcli.o:
+	@mkdir -p $$(dirname $@)
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) $(LIBCURL_CFLAGS) -DIN_LIBGCLI=1 -c -o $@ $<
+
+.c.gcli.o:
+	@mkdir -p $$(dirname $@)
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
+		$(LIBEDIT_CPPFLAGS) $(LIBREADLINE_CPPFLAGS) \
+		$(LIBCURL_CFLAGS) $(LIBEDIT_CFLAGS) $(LIBREADLINE_CFLAGS) \
+		-c -o $@ $<
+
+.c.pgen.o:
+	@mkdir -p $$(dirname $@)
+	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(CCDEPFLAGS_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) -c -o $@ $<
+
+clean-auto:
+	$(RM) -f pgen gcli libgcli.a \
+		$(LIBGCLI_OBJS) $(GCLI_OBJS) \
+		$(TEMPLATE_HEADERS) $(TEMPLATE_SRCS) \
+		$(PGEN_OBJS) $(DEPS) \
+		lex.yy.c y.tab.c y.tab.h \
+		$(TEST_PROGRAMS:=.tests.o) \
+		$(TEST_PROGRAMS) \
+		$(MANPAGES)
+
+TEST_PROGRAMS = \
+	tests/json-escape \
+	tests/github-parse \
+	tests/gitlab-parse \
+	tests/gitea-parse \
+	tests/bugzilla-parse \
+	tests/url-encode \
+	tests/pretty-print \
+	tests/jsongen \
+	tests/base64
+
+$(TEST_PROGRAMS): libgcli.a $(TEST_PROGRAMS:=.tests.o)
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
+		$(LIBATFC_CFLAGS) $(LDFLAGS) -o $@ \
+		$(@:=.tests.o) libgcli.a \
+		$(LIBATFC_LIBS) $(LIBCURL_LIBS)
+
+.c.tests.o:
+	@mkdir -p $$(dirname $@)
+	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
+		$(LIBATFC_CFLAGS) $(LIBCURL_CFLAGS) \
+		-DTESTSRCDIR="\"@SRCDIR@/tests/\"" -c -o $@ $<
+
+$(TEST_PROGRAMS:=.c): $(TEMPLATE_HEADERS)
+
+check-auto: $(TEST_PROGRAMS)
+	$(KYUA) test --build-root ./tests --kyuafile @SRCDIR@/tests/Kyuafile
+
+#################### install target ########################################
+MANPAGES= \
+	docs/gcli-api.1 \
+	docs/gcli-comment.1 \
+	docs/gcli-config.1 \
+	docs/gcli-forks.1 \
+	docs/gcli-gists.1 \
+	docs/gcli-issues.1 \
+	docs/gcli-labels.1 \
+	docs/gcli-milestones.1 \
+	docs/gcli-pipelines.1 \
+	docs/gcli-pulls.1 \
+	docs/gcli-releases.1 \
+	docs/gcli-repos.1 \
+	docs/gcli-snippets.1 \
+	docs/gcli-status.1 \
+	docs/gcli.1 \
+	docs/gcli.5
+
+bindir=	/bin
+mandir=	/share/man
+
+BINDIR=	$(DESTDIR)$(PREFIX)$(bindir)
+MANDIR=	$(DESTDIR)$(PREFIX)$(mandir)
+
+.SUFFIXES: .in
+.PHONY: manpages
+
+# phony target to ensure the makefile is updated with the correct
+# sed substitions.
+manpages: Makefile @SRCDIR@/configure
+	@$(MAKE) $(MANPAGES)
+
+$(MANPAGES): @SRCDIR@/configure Makefile @SRCDIR@/${@:=.in}
+	@mkdir -p $$(dirname $@)
+	sed \
+		-e 's|\@PACKAGE_DATE\@|@PACKAGE_DATE@|g' \
+		-e 's|\@PACKAGE_STRING\@|@PACKAGE_STRING@|g' \
+		-e 's|\@PACKAGE_BUGREPORT\@|@PACKAGE_BUGREPORT@|g' \
+		-e 's|\@PACKAGE_URL\@|@PACKAGE_URL@|g' \
+		-e 's|\@PACKAGE_VERSION\@|@PACKAGE_VERSION@|g' \
+		< @SRCDIR@/${@:=.in} > $@
+
+install-auto: manpages gcli
+	$(INSTALL) -d $(BINDIR)
+	$(INSTALL) -m 0755 gcli $(BINDIR)
+	$(INSTALL) -d $(MANDIR)
+	# TODO: compress manual pages
+	$(INSTALL) -m 644 $(MANPAGES) $(MANDIR)

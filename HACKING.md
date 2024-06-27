@@ -10,106 +10,153 @@ patches.
 
 ## Building GCLI
 
-We use the GNU Autotools to build GCLI. Using the autotools has a few
-advantages:
+We use handwritten Makefiles to build GCLI. This has a few advantages:
 
 - Portability across many platforms, even many older ones
-- I (Nico) know Autotools fairly well
-- Cross-Compilation is easy (though not yet fully supported by gcli)
-- Maturity of the tooling due to many years of development
-- Very few dependencies
+- I (Nico) know Makefiles fairly well
+- Cross-Compilation can easily be done
+- High flexibility
+- Few to no dependencies
+- Short compilation times
+
+A few caveats are:
+
+- The Makefile must work with at least 3 implementations of Make:
+  - BSD Make (bmake)
+  - Schily SMake (smake)
+  - GNU Make (gmake)
+
+  Some of these make implementations are very buggy (most notably GNU make)
+- Getting target dependencies just right is not easy
+
+For that reason I highly suggest testing with all three make implementations.
 
 ### General workflow
 
-Autotools generate a `configure` script from `configure.ac` and
-Makefiles using the `configure` script from `Makefile.am`.
+A hand written shell script called `configure` is run inside a
+directory where to place build files.
 
-The `configure` script checks the build system for various features
-and edge cases and allows you to enable features etc. This is the
-place where you can set the C Compiler to be used, flags that should
-be passed to it and where libraries should be found.
+This script checks the environment for various properties such as:
 
-To generate the configure script you need to invoke autoreconf via the
-provided autogen script:
+- The compiler to use
+- Compiler options
+- Target system properties
+- Dependencies and Libraries
+- Additional tooling that can be used
 
-    $ ./autogen.sh
+The script allows you to configure multiple build directories from
+a single source directory (so called "out of tree builds").
 
-I suggest out-of-tree builds (that is source code is separate from
-build output).
+The following example shows you how to configure a default build directory:
 
-For various different build configurations I create different build
-directories and one for general debug work:
-
-    $ mkdir build build-sanitized build-32
+    $ mkdir build
     $ cd build/
+    $ ../configure
 
-Note: In the following I assume LLVM Clang like compiler options. If
-your compiler uses different flags (like e.g. Oracle DeveloperStudio)
-please change the options appropriately.
+Once the configure script has run you can run make to build gcli:
+
+    $ make
+
+To install gcli to the default prefix (`/usr/local`) you can run:
+
+    $ make install
+
+To run the test suite:
+
+    $ make check
+
+Note that running the test suite requires ATF and Kyua. More details
+can be found below.
+
+If you wish to change the compiler to be used you can set these in the
+environment:
+
+    $ env CC=/usr/local/bin/clang17 ../configure
+
+To build a default release build with optimisations you can run:
+
+    $ ../configure --release
+
+Check the built-in help of the configure script for more details:
+
+    $ ../configure --help
 
 #### Full Debug build
 
-Then you can configure each build directory with appropriate options:
+The configure script comes with a `--debug` flag that configures a
+directory for a build with no optimisations and full debug info.
 
-    $ ../configure \
-        CC=/usr/bin/cc \
-        CFLAGS='-std=iso9899:1999 -pedantic -Wall -Wextra -Wno-misleading-indentation -Werror -g -O0' \
-        LDFLAGS='-g' \
-        --disable-shared
+I suggest you use it for development purposes:
 
-The above will give you a fully debuggable and build with strict C99
-compiler errors. I very much suggest that you use those options while
-working on and debugging gcli.
+    $ ../configure --debug
 
-*Note*: The `--disable-shared` is required because if you build a
-shared version of libgcli, libtool will replace the gcli binary with a
-shell script that alters the dld search path to read the correct
-`libgcli.so`. Because of `build/gcli` now not being an ELF
-executable but a shell script debuggers can't load gcli properly.
+You can proceed as usual with make.
 
 #### Sanitized Builds
 
-I sometimes enable the sanitizer features of the C Compiler to check
-for common bugs:
-
-    $ ../configure CC=/usr/bin/cc \
-        CFLAGS='-std=iso9899:1999 -pedantic -Wall -Wextra
-                -Wno-misleading-indentation -Werror -g -O0
-                -fsanitize=address,undefined' \
-        LDFLAGS=-g \
-        --disable-shared
+TBD
 
 #### Cross-Compilation
 
-This is not yet fully supported by gcli. However, it is possible to
-e.g. build a 32bit version of gcli on a 64bit host OS.
+gcli supports cross compilation. A cross-compilation setup can be
+achieved by setting at least the following environment variables:
 
-In this example I have a 32bit version of libcurl installed in
-/opt/sn. To build gcli against that version you can do something like
-the following:
+- `CC` to the target system (aka. host) compiler
+- `CC_FOR_BUILD` to the build system (aka. build) compiler
+- `PKG_CONFIG_PATH` to the path where pkgconfig should look for `.pc` files
 
-    $ ../configure CC=/usr/bin/cc \
-        CFLAGS='-m32 -std=iso9899:1999 -pedantic -Wall -Wextra
-        -Wno-misleading-indentation -Werror -g -O0' \
-        LDFLAGS='-g -L/opt/sn/lib32' \
-        --with-libcurl=/opt/sn
+e.g. to compile from FreeBSD amd64 to a armv7l Linux system:
 
-Note: The RPATH will be set automatically by configure. You don't need
-to cram it into the LDFLAGS.
+	$ CC=/opt/armv7-linux-gnueabihf-gcc/bin/armv7-linux-gnueabihf-gcc \
+	> CC_FOR_BUILD=cc \
+	> PKG_CONFIG_PATH=/opt/armv7-linux-gnueabihf-gcc/root/usr/lib/pkgconfig \
+	> ../configure --debug
+	Configuring gcli 2.4.0-devel
+	Checking for realpath ... realpath
+	Checking host compiler ... /opt/armv7-linux-gnueabihf-gcc/bin/armv7-linux-gnueabihf-gcc
+	Checking host compiler type ... gcc
+	Checking host compiler target ... armv7-linux-gnueabihf
+	Checking for cross-compilation setup ... yes
+	Checking build compiler type... clang
+	Checking build compiler target ... amd64-unknown-freebsd14.1
+	Checking for pkg-config ... pkg-config
+	Checking for libcurl ... found
+	Checking for atf-c ... found
+	Checking for libedit ... found
+	Checking for kyua ... kyua
+	Checking for ccache ... ccache
+	Checking for install ... install
+	Writing config.h
+	Configuration Summary:
+
+	    Build system type: amd64-unknown-freebsd14.1
+	     Host system type: armv7-linux-gnueabihf
+	         optimise for: debug
+	                   CC: /opt/armv7-linux-gnueabihf-gcc/bin/armv7-linux-gnueabihf-gcc
+	         CC_FOR_BUILD: cc
+	               CFLAGS: 
+	     CFLAGS_FOR_BUILD: 
+	       LIBCURL_CFLAGS: 
+	         LIBCURL_LIBS: -lcurl
+	       LIBATFC_CFLAGS: -I/usr/local/include
+	         LIBATFC_LIBS: -L/usr/local/lib -latf-c
+	 Using libedit:
+	       LIBEDIT_CFLAGS: -I/usr/include/editline
+	         LIBEDIT_LIBS: -ledit
+
+	Configuration done. You may now run make.
+
+When you now run make the compilers will be chosen appropriately.
+The test suite will not work when cross-compiling.
 
 ## Tests
 
 The test suite depends on [Kyua](https://github.com/jmmv/kyua) and
 [libatf-c](https://github.com/jmmv/atf).
 
-Before submitting patches please make sure that your changes pass the
-test suite:
+To run the test suite in a configured directory `build` run:
 
-    $ make -C build check
-
-If you change the build system also make sure that it passes a distcheck:
-
-    $ make -C build distcheck
+	$ make -C build check
 
 # Code Style
 

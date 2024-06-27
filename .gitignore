@@ -3,7 +3,6 @@
 /templates/*/*.t~
 /templates/*/*.h
 /Makefile
-/Makefile.in
 /aclocal.m4
 /autom4te.cache/
 /compile
@@ -14,7 +13,6 @@
 /config.log
 /config.status
 /config.sub
-/configure
 /configure~
 /depcomp
 # build artifacts
