@@ -4,7 +4,7 @@
 
 CONFIGURE_CMD_ARGS="${*}"
 
-PACKAGE_VERSION="2.4.0-devel"
+PACKAGE_VERSION="2.5.0-devel"
 PACKAGE_DATE="UNRELEASED"
 PACKAGE_STRING="gcli $PACKAGE_VERSION"
 PACKAGE_BUGREPORT="https://lists.sr.ht/~herrhotzenplotz/gcli-discuss"
