@@ -9,6 +9,51 @@ This changelog does not follow semantic versioning.
 - Added a convenience flag `-V` or `--version` that prints the
   version of gcli.
 
+- Added an option to disable the spinner to indicate network activity
+
+  You can now either set `disable-spinner=yes` in your default
+  section in the config file, specify `--no-spinner` as a command
+  line flag or set the environment variable `GCLI_NOSPINNER` to
+  disable the spinner.  This is useful for dumb terminal environments
+  like acme where the `\r` used by the spinner is not interpreted.
+  Submitted by: Gavin-John Noonan
+
+- Added an interactive status feature
+
+  Running `gcli status` will now drop you into a prompt-based
+  interactive TODO/notification menu. Currently this only supports
+  issues however this will be extended in future releases.
+  The old behaviour of `gcli status` showing a list of notifications
+  can be achieved by supplying the `-l` or `--list` option.
+
+  See also https://gitlab.com/herrhotzenplotz/gcli/-/issues/224
+
+- Experimental support for code review has been added
+
+  When enabling experimental features through either:
+
+  - setting `GCLI_ENABLE_EXPERIMENTAL` in the environment to `yes`
+  - setting `enable-experimental` in the default section of the
+    gcli config file to yes
+
+  you will get a action `review` on the pull request subcommand.
+
+  This subcommand will pull down the diff of the given pull request
+  and loads it into your editor. You can then annotate the diff,
+  save and quit. gcli will then parse the diff, extract comments
+  and allows you to submit them as a review.
+
+  Please refer to the new `gcli-pulls-review(1)` manual page that
+  has been added for this feature.
+
+  Also note that this is experimental and may be buggy. However,
+  testing is very much appreciated and I will gladly discuss ideas
+  and usability issues.
+
+  Please check in on IRC (#gcli on Libera.Chat) for these matters
+  and/or post to our mailing list at
+  https://lists.sr.ht/~herrhotzenplotz/gcli-discuss.
+
 ### Fixed
 
 - Fixed resolving true .git directory when working inside a git
@@ -16,7 +61,41 @@ This changelog does not follow semantic versioning.
   changed how these worktrees pointing to the true git directory.
   Reported by: Robert Clausecker
 
+- Fixed bad error message extraction when API errors occured on
+  GitLab. We now check for common error message fields in the
+  returned payload from the GitLab API and choose the (probably)
+  most useful one.
+
+- Fixed segmentation fault when displaying certain pull requests
+  on Gitea.
+
+- Fixed some spelling mistakes in various manual pages
+
 ### Changed
+
+- The GitLab API returns the list of comments in reverse chronological
+  order. We now reverse this list to print the comments in the correct
+  order such that a logical timeline of a conversation can be seen.
+
+- The build system of gcli has been migrated away from Autotools.
+  The GNU autotools have been complicating and slowing down the
+  gcli builds by a huge amount. Using autotools prevented easy
+  cross-compilation of gcli because it would have required the use
+  of GNU make. Instead of autotools we now use a hand-written
+  configure script and a hand-written Makefile that gets pre-processed
+  by the configure script. You can still invoke the configure script
+  as expected however some options aren't available anymore.
+
+  Packagers are likely interested in the `--release` flag of the
+  configure script. Most other compilation environment flags
+  are controlled by environment variables. Please refer to
+  `./configure --help` for more information. The `HACKING.md` file
+  also includes valuable information including examples.
+
+  Out-of-tree builds are still fully supported.
+
+  If you encounter bugs / other difficulties due to these changes
+  please report back!
 
 ### Removed
 
