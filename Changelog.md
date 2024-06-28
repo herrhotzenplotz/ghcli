@@ -2,7 +2,7 @@
 
 This changelog does not follow semantic versioning.
 
-## UNRELEASED
+## 2.4.0 (2024-June-28)
 
 ### Added
 
@@ -96,8 +96,6 @@ This changelog does not follow semantic versioning.
 
   If you encounter bugs / other difficulties due to these changes
   please report back!
-
-### Removed
 
 ## 2.3.0 (2024-Mar-25)
 
