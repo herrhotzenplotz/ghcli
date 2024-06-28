@@ -36,6 +36,8 @@ There are official packages available:
 - [Debian Testing](https://packages.debian.org/trixie/gcli)
 - [ArchLinux AUR](https://aur.archlinux.org/packages/gcli)
 - [NixPkgs Unstable](https://search.nixos.org/packages?channel=unstable&show=gcli&from=0&size=50&sort=relevance&type=packages&query=gcli)
+- [NetBSD pkgsrc](https://pkgsrc.se/devel/gcli)
+- [MacPorts](https://ports.macports.org/port/gcli/)
 
 ### Dependencies
 
@@ -45,14 +47,7 @@ Required dependencies:
 - lex (flex is preferred)
 - C99 Compiler and linker
 - make
-
-Optional dependencies:
 - pkg-config
-
-If you are building from Git you will also need:
-- m4
-- autoconf
-- automake
 
 The test suite requires:
 - [Kyua](https://github.com/jmmv/kyua)
@@ -71,12 +66,6 @@ value. The final installation destination is `$DESTDIR/$PREFIX/...`.
 
 If you are unsure, consult the builtin configure help by running
 `./configure --help`.
-
-Also, if you are building from Git you need to generate the configure script
-first:
-```console
-$ ./autogen.sh
-```
 
 For more details also see [HACKING.md](HACKING.md).
 

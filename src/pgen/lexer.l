@@ -34,7 +34,7 @@
 #include <stdlib.h>
 
 #include <gcli/pgen.h>
-#include "src/pgen/parser.h"
+#include "y.tab.h"
 
 int yycol = 1, yyrow = 1;
 char *yyfile = NULL;
@@ -67,7 +67,7 @@ struct                             { yycol += yyleng; return STRUCT;    }
 ")"                                { yycol += yyleng; return CPAREN;    }
 ";"                                { yycol += yyleng; return SEMICOLON; }
 ","                                { yycol += yyleng; return COMMA;     }
-[A-Za-z][A-Za-z0-9_*]*             {
+[A-Za-z][A-Za-z0-9_*.]*            {
                                        yycol += yyleng;
                                        yylval.ident.text = strdup(yytext);
                                        return IDENT;

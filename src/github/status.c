@@ -28,6 +28,8 @@
  */
 
 #include <gcli/curl.h>
+#include <gcli/github/comments.h>
+#include <gcli/github/issues.h>
 #include <gcli/github/status.h>
 #include <gcli/json_util.h>
 
@@ -68,4 +70,22 @@ github_notification_mark_as_read(struct gcli_ctx *ctx, char const *id)
 	free(url);
 
 	return rc;
+}
+
+int
+github_notification_get_issue(struct gcli_ctx *const ctx,
+                              struct gcli_notification const *const notification,
+                              struct gcli_issue *const out)
+{
+	return github_fetch_issue(ctx, notification->target.url, out);
+}
+
+int
+github_notification_get_comments(struct gcli_ctx *const ctx,
+                                 struct gcli_notification const *const notification,
+                                 struct gcli_comment_list *const out)
+{
+	char *url = sn_asprintf("%s/comments", notification->target.url);
+
+	return github_fetch_comments(ctx, url, out);
 }

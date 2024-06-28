@@ -100,6 +100,29 @@ resolve_worktree_gitdir_if_needed(char *dotgit)
 
 	fclose(f);
 
+	/* In newer versions of git there is a file called "commondir"
+	 * in .git in a worktree. It contains the path to the real
+	 * .git directory */
+	{
+		char *other_path = sn_asprintf("%s/%s", newdir, "commondir");
+		if ((f = fopen(other_path, "r"))) {
+			char buf[256] = {0};
+			char *tmp = newdir;
+
+			fgets(buf, sizeof buf, f);
+			size_t const len = strlen(buf);
+			if (buf[len-1] == '\n')
+				buf[len-1] = '\0';
+
+			newdir = sn_asprintf("%s/%s", tmp, buf);
+			free(tmp);
+
+			fclose(f);
+		}
+
+		free(other_path);
+	}
+
 	free(dotgit);
 	return newdir;
 }

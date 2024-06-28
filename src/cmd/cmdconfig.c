@@ -29,6 +29,7 @@
 
 #include <config.h>
 
+#include <gcli/cmd/cmd.h>
 #include <gcli/cmd/cmdconfig.h>
 #include <gcli/cmd/gitconfig.h>
 
@@ -63,6 +64,8 @@ struct gcli_config {
 	int override_forgetype;
 	int colours_disabled;       /* NO_COLOR set or output is not a TTY */
 	int force_colours;          /* -c option was given */
+	int no_spinner;             /* don't show a progress spinner */
+	int enable_experimental;    /* enable experimental features */
 
 	sn_sv  buffer;
 	void  *mmap_pointer;
@@ -471,6 +474,12 @@ readenv(struct gcli_config *cfg)
 	tmp = getenv("NO_COLOR");
 	if (tmp && tmp[0] != '\0')
 		cfg->colours_disabled = checkyes(tmp);
+
+	if ((tmp = getenv("GCLI_NOSPINNER")))
+		cfg->no_spinner = checkyes(tmp);
+
+	if ((tmp = getenv("GCLI_ENABLE_EXPERIMENTAL")))
+		cfg->enable_experimental = checkyes(tmp);
 }
 
 int
@@ -514,6 +523,10 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 		  .has_arg = no_argument,
 		  .flag    = &cfg->colours_disabled,
 		  .val     = 0 },
+		{ .name    = "no-spinner",
+		  .has_arg = no_argument,
+		  .flag    = &cfg->no_spinner,
+		  .val     = 1 },
 		{ .name    = "type",
 		  .has_arg = required_argument,
 		  .flag    = NULL,
@@ -526,6 +539,10 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 		  .has_arg = no_argument,
 		  .flag    = NULL,
 		  .val     = 'v' },
+		{ .name    = "version",
+		  .has_arg = no_argument,
+		  .flag    = NULL,
+		  .val     = 'V' },
 		{0},
 	};
 
@@ -539,7 +556,7 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 	/* Start off by pre-populating the config structure */
 	readenv(cfg);
 
-	while ((ch = getopt_long(*argc, *argv, "+a:r:cqvt:", options, NULL)) != -1) {
+	while ((ch = getopt_long(*argc, *argv, "+a:r:cqvt:V", options, NULL)) != -1) {
 		switch (ch) {
 		case 'a': {
 			cfg->override_default_account = optarg;
@@ -570,6 +587,13 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 				        "Have either github, gitlab or gitea.\n", optarg);
 				return EXIT_FAILURE;
 			}
+		} break;
+		case 'V': {
+			longversion();
+			/* call exit here because if we return an OK we would continue
+			 * running the gcli command. we do not want this as this flag
+			 * only ever prints the version and exits. */
+			exit(EXIT_SUCCESS);
 		} break;
 		case 0: break;
 		case '?':
@@ -664,6 +688,14 @@ gcli_config_get_editor(struct gcli_ctx *ctx)
 	ensure_config(ctx);
 
 	return sn_sv_to_cstr(gcli_config_find_by_key(ctx, "defaults", "editor"));
+}
+
+char *
+gcli_config_get_pager(struct gcli_ctx *ctx)
+{
+	ensure_config(ctx);
+
+	return sn_sv_to_cstr(gcli_config_find_by_key(ctx, "defaults", "pager"));
 }
 
 static char const *const
@@ -883,7 +915,7 @@ gcli_config_get_forge_type(struct gcli_ctx *ctx)
 		static int have_printed_forge_type = 0;
 		static char const *const ftype_name[] = {
 			[GCLI_FORGE_GITHUB] = "GitHub",
-			[GCLI_FORGE_GITLAB] = "Gitlab",
+			[GCLI_FORGE_GITLAB] = "GitLab",
 			[GCLI_FORGE_GITEA] = "Gitea",
 			[GCLI_FORGE_BUGZILLA] = "Bugzilla",
 		};
@@ -961,4 +993,43 @@ gcli_config_have_colours(struct gcli_ctx *ctx)
 	tested_tty = 1;
 
 	return !cfg->colours_disabled;
+}
+
+int
+gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
+{
+	ensure_config(ctx);
+
+	struct gcli_config *cfg;
+	cfg = ctx_config(ctx);
+
+	if (cfg->no_spinner)
+		return 0;
+
+	sn_sv cfg_entry = gcli_config_find_by_key(ctx, "defaults", "disable-spinner");
+	if (sn_sv_null(cfg_entry))
+		return 1;
+
+	if (checkyes(sn_sv_to_cstr(cfg_entry)))
+		return 0;
+
+	return 1;
+}
+
+bool
+gcli_config_enable_experimental(struct gcli_ctx *ctx)
+{
+	ensure_config(ctx);
+
+	struct gcli_config *cfg;
+	cfg = ctx_config(ctx);
+
+	if (cfg->enable_experimental)
+		return true;
+
+	sn_sv cfg_entry = gcli_config_find_by_key(ctx, "defaults", "enable-experimental");
+	if (sn_sv_null(cfg_entry))
+		return false;
+
+	return checkyes(sn_sv_to_cstr(cfg_entry));
 }

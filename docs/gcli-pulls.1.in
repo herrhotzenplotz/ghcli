@@ -33,7 +33,13 @@ various
 .Xr git 1
 forges such as GitLab, Gitea or GitHub. Without any action specified,
 .Nm
-will list open PRs in the given or autodetected repository.
+will list open PRs in the given or auto-detected repository.
+.Pp
+For the
+.Nm
+.Cm review
+subcommand please refer to
+.Xr gcli-pulls-review 1 .
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl s , -sorted
@@ -91,7 +97,7 @@ on the specified
 .Sh SUBCOMMANDS
 .Bl -tag -width create
 .It Cm create
-Create a new PR in the given or autodetected repository. The editor
+Create a new PR in the given or auto-detected repository. The editor
 will come up and ask you to enter the PR message.
 .Pp
 When the title is omitted gcli will interactively prompt the various
@@ -118,6 +124,9 @@ Enable the automerge feature when creating the PR.
 .It Ar "PR Title..."
 The title of the Pull Request or Merge Request.
 .El
+.It Cm review
+See
+.Xr gcli-pulls-review 1 .
 .El
 .Sh ACTIONS
 .Ar actions...
@@ -181,6 +190,10 @@ Remove the given label from the pull request.
 .It Cm title Ar new-title
 Change the title of the pull request to
 .Ar new-title .
+.It Cm review
+Review the pull request. See
+.Xr gcli-pulls-review 1
+for more details on this action.
 .El
 .Sh EXAMPLES
 Print a list of open PRs in the current project:
@@ -234,7 +247,7 @@ List pull requests that are associated with the milestone
 $ gcli pulls -M version420
 .Ed
 .Pp
-Change the title of pull request #42 on Github to
+Change the title of pull request #42 on GitHub to
 .Dq "This is the new title" :
 .Bd -literal -offset indent
 $ gcli -t github pulls -i 42 title "This is the new title"

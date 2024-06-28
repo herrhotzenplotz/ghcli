@@ -38,8 +38,7 @@
 #include <gcli/curl.h>
 
 int gitlab_perform_submit_comment(struct gcli_ctx *ctx,
-                                  struct gcli_submit_comment_opts opts,
-                                  struct gcli_fetch_buffer *out);
+                                  struct gcli_submit_comment_opts opts);
 
 int gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
                               char const *repo, gcli_id issue,
@@ -48,5 +47,8 @@ int gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
 int gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner,
                            char const *repo, gcli_id issue,
                            struct gcli_comment_list *out);
+
+int gitlab_fetch_comments(struct gcli_ctx *ctx, char *url,
+                          struct gcli_comment_list *const out);
 
 #endif /* GITLAB_COMMENTS_H */

@@ -1,0 +1,107 @@
+.Dd @PACKAGE_DATE@
+.Dt GCLI-PULLS-REVIEW 1
+.Os @PACKAGE_STRING@
+.Sh NAME
+.Nm gcli pulls review
+.Nd GCLI Integrated Code Review Tool
+.Sh SYNOPSIS
+.Nm
+.Op Fl o Ar owner Fl r Ar repo
+.Fl i Ar id
+.Cm review
+.Sh DESCRIPTION
+.Sy WARNING!
+This feature is rather new. Expect bugs and broken features. Please
+report bugs if you hit any. The same also applies to this manual
+page. Please suggest improvements that can be made to this feature
+too. To enable this experimental action you must either set
+.Dq enable-experimental
+in your gcli config file (see
+.Xr gcli 5 )
+to
+.Dq yes
+or set the environment variable
+.Ev GCLI_ENABLE_EXPERIMENTAL
+to
+.Dq yes .
+.Pp
+The
+.Nm
+action can be used to perform code review tasks for pull requests
+on Git forges supported by gcli.
+.Pp
+Running this action will drop you into your editor and lets you
+annotate the diff of the PR.
+Comments are always above the change they refer to. A change is
+either a single diff line or multiple lines wrapped in curly braces
+on the lines surrounding the change. Comments may be prefixed with
+.Dq > :
+.Bd -literal -offset indent
+@@ foo.md -0,0 +0,0 @@ hunk starts here
+ No change
+This is a single line comment
++Foo
+ 
+> This is is a multiline comment on a multiline diff.
+>
+> Comment continues here.
+{
+ not a change
+-Removed this line
++Added this line
++Added another line.
+}
+ this is also not a change
+.Ed
+.Pp
+The above example produces two comments, the first referring only to the addition of
+.Dq Foo
+and the second referring to 4 lines surrounded by the curly braces.
+.Pp
+Everything leading up to the first diff will be attached as a
+top-level comment for your review.
+.Pp
+After you saved and exited the editor you will be asked what actions
+to take on your review. This allows you to request changes, approve
+the changes, leave a plain comment or to postpone the review locally.
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl o , -owner Ar owner
+List PRs in the repository of the given owner. This option can only
+be used in combination with
+.Fl r .
+.It Fl r , -repo Ar repo
+List PRs in the given repository. This option can only be used in
+combination with
+.Fl o .
+.It Fl i , -id Ar PR
+Review pull request
+.Ar PR .
+.El
+.Sh EXAMPLES
+Review PR #69 in the current inferred forge and remote:
+.Bd -literal -offset indent
+$ gcli pulls -i 69 review
+.Ed
+.Pp
+Review PR #12 in curl/curl on Github:
+.Bd -literal -offset indent
+$ gcli -t github pulls -o curl -r curl -i 12 review
+.Ed
+.Sh SEE ALSO
+.Xr git 1 ,
+.Xr git-merge 1 ,
+.Xr git-branch 1 ,
+.Xr gcli 1 ,
+.Xr patch 1
+.Sh AUTHORS
+.An Nico Sonack aka. herrhotzenplotz Aq Mt nsonack@herrhotzenplotz.de
+and contributors.
+.Sh BUGS
+At the moment the diff cache directory is not created automagically.
+You have to manually create it in case gcli complains.
+.Pp
+This feature is not implemented (but in active development) on Gitea.
+.Pp
+Please report bugs at @PACKAGE_URL@, via E-Mail to @PACKAGE_BUGREPORT@
+or on Github.

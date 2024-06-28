@@ -69,7 +69,7 @@ gitea_upload_release_asset(struct gcli_ctx *ctx, char *const url,
 
 	free(request);
 	free(e_assetname);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return rc;
 }
@@ -143,10 +143,10 @@ gitea_create_release(struct gcli_ctx *ctx, struct gcli_new_release const *releas
 
 	gcli_release_free(&response);
 out:
+	gcli_fetch_buffer_free(&buffer);
 	free(e_owner);
 	free(e_repo);
 	free(upload_url);
-	free(buffer.data);
 	free(url);
 	free(payload);
 

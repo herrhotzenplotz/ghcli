@@ -109,7 +109,7 @@ gcli_get_gist(struct gcli_ctx *ctx, char const *gist_id, struct gcli_gist *out)
 		json_close(&stream);
 	}
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(url);
 
 	return rc;
@@ -151,7 +151,7 @@ gcli_create_gist(struct gcli_ctx *ctx, struct gcli_new_gist opts)
 	char *post_data = NULL;
 	char *url = NULL;
 	int rc = 0;
-	struct gcli_fetch_buffer fetch_buffer = {0};
+	struct gcli_fetch_buffer buffer = {0};
 	struct gcli_jsongen gen = {0};
 
 	/* Read in the file content. this may come from stdin this we don't know
@@ -208,10 +208,10 @@ gcli_create_gist(struct gcli_ctx *ctx, struct gcli_new_gist opts)
 	url = sn_asprintf("%s/gists", gcli_get_apibase(ctx));
 
 	/* Perferm fetch */
-	rc = gcli_fetch_with_method(ctx, "POST", url, post_data, NULL, &fetch_buffer);
+	rc = gcli_fetch_with_method(ctx, "POST", url, post_data, NULL, &buffer);
 
+	gcli_fetch_buffer_free(&buffer);
 	free(content);
-	free(fetch_buffer.data);
 	free(url);
 	free(post_data);
 
@@ -229,7 +229,7 @@ gcli_delete_gist(struct gcli_ctx *ctx, char const *gist_id)
 
 	rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, &buffer);
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(url);
 
 	return rc;

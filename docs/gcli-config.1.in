@@ -23,7 +23,7 @@ it to e.g. add or delete SSH Public Keys used to push to forges.
 .It Fl t , -title Ar title
 Set the title of the SSH Key to be added. This is a short description
 of the key.
-.It Fl k , -key Pa keypath
+.It Fl k , -key Pa key-path
 Path to the file containing the SSH public key.
 .It Fl i , -id Ar id
 ID of the public key to delete.
@@ -58,7 +58,7 @@ $ gcli config ssh add \\
 .An Nico Sonack aka. herrhotzenplotz Aq Mt nsonack@herrhotzenplotz.de
 and contributors.
 .Sh BUGS
-When using this feature to manage SSH keys on Github be aware that you need the
+When using this feature to manage SSH keys on GitHub be aware that you need the
 .Dq read:public_key
 scope enabled on your access token. You will receive HTTP 404 errors
 otherwise.

@@ -23,7 +23,7 @@ usually consist of either only the subcommand to list requested data
 or the subcommand plus further subcommands or options to perform
 various tasks. Some commands may also take an item to operate on and
 accept multiple actions that will be performed on the item (e.g. PRs
-may be summarized, comments fetched and a diff printed all in one
+may be summarised, comments fetched and a diff printed all in one
 command).
 .Pp
 The default behaviour of
@@ -46,11 +46,11 @@ Manage labels for issues and pull/merge requests on repositories. See
 Forking repositories. See
 .Xr gcli-forks 1 .
 .It Cm gists
-Github Gists are like paste bins to where you can dump code snippets
+GitHub Gists are like paste bins to where you can dump code snippets
 etc. See
 .Xr gcli-gists 1 .
 .It Cm snippets
-Support for Gitlab snippets. See
+Support for GitLab snippets. See
 .Xr gcli-snippets 1 .
 .It Cm repos
 Manage your own or other repositories. See
@@ -62,7 +62,7 @@ Submit comments under issues and PRs. See
 Print a list of TODOs and/or notifications. See
 .Xr gcli-status 1 .
 .It Cm pipelines
-Inspect and manage Gitlab Pipelines. See
+Inspect and manage GitLab Pipelines. See
 .Xr gcli-pipelines 1 .
 .It Cm releases
 Create and manage releases. See
@@ -103,6 +103,15 @@ unless stdout is not a tty. See
 .Xr isatty 3 .
 This is useful in combination with modern pagers such as
 .Xr less 1 .
+.It Fl -no-spinner
+Disable the animated spinner that is displayed when
+.Nm
+is making network requests. This is useful inside dumb terminals
+or in editors such as acme.
+See also
+.Ev GCLI_NOSPINNER
+in
+.Sx ENVIRONMENT .
 .It Fl q , -quiet
 Suppresses most output of
 .Nm .
@@ -131,7 +140,7 @@ this parameter allows to fetch more than that. Setting
 .Ar n
 to -1 will result in all pages being queried and all items being read.
 However, be careful with that, since if there is a lot of data to be
-fetched, it may result in rate limiting by the Github API, aside from
+fetched, it may result in rate limiting by the GitHub API, aside from
 the fact that it may also take a considerable amount of time to
 process.
 .It Fl a , -all
@@ -140,7 +149,7 @@ Fetch all data, including closed issues and closed/merged PRs.
 Do not ask for confirmation when performing destructive operations or
 performing submissions. Always assume yes.
 .It Fl o , -owner Ar owner
-Operate on the given owner (organization or user).  Can only be used
+Operate on the given owner (organisation or user).  Can only be used
 in combination with
 .Fl r .
 .It Fl r , -repo Ar repo
@@ -177,10 +186,19 @@ If set to
 .Sq 1 ,
 .Sq y or
 .Sq yes
-(capitalization ignored) this will suppress output of ANSI colour
+(capitalisation ignored) this will suppress output of ANSI colour
 escape sequences. See
 .Sx OPTIONS
 (--colours).
+.It Ev GCLI_NOSPINNER
+If set to
+.Sq 1 ,
+.Sq y or
+.Sq yes
+(capitalisation ignored) this will disable the animated spinner when
+gcli is making requests. See
+.Sx OPTIONS
+(--disable-spinner)
 .El
 .Sh FILES
 .Bl -tag -width ${XDG_CONFIG_HOME}/gcli/config -compact
@@ -215,7 +233,7 @@ Get a summary and comments of upstream PR #22:
 $ gcli pulls -p 22 summary comments
 .Ed
 .Pp
-Establish a connection to github and print the last 10 pull requests
+Establish a connection to GitHub and print the last 10 pull requests
 in contour-terminal/contour regardless of their state.
 .Bd -literal -offset indent
 $ gcli -t github pulls -o contour-terminal -r contour -a -n10
@@ -241,7 +259,7 @@ working from contain the relevant forge and repository information.
 The idea for
 .Nm
 appeared during a long rant on IRC where the issue with the official
-tool written by GitHub became clear to be the manual dialing and DNS
+tool written by GitHub became clear to be the manual dialling and DNS
 resolving by the Go runtime, circumventing almost the entirety of the
 IP and DNS services of the operating system and leaking sensitive
 information when using Tor.

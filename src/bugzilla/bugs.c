@@ -102,7 +102,7 @@ bugzilla_get_bugs(struct gcli_ctx *ctx, char const *product, char const *compone
 		json_close(&stream);
 	}
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(url);
 
 	return rc;
@@ -132,7 +132,7 @@ bugzilla_bug_get_comments(struct gcli_ctx *const ctx, char const *const product,
 	rc = parse_bugzilla_comments(ctx, &stream, out);
 	json_close(&stream);
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 error_fetch:
 	free(url);
@@ -159,7 +159,7 @@ bugzilla_bug_get_op(struct gcli_ctx *ctx, gcli_id const bug_id, char **out)
 	rc = parse_bugzilla_bug_op(ctx, &stream, out);
 	json_close(&stream);
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 error_fetch:
 	free(url);
@@ -213,7 +213,7 @@ bugzilla_get_bug(struct gcli_ctx *ctx, char const *product,
 error_no_such_bug:
 error_parse:
 	json_close(&stream);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 error_fetch:
 	free(url);
@@ -245,7 +245,7 @@ bugzilla_bug_get_attachments(struct gcli_ctx *ctx, char const *const product,
 	rc = parse_bugzilla_bug_attachments(ctx, &stream, out);
 	json_close(&stream);
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 error_fetch:
 	free(url);
@@ -366,7 +366,7 @@ bugzilla_bug_submit(struct gcli_ctx *const ctx,
 			rc = bugzilla_get_bug(ctx, NULL, NULL, id, out);
 	}
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(url);
 	free(payload);
 

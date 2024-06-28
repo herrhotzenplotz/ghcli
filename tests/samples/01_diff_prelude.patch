@@ -1,0 +1,119 @@
+From 47b40f51cae6cec9a3132f888fd66c21ecb687fa Mon Sep 17 00:00:00 2001
+From: Nico Sonack <nsonack@outlook.com>
+Date: Sun, 10 Oct 2021 12:23:11 +0200
+Subject: [PATCH] Start submission implementation
+
+---
+ include/ghcli/pulls.h |  1 +
+ src/ghcli.c           | 55 +++++++++++++++++++++++++++++++++++++++++++
+ src/pulls.c           |  9 +++++++
+ 3 files changed, 65 insertions(+)
+
+diff --git a/include/ghcli/pulls.h b/include/ghcli/pulls.h
+index 30a503cf..05d233eb 100644
+--- a/include/ghcli/pulls.h
++++ b/include/ghcli/pulls.h
+@@ -57,5 +57,6 @@ int  ghcli_get_prs(const char *org, const char *reponame, bool all, ghcli_pull *
+ void ghcli_print_pr_table(FILE *stream, ghcli_pull *pulls, int pulls_size);
+ void ghcli_print_pr_diff(FILE *stream, const char *org, const char *reponame, int pr_number);
+ void ghcli_pr_summary(FILE *stream, const char *org, const char *reponame, int pr_number);
++void ghcli_pr_submit(const char *from, const char *to, int in_draft);
+ 
+ #endif /* PULLS_H */
+diff --git a/src/ghcli.c b/src/ghcli.c
+index 4ce96f5a..7c19cfdc 100644
+--- a/src/ghcli.c
++++ b/src/ghcli.c
+@@ -27,6 +27,7 @@
+  * OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include <getopt.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -49,6 +50,54 @@ shift(int *argc, char ***argv)
+     return *((*argv)++);
+ }
+ 
++/**
++ * Create a pull request
++ */
++static int
++subcommand_pull_create(int argc, char *argv[])
++{
++    /* we'll use getopt_long here to parse the arguments */
++    int   is_draft = 0;
++    int   ch;
++    char *from = NULL, *to = NULL;
++
++    const struct option options[] = {
++        { .name = "from",  .has_arg = required_argument, .flag = NULL,      .val = 'f' },
++        { .name = "to",    .has_arg = required_argument, .flag = NULL,      .val = 't' },
++        { .name = "draft", .has_arg = no_argument,       .flag = &is_draft, .val = 1 },
++        {0},
++    };
++
++    while ((ch = getopt_long(argc, argv, "f:t:d", options, NULL)) != -1) {
++        switch (ch) {
++        case 'f':
++            from = optarg;
++            break;
++        case 't':
++            to = optarg;
++            break;
++        case 'd':
++            is_draft = 1;
++            break;
++        default:
++            errx(1, "RTFM");
++        }
++    }
++
++    argc -= optind;
++    argv += optind;
++
++    if (!from)
++        errx(1, "PR head is missing. Please specify --from");
++
++    if (!to)
++        errx(1, "PR base is missing. Please specify --to");
++
++    ghcli_pr_submit(from, to, is_draft);
++
++    return EXIT_SUCCESS;
++}
++
+ static int
+ subcommand_pulls(int argc, char *argv[])
+ {
+@@ -61,6 +110,12 @@ subcommand_pulls(int argc, char *argv[])
+     int         pulls_size = 0;
+     bool        all        = false;
+ 
++    /* detect whether we wanna create a PR */
++    if (argc > 1 && (strcmp(argv[1], "create") == 0)) {
++        shift(&argc, &argv);
++        return subcommand_pull_create(argc, argv);
++    }
++
+     /* Parse commandline options */
+     while ((ch = getopt(argc, argv, "o:r:p:a")) != -1) {
+         switch (ch) {
+diff --git a/src/pulls.c b/src/pulls.c
+index c10a5012..dda0ecfe 100644
+--- a/src/pulls.c
++++ b/src/pulls.c
+@@ -443,3 +443,12 @@ ghcli_pr_summary(FILE *out, const char *org, const char *reponame, int pr_number
+     fprintf(out, "\nCOMMITS\n");
+     ghcli_print_commits_table(out, commits, commits_size);
+ }
++
++void
++ghcli_pr_submit(const char *from, const char *to, int is_draft)
++{
++    (void) from;
++    (void) to;
++    (void) is_draft;
++    errx(1, "not yet implemented");
++}

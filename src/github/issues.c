@@ -169,7 +169,7 @@ search_issues(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	rc = parse_github_issue_search_result(ctx, &stream, out);
 
 	json_close(&stream);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 error_fetch:
 	free(url);
@@ -247,23 +247,12 @@ github_issues_search(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 int
-github_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, gcli_id const issue_number,
-                         struct gcli_issue *const out)
+github_fetch_issue(struct gcli_ctx *const ctx, char *const url,
+                   struct gcli_issue *const out)
 {
-	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	struct gcli_fetch_buffer buffer = {0};
 	struct json_stream parser = {0};
 	int rc = 0;
-
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid,
-	                  gcli_get_apibase(ctx), e_owner, e_repo,
-	                  issue_number);
 
 	rc = gcli_fetch(ctx, url, NULL, &buffer);
 
@@ -274,10 +263,33 @@ github_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
 		json_close(&parser);
 	}
 
-	free(url);
+	gcli_fetch_buffer_free(&buffer);
+
+	return rc;
+}
+
+int
+github_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
+                         char const *repo, gcli_id const issue_number,
+                         struct gcli_issue *const out)
+{
+	char *url = NULL;
+	char *e_owner = NULL;
+	char *e_repo = NULL;
+	int rc = 0;
+
+	e_owner = gcli_urlencode(owner);
+	e_repo  = gcli_urlencode(repo);
+
+	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid,
+	                  gcli_get_apibase(ctx), e_owner, e_repo,
+	                  issue_number);
+
 	free(e_owner);
 	free(e_repo);
-	free(buffer.data);
+
+	rc = github_fetch_issue(ctx, url, out);
+	free(url);
 
 	return rc;
 }
@@ -372,7 +384,7 @@ github_perform_submit_issue(struct gcli_ctx *const ctx,
 		json_close(&stream);
 	}
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(payload);
 	free(url);
 

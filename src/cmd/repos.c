@@ -231,12 +231,14 @@ action_delete(char const *const owner, char const *const repo, int *argc,
 static gcli_repo_visibility
 parse_visibility(char const *str)
 {
-	if (strcmp(str, "public") == 0)
+	if (strcmp(str, "public") == 0) {
 		return GCLI_REPO_VISIBILITY_PUBLIC;
-	else if (strcmp(str, "private") == 0)
+	} else if (strcmp(str, "private") == 0) {
 		return GCLI_REPO_VISIBILITY_PRIVATE;
-	else
-		return -1;
+	} else {
+		fprintf(stderr, "gcli: error: bad visibility level »%s«\n", str);
+		return 1;
+	}
 }
 
 /* Change the visibility level of a repository (e.g. public, private
@@ -259,10 +261,6 @@ action_set_visibility(char const *const owner, char const *const repo,
 	*argc -= 2;
 
 	visblty = parse_visibility(visblty_str);
-	if (visblty < 0) {
-		fprintf(stderr, "gcli: error: bad visibility level »%s«\n", visblty_str);
-		return 1;
-	}
 
 	if ((rc = gcli_repo_set_visibility(g_clictx, owner, repo, visblty)) < 0) {
 		fprintf(stderr, "gcli: error: failed to set visibility: %s\n",

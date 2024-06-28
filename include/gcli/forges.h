@@ -59,8 +59,7 @@ struct gcli_forge_descriptor {
 	 * Submit a comment to a pull/mr or issue */
 	int (*perform_submit_comment)(
 		struct gcli_ctx *ctx,
-		struct gcli_submit_comment_opts  opts,
-		struct gcli_fetch_buffer        *out);
+		struct gcli_submit_comment_opts opts);
 
 	/**
 	 * List comments on the given issue */
@@ -429,6 +428,12 @@ struct gcli_forge_descriptor {
 		char const *new_title);
 
 	/**
+	 * Create a review on a PR */
+	int (*pull_create_review)(
+		struct gcli_ctx *ctx,
+		struct gcli_pull_create_review_details const *details);
+
+	/**
 	 * Get a list of releases in the given repo */
 	int (*get_releases)(
 		struct gcli_ctx *ctx,
@@ -510,10 +515,24 @@ struct gcli_forge_descriptor {
 
 	/**
 	 * Status summary for the account */
-    int (*get_notifications)(
-	    struct gcli_ctx *ctx,
-	    int max,
+	int (*get_notifications)(
+		struct gcli_ctx *ctx,
+		int max,
 		struct gcli_notification_list *notifications);
+
+	/**
+	 * *Given an issue notification grab the associated issue. */
+	int (*notification_get_issue)(
+		struct gcli_ctx *ctx,
+		struct gcli_notification const *const notification,
+		struct gcli_issue *out);
+
+	/**
+	 * Given a notification fetch the target's comments */
+	int (*notification_get_comments)(
+		struct gcli_ctx *ctx,
+		struct gcli_notification const *notification,
+		struct gcli_comment_list *out);
 
 	/**
 	 * Mark notification with the given id as read

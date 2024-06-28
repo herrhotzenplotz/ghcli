@@ -133,7 +133,8 @@ github_forge_descriptor =
 	.pull_remove_labels        = github_issue_remove_labels,
 	.pull_set_milestone        = github_issue_set_milestone,
 
-	/* Releases */
+	.pull_create_review        = github_pull_create_review,
+
 	.create_release            = github_create_release,
 	.delete_release            = github_delete_release,
 	.get_releases              = github_get_releases,
@@ -157,6 +158,8 @@ github_forge_descriptor =
 	/* Notifications */
 	.get_notifications         = github_get_notifications,
 	.notification_mark_as_read = github_notification_mark_as_read,
+	.notification_get_issue    = github_notification_get_issue,
+	.notification_get_comments = github_notification_get_comments,
 
 	/* Internal stuff */
 	.get_api_error_string      = github_api_error_string,
@@ -217,6 +220,7 @@ gitlab_forge_descriptor =
 	.pull_add_reviewer         = gitlab_mr_add_reviewer,
 	.pull_clear_milestone      = gitlab_mr_clear_milestone,
 	.pull_close                = gitlab_mr_close,
+	.pull_create_review        = gitlab_mr_create_review,
 	.pull_get_diff             = gitlab_mr_get_diff,
 	.pull_get_patch            = gitlab_mr_get_patch,
 	.pull_merge                = gitlab_mr_merge,
@@ -248,7 +252,9 @@ gitlab_forge_descriptor =
 
 	/* Notifications */
 	.get_notifications         = gitlab_get_notifications,
+	.notification_get_issue    = gitlab_notification_get_issue,
 	.notification_mark_as_read = gitlab_notification_mark_as_read,
+	.notification_get_comments = gitlab_notification_get_comments,
 
 	/* Internal stuff */
 	.get_api_error_string      = gitlab_api_error_string,

@@ -65,7 +65,7 @@ gitlab_get_repo(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		json_close(&stream);
 	}
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(e_owner);
 	free(e_repo);
 	free(url);
@@ -175,7 +175,7 @@ gitlab_repo_create(struct gcli_ctx *ctx, struct gcli_repo_create_options const *
 		json_close(&stream);
 	}
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(payload);
 	free(url);
 

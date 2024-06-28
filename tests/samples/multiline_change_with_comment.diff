@@ -1,0 +1,20 @@
+From 361f83923b9924a3e8796b0ddf03f768e26a1236 Mon Sep 17 00:00:00 2001
+diff --git a/README.md b/README.md
+index 5ab731f..2b99524 100644
+--- a/README.md
++++ b/README.md
+@@ -6,9 +6,8 @@ Das hier ist nur ein kurzer Test.
+ Ich füge zum Test hier mal eine neue Zeile ein.
+ 
+ 
+> This is the comment.
+> It also spans across multiple lines.
+{
+-
+-
+-
++This is just a change.
++Across multiple lines.
+}
+ 
+ This line belongs to a different commit.

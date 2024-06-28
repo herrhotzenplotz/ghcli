@@ -36,6 +36,16 @@
 
 #include <gcli/curl.h>
 
+/* Gitlab returns error messages in many strange ways. Since the
+ * keys are different we try to produce a good error message by looking
+ * for all possible keys and then returning a sensible value. This struct
+ * contains a collection of found messages. */
+struct gitlab_error_data {
+	char *message;
+	char *error_description;
+	char *error;
+};
+
 char const *gitlab_api_error_string(struct gcli_ctx *ctx, struct gcli_fetch_buffer *buf);
 int gitlab_user_id(struct gcli_ctx *ctx, char const *user_name);
 

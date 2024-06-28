@@ -440,3 +440,102 @@ get_int_to_sv_(struct gcli_ctx *ctx, json_stream *input, sn_sv *out,
 
 	return 0;
 }
+
+int
+get_github_notification_target_type(struct gcli_ctx *ctx, json_stream *input,
+                                    enum gcli_notification_target_type *out)
+{
+	sn_sv tmp;
+	int rc = 0;
+
+	rc = get_sv(ctx, input, &tmp);
+	if (rc < 0)
+		return rc;
+
+	if (sn_sv_eq_to(tmp, "Issue")) {
+		*out = GCLI_NOTIFICATION_TARGET_ISSUE;
+
+	} else if (sn_sv_eq_to(tmp, "PullRequest")) {
+		*out = GCLI_NOTIFICATION_TARGET_PULL_REQUEST;
+
+	} else {
+		rc = gcli_error(
+			ctx, "bad github notification target type: "SV_FMT,
+			SV_ARGS(tmp));
+
+	}
+
+	free(tmp.data);
+
+	return rc;
+}
+
+int
+get_gitlab_notification_target_type(struct gcli_ctx *ctx, json_stream *input,
+                                    enum gcli_notification_target_type *out)
+{
+	sn_sv tmp;
+	int rc = 0;
+
+	rc = get_sv(ctx, input, &tmp);
+	if (rc < 0)
+		return rc;
+
+	if (sn_sv_eq_to(tmp, "Issue")) {
+		*out = GCLI_NOTIFICATION_TARGET_ISSUE;
+
+	} else if (sn_sv_eq_to(tmp, "MergeRequest")) {
+		*out = GCLI_NOTIFICATION_TARGET_PULL_REQUEST;
+
+	} else if (sn_sv_eq_to(tmp, "Commit")) {
+		*out = GCLI_NOTIFICATION_TARGET_COMMIT;
+
+	} else if (sn_sv_eq_to(tmp, "Epic")) {
+		*out = GCLI_NOTIFICATION_TARGET_EPIC;
+
+	} else {
+		rc = gcli_error(
+			ctx, "bad github notification target type: "SV_FMT,
+			SV_ARGS(tmp));
+
+	}
+
+	free(tmp.data);
+
+	return rc;
+}
+
+int
+get_gitea_notification_target_type(struct gcli_ctx *ctx, json_stream *input,
+                                   enum gcli_notification_target_type *out)
+{
+	sn_sv tmp;
+	int rc = 0;
+
+	rc = get_sv(ctx, input, &tmp);
+	if (rc < 0)
+		return rc;
+
+	if (sn_sv_eq_to(tmp, "Issue")) {
+		*out = GCLI_NOTIFICATION_TARGET_ISSUE;
+
+	} else if (sn_sv_eq_to(tmp, "Pull")) {
+		*out = GCLI_NOTIFICATION_TARGET_PULL_REQUEST;
+
+	} else if (sn_sv_eq_to(tmp, "Commit")) {
+		*out = GCLI_NOTIFICATION_TARGET_COMMIT;
+
+	} else if (sn_sv_eq_to(tmp, "Repository")) {
+		*out = GCLI_NOTIFICATION_TARGET_REPOSITORY;
+
+	} else {
+		rc = gcli_error(
+			ctx, "bad github notification target type: "SV_FMT,
+			SV_ARGS(tmp));
+
+	}
+
+	free(tmp.data);
+
+	return rc;
+}

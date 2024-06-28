@@ -40,12 +40,30 @@ gitlab_api_error_string(struct gcli_ctx *ctx, struct gcli_fetch_buffer *const bu
 	char *msg = NULL;
 	int rc;
 	struct json_stream stream = {0};
+	struct gitlab_error_data error_data = {0};
 
 	json_open_buffer(&stream, buf->data, buf->length);
-	rc = parse_gitlab_get_error(ctx, &stream, &msg);
+	rc = parse_gitlab_get_error(ctx, &stream, &error_data);
 	json_close(&stream);
 
+	/* Extract a most useful error message */
+	if (error_data.error_description) {
+		msg = strdup(error_data.error_description);
+	} else if (error_data.message) {
+		msg = strdup(error_data.message);
+	} else if (error_data.error) {
+		msg = strdup(error_data.error);
+	} else {
+		msg = NULL;
+	}
+
+	free(error_data.error_description);
+	free(error_data.message);
+	free(error_data.error);
+
 	if (rc < 0 || msg == NULL) {
+		free(msg);
+
 		if (sn_verbose()) {
 			return sn_asprintf("Could not parse Gitlab error response. "
 			                   "The response was:\n\n%.*s\n",
@@ -89,7 +107,7 @@ gitlab_user_id(struct gcli_ctx *ctx, char const *user_name)
 
 	free(e_username);
 	free(url);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return uid;
 }

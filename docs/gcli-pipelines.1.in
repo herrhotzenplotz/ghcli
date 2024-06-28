@@ -19,7 +19,7 @@
 .Sh DESCRIPTION
 .Nm
 is used to display data about the Continuous Integration (CI) service
-of Gitlab. You can list pipelines of a given repository, list jobs in
+of GitLab. You can list pipelines of a given repository, list jobs in
 a given pipeline or perform actions such as restarting jobs or
 fetching their logs.
 .Sh OPTIONS

@@ -1,6 +1,6 @@
 # Setting up gcli for use with an account
 
-Creating issues on Github requires an account which we need to
+Creating issues on GitHub requires an account which we need to
 generate an authentication token for gcli.
 
 Log into your GitHub account and click on your account icon in the top

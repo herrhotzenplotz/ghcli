@@ -47,6 +47,9 @@ int github_pull_get_diff(struct  gcli_ctx *ctx, FILE *stream, char const *owner,
 int github_pull_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
                           char const *reponame, gcli_id pr_number);
 
+int github_print_pull_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
+                            char const *reponame, gcli_id pr_number);
+
 int github_pull_get_checks(struct gcli_ctx *ctx, char const *owner,
                            char const *repo, gcli_id pr_number,
                            struct gcli_pull_checks_list *out);
@@ -79,5 +82,8 @@ int github_pull_add_reviewer(struct gcli_ctx *ctx, char const *owner,
 
 int github_pull_set_title(struct gcli_ctx *ctx, char const *owner,
                           char const *repo, gcli_id pull, char const *new_title);
+
+int github_pull_create_review(struct gcli_ctx *ctx,
+                              struct gcli_pull_create_review_details const *details);
 
 #endif /* GITHUB_PULLS_H */

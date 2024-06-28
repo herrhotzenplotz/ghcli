@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <gcli/ctx.h>
+#include <gcli/gitlab/api.h>
 
 #include "gcli_tests.h"
 
@@ -310,6 +311,38 @@ ATF_TC_BODY(gitlab_simple_snippet, tc)
 	gcli_destroy(&ctx);
 }
 
+ATF_TC_WITHOUT_HEAD(gitlab_error_token_expired);
+ATF_TC_BODY(gitlab_error_token_expired, tc)
+{
+	struct gcli_ctx *ctx = test_context();
+	struct gcli_fetch_buffer buffer = {0};
+	char const *errmsg = NULL;
+
+	buffer.length = sn_read_file(TESTSRCDIR"/samples/gitlab_token_expired.json",
+	                             &buffer.data);
+
+	ATF_REQUIRE(buffer.length);
+	errmsg = gitlab_api_error_string(ctx, &buffer);
+
+	ATF_CHECK_STREQ(errmsg, "Token has expired.");
+}
+
+ATF_TC_WITHOUT_HEAD(gitlab_error_unauthorised);
+ATF_TC_BODY(gitlab_error_unauthorised, tc)
+{
+	struct gcli_ctx *ctx = test_context();
+	struct gcli_fetch_buffer buffer = {0};
+	char const *errmsg = NULL;
+
+	buffer.length = sn_read_file(TESTSRCDIR"/samples/gitlab_error_unauthorised.json",
+	                             &buffer.data);
+
+	ATF_REQUIRE(buffer.length);
+	errmsg = gitlab_api_error_string(ctx, &buffer);
+
+	ATF_CHECK_STREQ(errmsg, "401 Unauthorized");
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, gitlab_simple_fork);
@@ -321,6 +354,8 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, gitlab_simple_release);
 	ATF_TP_ADD_TC(tp, gitlab_simple_repo);
 	ATF_TP_ADD_TC(tp, gitlab_simple_snippet);
+	ATF_TP_ADD_TC(tp, gitlab_error_token_expired);
+	ATF_TP_ADD_TC(tp, gitlab_error_unauthorised);
 
 	return atf_no_error();
 }

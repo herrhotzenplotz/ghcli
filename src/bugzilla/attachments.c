@@ -62,7 +62,7 @@ bugzilla_attachment_get_content(struct gcli_ctx *ctx, gcli_id attachment_id,
 
 error_parse:
 	json_close(&stream);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 error_fetch:
 	free(url);

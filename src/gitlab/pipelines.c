@@ -215,7 +215,7 @@ gitlab_get_job(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		json_close(&stream);
 	}
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(url);
 
 	return rc;

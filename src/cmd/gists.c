@@ -360,9 +360,9 @@ subcommand_gists(int argc, char *argv[])
 
 	/* Make sure we are looking at a GitHub forge */
 	if (gcli_config_get_forge_type(g_clictx) != GCLI_FORGE_GITHUB) {
-		errx(1, "gcli: error: The gists subcommand only works for Github "
+		errx(1, "gcli: error: The gists subcommand only works for GitHub "
 		     "forges. Please use either -a or -t to force using a "
-		     "Github account.");
+		     "GitHub account.");
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(gist_subcommands); ++i) {

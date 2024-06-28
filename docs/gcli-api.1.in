@@ -11,7 +11,7 @@
 .Sh DESCRIPTION
 The
 .Nm
-is used to debug API calls. It will autodetect the current forge and
+is used to debug API calls. It will auto-detect the current forge and
 perform a request to its REST API. The response is printed to stdout.
 The API base URL is automatically prepended to the given
 .Ar path .

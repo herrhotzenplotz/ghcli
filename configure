@@ -1,0 +1,358 @@
+#!/bin/sh
+
+# set -o pipefail
+
+CONFIGURE_CMD_ARGS="${*}"
+
+PACKAGE_VERSION="2.4.0"
+PACKAGE_DATE="2024-June-28"
+PACKAGE_STRING="gcli $PACKAGE_VERSION"
+PACKAGE_BUGREPORT="https://lists.sr.ht/~herrhotzenplotz/gcli-discuss"
+PACKAGE_URL="https://sr.ht/~herrhotzenplotz/gcli"
+echo "Configuring gcli $PACKAGE_VERSION" >&2
+
+find_program() {
+	varname=$1
+	shift
+	should_fail=$1
+	shift
+
+	printf "Checking for $varname ..." >&2
+	for x in $*; do
+		if (command -v $x >/dev/null 2>&1) && [ -x $(command -v $x) ]; then
+			printf " $x\n" >&2
+			echo $x
+			return
+		fi
+	done
+	printf " not found\n" >&2
+	[ $should_fail -eq 1 ] && exit 1
+
+}
+
+REALPATH=${REALPATH:-$(find_program realpath 1 realpath grealpath)}
+rel_srcdir="$(dirname ${0})"
+srcdir="$(${REALPATH} ${rel_srcdir})"
+
+tolower() {
+	tr '[[:upper:]]' '[[:lower:]]'
+}
+
+die() {
+	printf "%s\n" "${*}"
+	exit 1
+}
+
+compiler_type() {
+	if ${1} -v 2>&1 | grep clang > /dev/null; then
+		echo "clang"
+	elif ${1} -v 2>&1 | grep '^gcc' > /dev/null; then
+		echo "gcc"
+	elif ${1} -qversion 2>&1 | grep 'IBM XL C' >/dev/null; then
+		echo "xlc"
+	else
+		# TODO: implement studio
+		echo "unknown"
+	fi
+}
+
+normalise_compiler_target() {
+	tolower | sed -e 's|x86_64|amd64|g' -e 's| ||g'
+}
+
+compiler_target() {
+	ccom=$1
+	cc=$2
+
+	case $ccom in
+		gcc|clang)
+			$cc -v 2>&1 \
+				| grep '^Target' \
+				| cut -d: -f2
+			;;
+		xlc)
+			# for xlc we can't easily get its target. instead we ask its
+			# configured assembler for the target. Right now I assume it
+			# is a GNU assembler. If this doesn't work for you please fix!
+			# I don't have access to any equipment running anything else
+			# and I will not beg IBM for giving me access.
+			xlc_config=$($cc -v 2>&1 | grep XL_CONFIG | sed 's|.*XL_CONFIG=\([^:]*\):.*|\1|')
+			[ -z "${xlc_config}" ] && die "xlc config file not detected"
+			xlc_as=$(cat $xlc_config | grep -E 'as[\t ]+.*=[ ]+' | sed 1q | cut -d= -f2 | sed 's| ||g')
+			[ -z "${xlc_as}" ] && die "failed to figure out assembler used by XL C"
+			$xlc_as --version 2>&1 | grep 'GNU assembler' >/dev/null || die "Can only derive compiler target from GNU assembler, please submit fix for your assembler"
+			$xlc_as --version 2>&1 | grep target | sed "s|.*\`\([^']*\)'.*|\1|"
+			;;
+		*)
+			echo "unknown-unknown-unknown"
+			;;
+	esac | normalise_compiler_target
+}
+
+# args= pkgconfig-name variable-name is-mandatory
+find_package() {
+	printf "Checking for $1 ..." >&2
+	if ! $PKG_CONFIG --exists $1; then
+		if [ $3 -eq 0 ]; then
+			printf " not found\n"
+			export ${2}_FOUND=0
+			return
+		else
+			die "not found"
+		fi
+	fi
+	export ${2}_CFLAGS="$($PKG_CONFIG --cflags $1)"
+	export ${2}_LIBS="$($PKG_CONFIG --libs $1)"
+	export ${2}_FOUND=1
+	printf " found\n" >&2
+}
+
+usage() {
+	cat >&2 <<EOF
+usage: ./configure [options]
+
+Configure build directory of gcli.
+
+OPTIONS:
+    --prefix=PREFIX         Set installation prefix to PREFIX [DEFAULT: /usr/local]
+    --enable-libedit        Search and use libedit for interactive editing [DEFAULT: yes]
+    --disable-libedit       Do not use libedit
+    --enable-libreadline    Search and use libreadline for interactive editing [DEFAULT: yes]
+    --disable-libreadline   Disable use of libreadline
+    --debug                 Compile without optimisations, generate code with
+                            debug information and enable additional compiler-specific
+                            warnings and portability checks.
+    --release               Optimise for release
+    --help                  Print this help
+
+ENVIRONMENT:
+    CC                      Host system compiler to use [DEFAULT: cc]
+    CC_FOR_BUILD            Build system compiler [DEFAULT: \$CC]
+    CFLAGS                  Host system C compiler flags
+    CFLAGS_FOR_BUILD        Build system compiler flags
+    CPPFLAGS                C Preprocessor flags for host system compiler
+    CPPFLAGS_FOR_BUILD      C Preprocessor flags for build system compiler
+    PKG_CONFIG              pkg-config to use [DEFAULT: autodetect]
+    AR                      Archiver to use [DEFAULT: autodetect]
+    RANLIB                  Ranlib to use [DEFAULT: autodetect]
+    RM                      rm to use [DEFAULT: autodetect]
+    KYUA                    Path to Kyua [DEFAULT: autodetect]
+    CCACHE                  Path to ccache [DEFAULT: autodetect]
+    INSTALL                 Path to install [DEFAULT: autodetect]
+EOF
+	exit 1
+}
+
+# Install options
+#
+PREFIX=/usr/local
+OPTIMISE=
+ENABLE_LIBEDIT=1
+ENABLE_LIBREADLINE=1
+
+# Parse flags
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--prefix=*)
+			PREFIX=${1##--prefix=}
+			shift
+			;;
+		--prefix)
+			PREFIX=${2}
+			shift; shift
+			;;
+		--enable-libedit)
+			ENABLE_LIBEDIT=1
+			shift
+			;;
+		--disable-libedit)
+			ENABLE_LIBEDIT=0
+			shift
+			;;
+		--enable-libreadline)
+			ENABLE_LIBREADLINE=1
+			shift
+			;;
+		--disable-libreadline)
+			ENABLE_LIBREADLINE=0
+			shift
+			;;
+		--debug)
+			OPTIMISE=debug
+			shift
+			;;
+		--release)
+			OPTIMISE=release
+			shift
+			;;
+		--help)
+			usage
+			;;
+		*)
+			die "error: unknown flag: $1"
+			;;
+	esac
+done
+
+###############################################################
+# COMPILERS
+###############################################################
+
+# Host Compiler
+printf "Checking host compiler ..."
+CC=${CC:-cc}
+printf " $CC\n"
+
+# Detect the compiler type and enable dependency tracking
+printf "Checking host compiler type ..."
+CCOM=$(compiler_type "${CC}")
+printf " $CCOM\n"
+
+printf "Checking host compiler target ..."
+HOST=$(compiler_target $CCOM "$CC $CFLAGS $CPPFLAGS")
+printf " $HOST\n"
+
+# Build compiler
+printf "Checking for cross-compilation setup ..."
+is_cross=0
+CC_FOR_BUILD=${CC_FOR_BUILD:-${CC}}
+if ! [ "${CC_FOR_BUILD}" = "${CC}" ]; then
+	is_cross=1
+	printf " yes\n"
+else
+	printf " no\n"
+fi
+
+if [ $is_cross -eq 1 ]; then
+	printf "Checking build compiler type..."
+	CCOM_FOR_BUILD=$(compiler_type "${CC_FOR_BUILD}")
+	printf " ${CCOM_FOR_BUILD}\n"
+
+	printf "Checking build compiler target ..."
+	BUILD=$(compiler_target $CCOM_FOR_BUILD $CC_FOR_BUILD)
+	printf " $BUILD\n"
+else
+	CCOM_FOR_BUILD="${CCOM}"
+	BUILD="${HOST}"
+fi
+
+############################################################################
+# LIBRARIES
+############################################################################
+PKG_CONFIG=${PKG_CONFIG:-$(find_program pkg-config 1 pkg-config pkgconf)}
+find_package libcurl LIBCURL 1
+find_package atf-c LIBATFC 0
+find_package libcrypto LIBCRYPTO 1
+
+# Look for libedit if not disabled
+if [ $ENABLE_LIBEDIT -eq 1 ]; then
+	find_package libedit LIBEDIT 0
+else
+	LIBEDIT_FOUND=0
+fi
+
+# Now only look for readline if libedit hasn't been found/enabled
+# and readline support hasn't been disabled.
+if [ $LIBEDIT_FOUND -eq 1 ]; then
+	LIBREADLINE_FOUND=0
+elif [ $ENABLE_LIBREADLINE -eq 1 ]; then
+	find_package readline LIBREADLINE 0
+else
+	LIBREADLINE_FOUND=0
+fi
+
+###################################################################
+# TESTS and other programs
+###################################################################
+AR=${AR:-ar}
+RANLIB=${RANLIB:-ranlib}
+RM=${RM:-rm}
+KYUA=${KYUA:-$(find_program kyua 0 kyua)}
+CCACHE=${CCACHE:-$(find_program ccache 0 ccache)}
+INSTALL=${INSTALL:-$(find_program install 1 install ginstall)}
+
+###################################################################
+# Configure Makefile
+###################################################################
+#
+# FIXME: this escapes the source directory in case it contains
+#        spaces. however, both GNU and BSD make are incapable of
+#        handling hese situations in combination with VPATH. On
+#        NetBSD we get a bug where it hard-splits the path on spaces
+#        in a prerequisite no matter whether it is escaped or not.
+ESC_SRCDIR="$(echo ${srcdir} | sed -e 's| |\\\\ |g')"
+
+sed \
+	-e "s|@SRCDIR@|${ESC_SRCDIR}|g" \
+	-e "s|@OPTIMISE@|$OPTIMISE|g" \
+	-e "s|@LIBCURL_CFLAGS@|$LIBCURL_CFLAGS|g" \
+	-e "s|@LIBCURL_LIBS@|$LIBCURL_LIBS|g" \
+	-e "s|@LIBCRYPTO_CFLAGS@|$LIBCRYPTO_CFLAGS|g" \
+	-e "s|@LIBCRYPTO_LIBS@|$LIBCRYPTO_LIBS|g" \
+	-e "s|@LIBATFC_CFLAGS@|$LIBATFC_CFLAGS|g" \
+	-e "s|@LIBATFC_LIBS@|$LIBATFC_LIBS|g" \
+	-e "s|@LIBEDIT_FOUND@|$LIBEDIT_FOUND|g" \
+	-e "s|@LIBEDIT_CFLAGS@|$LIBEDIT_CFLAGS|g" \
+	-e "s|@LIBEDIT_LIBS@|$LIBEDIT_LIBS|g" \
+	-e "s|@LIBREADLINE_FOUND@|$LIBREADLINE_FOUND|g" \
+	-e "s|@LIBREADLINE_CFLAGS@|$LIBREADLINE_CFLAGS|g" \
+	-e "s|@LIBREADLINE_LIBS@|$LIBREADLINE_LIBS|g" \
+	-e "s|@CONFIGURE_CMD_ARGS@|$CONFIGURE_CMD_ARGS|g" \
+	-e "s|@CC@|$CC|g" \
+	-e "s|@CCOM@|$CCOM|g" \
+	-e "s|@ENV_CFLAGS@|$CFLAGS|g" \
+	-e "s|@ENV_CPPFLAGS@|$CPPFLAGS|g" \
+	-e "s|@CC_FOR_BUILD@|$CC_FOR_BUILD|g" \
+	-e "s|@CCOM_FOR_BUILD@|$CCOM_FOR_BUILD|g" \
+	-e "s|@ENV_CFLAGS_FOR_BUILD@|$CFLAGS_FOR_BUILD|g" \
+	-e "s|@ENV_CPPFLAGS_FOR_BUILD@|$CPPFLAGS_FOR_BUILD|g" \
+	-e "s|@ENV_PKG_CONFIG@|$PKG_CONFIG|g" \
+	-e "s|@ENV_PKG_CONFIG_PATH@|$PKG_CONFIG_PATH|g" \
+	-e "s|@AR@|$AR|g" \
+	-e "s|@CCACHE@|$CCACHE|g" \
+	-e "s|@RANLIB@|$RANLIB|g" \
+	-e "s|@RM@|$RM|g" \
+	-e "s|@KYUA@|$KYUA|g" \
+	-e "s|@INSTALL@|$INSTALL|g" \
+	-e "s|@PREFIX@|$PREFIX|g" \
+	-e "s|@PACKAGE_STRING@|$PACKAGE_STRING|g" \
+	-e "s|@PACKAGE_DATE@|$PACKAGE_DATE|g" \
+	-e "s|@PACKAGE_BUGREPORT@|$PACKAGE_BUGREPORT|g" \
+	-e "s|@PACKAGE_URL@|$PACKAGE_URL|g" \
+	-e "s|@PACKAGE_VERSION@|$PACKAGE_VERSION|g" \
+	< "${srcdir}/Makefile.in" > Makefile
+
+echo "Writing config.h"
+cat > config.h <<EOF
+#define PACKAGE_STRING "$PACKAGE_STRING"
+#define PACKAGE_URL "$PACKAGE_URL"
+#define PACKAGE_VERSION "$PACKAGE_VERSION"
+#define PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT"
+#define PACKAGE_DATE "$PACKAGE_DATE"
+#define HOSTOS "$HOST"
+EOF
+
+echo "Configuration Summary:"
+echo ""
+echo "    Build system type: ${BUILD}"
+echo "     Host system type: ${HOST}"
+echo "         optimise for: ${OPTIMISE:-none}"
+echo "                   CC: ${CC}"
+echo "         CC_FOR_BUILD: ${CC_FOR_BUILD}"
+echo "               CFLAGS: ${CFLAGS}"
+echo "     CFLAGS_FOR_BUILD: ${CFLAGS_FOR_BUILD}"
+echo "       LIBCURL_CFLAGS: ${LIBCURL_CFLAGS}"
+echo "         LIBCURL_LIBS: ${LIBCURL_LIBS}"
+echo "       LIBATFC_CFLAGS: ${LIBATFC_CFLAGS}"
+echo "         LIBATFC_LIBS: ${LIBATFC_LIBS}"
+if [ $LIBEDIT_FOUND -eq 1 ]; then
+echo " Using libedit:"
+echo "       LIBEDIT_CFLAGS: ${LIBEDIT_CFLAGS}"
+echo "         LIBEDIT_LIBS: ${LIBEDIT_LIBS}"
+elif [ $LIBREADLINE_FOUND -eq 1 ]; then
+echo " Using libreadline:"
+echo "   LIBREADLINE_CFLAGS: ${LIBREADLINE_CFLAGS}"
+echo "     LIBREADLINE_LIBS: ${LIBREADLINE_LIBS}"
+fi
+echo ""
+echo "Configuration done. You may now run make."

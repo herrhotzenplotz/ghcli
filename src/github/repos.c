@@ -171,7 +171,7 @@ github_repo_create(struct gcli_ctx *ctx, struct gcli_repo_create_options const *
 	}
 
 	/* Cleanup */
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 	free(payload);
 	free(url);
 

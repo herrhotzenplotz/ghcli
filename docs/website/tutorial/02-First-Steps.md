@@ -12,7 +12,7 @@ You will see the list of the 30 most recent open issue tickets. The
 command above does the following:
 
   - invoke gcli
-  - as a global option we switch it into Github-Mode
+  - as a global option we switch it into GitHub-Mode
   - invoke the issues subcommand
   - operate on the repository owner curl (`-o curl`)
   - operate on the repository curl (`-r curl`)

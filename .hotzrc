@@ -1,18 +1,23 @@
 # local kakrc for gcli
 
 # We build inside the build directory
-cd build
+# cd build
 
 set-option global ctagscmd "uctags -R --fields=+S"
 set-option global ctagspaths "../include ../src ../thirdparty"
 
 # Define the make cmd to be parallel but only use half of the available cpu cores
 evaluate-commands %sh{
-	N=$(nproc)
-	T=$(($N - 1))
-	S=$(($T / 2))
+	if [ $(uname -s) = FreeBSD ];
+	then
+		N=$(nproc)
+		T=$(($N - 1))
+		S=$(($T / 2))
 
-	echo "set-option global makecmd \"cpuset -l${S}-${T} make -j${T}\""
+		echo "set-option global makecmd \"cpuset -l${S}-${T} make -j${T} -C build\""
+	else
+		echo "set-option global makecmd \"nice make -C build\""
+	fi
 }
 
 hook global BufSetOption filetype=c %{

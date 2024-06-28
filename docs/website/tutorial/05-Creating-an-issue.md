@@ -1,6 +1,6 @@
 # Creating an issue
 
-**Note**: This assumes you have [configured gcli with an account](./04-Account-Setup.html) for Github already.
+**Note**: This assumes you have [configured gcli with an account](./04-Account-Setup.html) for GitHub already.
 
 ## Preparation
 

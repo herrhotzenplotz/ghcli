@@ -77,7 +77,7 @@ static struct subcommand {
 } default_subcommands[] = {
 	{ .cmd_name = "ci",
 	  .fn = subcommand_ci,
-	  .docstring = "Github CI status info" },
+	  .docstring = "GitHub CI status info" },
 	{ .cmd_name = "comment",
 	  .fn = subcommand_comment,
 	  .docstring = "Comment under issues and PRs" },
@@ -89,7 +89,7 @@ static struct subcommand {
 	  .docstring = "Create, delete and list repository forks" },
 	{ .cmd_name = "gists",
 	  .fn = subcommand_gists,
-	  .docstring = "Create, fetch and list Github Gists" },
+	  .docstring = "Create, fetch and list GitHub Gists" },
 	{ .cmd_name = "issues",
 	  .fn = subcommand_issues,
 	  .docstring = "Manage issues" },
@@ -101,7 +101,7 @@ static struct subcommand {
 	  .docstring = "Milestone handling" },
 	{ .cmd_name = "pipelines",
 	  .fn = subcommand_pipelines,
-	  .docstring = "Gitlab CI management" },
+	  .docstring = "GitLab CI management" },
 	{ .cmd_name = "pulls",
 	  .fn = subcommand_pulls,
 	  .docstring = "Create, view and manage PRs" },
@@ -113,7 +113,7 @@ static struct subcommand {
 	  .docstring = "Remote Repository management" },
 	{ .cmd_name = "snippets",
 	  .fn = subcommand_snippets,
-	  .docstring = "Fetch and list Gitlab snippets" },
+	  .docstring = "Fetch and list GitLab snippets" },
 	{ .cmd_name = "status",
 	  .fn = subcommand_status,
 	  .docstring = "General user status and notifications" },
@@ -136,20 +136,22 @@ usage(void)
 {
 	fprintf(stderr, "usage: gcli [options] subcommand\n\n");
 	fprintf(stderr, "OPTIONS:\n");
-	fprintf(stderr, "  -a account     Use the configured account instead of inferring it\n");
-	fprintf(stderr, "  -r remote      Infer account from the given git remote\n");
-	fprintf(stderr, "  -t type        Force the account type:\n");
-	fprintf(stderr, "                    - github (default: github.com)\n");
-	fprintf(stderr, "                    - gitlab (default: gitlab.com)\n");
-	fprintf(stderr, "                    - gitea (default: codeberg.org)\n");
-	fprintf(stderr, "                    - bugzilla (default: bugs.freebsd.org)\n");
-	fprintf(stderr, "  -c             Force colour and text formatting.\n");
-	fprintf(stderr, "  -q             Be quiet. (Not implemented yet)\n\n");
-	fprintf(stderr, "  -v             Be verbose.\n\n");
+	fprintf(stderr, "  -a account       Use the configured account instead of inferring it\n");
+	fprintf(stderr, "  -r remote        Infer account from the given git remote\n");
+	fprintf(stderr, "  -t type          Force the account type:\n");
+	fprintf(stderr, "                      - github (default: github.com)\n");
+	fprintf(stderr, "                      - gitlab (default: gitlab.com)\n");
+	fprintf(stderr, "                      - gitea (default: codeberg.org)\n");
+	fprintf(stderr, "                      - bugzilla (default: bugs.freebsd.org)\n");
+	fprintf(stderr, "  -c               Force colour and text formatting.\n");
+	fprintf(stderr, "  --no-spinner     Disable the animated spinner.\n");
+	fprintf(stderr, "  -q               Be quiet. (Not implemented yet)\n");
+	fprintf(stderr, "  -v               Be verbose.\n");
+	fprintf(stderr, "  -V | --version   Print version and exit.\n\n");
 	fprintf(stderr, "SUBCOMMANDS:\n");
 	for (size_t i = 0; i < subcommands_size; ++i) {
 		fprintf(stderr,
-		        "  %-13.13s  %s\n",
+		        "  %-15.15s  %s\n",
 		        subcommands[i].cmd_name,
 		        subcommands[i].docstring);
 	}
@@ -343,8 +345,6 @@ main(int argc, char *argv[])
 	if (gcli_config_init_ctx(g_clictx) < 0)
 		errx(1, "gcli: error: failed to init context: %s", gcli_get_error(g_clictx));
 
-	gcli_set_progress_func(g_clictx, gcli_progress_func);
-
 	/* Initial setup */
 	setup_subcommand_table();
 
@@ -377,6 +377,9 @@ main(int argc, char *argv[])
 
 		return EXIT_FAILURE;
 	}
+
+	if(gcli_config_display_progress_spinner(g_clictx))
+		gcli_set_progress_func(g_clictx, gcli_progress_func);
 
 	return sc->fn(argc, argv);
 }

@@ -96,7 +96,7 @@ github_get_milestone(struct gcli_ctx *ctx, char const *const owner,
 	}
 
 	free(url);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return rc;
 }

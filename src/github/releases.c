@@ -120,7 +120,7 @@ github_upload_release_asset(struct gcli_ctx *ctx, char const *url,
 		&buffer);
 
 	free(req);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return rc;
 }
@@ -197,8 +197,8 @@ github_create_release(struct gcli_ctx *ctx, struct gcli_new_release const *relea
 
 out:
 	gcli_release_free(&response);
+	gcli_fetch_buffer_free(&buffer);
 	free(upload_url);
-	free(buffer.data);
 	free(url);
 	free(payload);
 

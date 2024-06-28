@@ -40,6 +40,13 @@ which may contain the following keys:
 Path to a default editor. This might be overridden by the environment
 variable
 .Ev EDITOR .
+.It pager
+Name of the default pager when interactively displaying large output.
+May be overridden by the environment variable
+.Ev PAGER .
+If none of the above are specified,
+.Xr less 1
+is used as a sane default pager.
 .It github-default-account
 Section name of a default GitHub account to use whenever the account
 is unspecified on the command line or in the environment. See
@@ -55,6 +62,12 @@ Section name of a default Gitea account to use whenever the account
 is unspecified on the command line or in the environment. See
 .Ev GCLI_ACCOUNT in
 .Xr gcli 1 .
+.It disable-spinner
+Disable the progress spinner in the ui.
+.Nm
+uses this when making requests. This can also be set, and overridden with the
+.Ev GCLI_NOSPINNER
+environment variable.
 .El
 .Pp
 All other sections define accounts for forges. Each of these account
@@ -124,10 +137,11 @@ possible values see the equivalent definition in
 .Sh EXAMPLES
 .Ss User Configuration File
 An example for the user configuration file consisting of both a
-Github and a Gitlab account:
+GitHub and a GitLab account:
 .Bd -literal
 defaults {
 	editor=/path/to/ganoooo/emacs
+	pager=less
 	github-default-account=herrhotzenplotz-gh
 	gitlab-default-account=herrhotzenplotz-gitlab
 }
@@ -148,7 +162,7 @@ herrhotzenplotz-gl {
 .Ed
 .Pp
 Notice that this allows you to run gcli and force it to use a
-specific Gitlab account. E.g.:
+specific GitLab account. E.g.:
 .Bd -literal
 $ gcli -a herrhotzenplotz-gl issues -a
 .Ed
@@ -164,7 +178,8 @@ pr.inhibit-delete-source-branch=yes
 .Ed
 .Sh SEE ALSO
 .Xr git 1 ,
-.Xr gcli 1
+.Xr gcli 1 ,
+.Xr less 1
 .Sh AUTHORS
 .An Nico Sonack aka. herrhotzenplotz Aq Mt nsonack@herrhotzenplotz.de
 and contributors.

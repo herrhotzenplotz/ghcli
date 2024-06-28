@@ -76,7 +76,6 @@ gcli_curl_ctx_destroy(struct gcli_ctx *ctx)
 static int
 gcli_curl_ensure(struct gcli_ctx *ctx)
 {
-
 	if (ctx->curl) {
 		curl_easy_reset(ctx->curl);
 	} else {
@@ -215,7 +214,7 @@ gcli_curl_test_success(struct gcli_ctx *ctx, char const *url)
 	if (ctx->report_progress)
 		ctx->report_progress(true);
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return is_success;
 }
@@ -279,7 +278,7 @@ gcli_curl(struct gcli_ctx *ctx, FILE *stream, char const *url,
 	if (rc == 0)
 		fwrite(buffer.data, 1, buffer.length, stream);
 
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	curl_slist_free_all(headers);
 
@@ -294,17 +293,17 @@ fetch_header_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
 	char **out = userdata;
 
-	size_t sz          = size * nmemb;
-	sn_sv  buffer      = sn_sv_from_parts(ptr, sz);
-	sn_sv  header_name = sn_sv_chop_until(&buffer, ':');
+	size_t sz = size * nmemb;
+	sn_sv buffer = sn_sv_from_parts(ptr, sz);
+	sn_sv header_name = sn_sv_chop_until(&buffer, ':');
 
 	/* Despite what the documentation says, this header is called
 	 * "link" not "Link". Webdev ftw /sarc */
 	if (sn_sv_eq_to(header_name, "link")) {
-		buffer.data   += 1;
+		buffer.data += 1;
 		buffer.length -= 1;
-		buffer         = sn_sv_trim_front(buffer);
-		*out           = sn_strndup(buffer.data, buffer.length);
+		buffer = sn_sv_trim_front(buffer);
+		*out = sn_strndup(buffer.data, buffer.length);
 	}
 
 	return sz;
@@ -333,16 +332,16 @@ parse_link_header(char *_header)
 
 		if (sn_sv_eq_to(entry, "; rel=\"next\"")) {
 			/* Skip the triangle brackets around the url */
-			almost_url.data   += 1;
+			almost_url.data += 1;
 			almost_url.length -= 2;
-			almost_url         = sn_sv_trim(almost_url);
+			almost_url = sn_sv_trim(almost_url);
 			return sn_sv_to_cstr(almost_url);
 		}
 
 		/* skip the comma if we have enough data */
 		if (header.length > 0) {
 			header.length -= 1;
-			header.data   += 1;
+			header.data += 1;
 		}
 	}
 
@@ -440,9 +439,7 @@ gcli_fetch_with_method(
 		if (link_header && pagination_next)
 			*pagination_next = parse_link_header(link_header);
 	} else if (out) { /* error happened and we have an output buffer */
-		free(out->data);
-		out->data = NULL;
-		out->length = 0;
+		gcli_fetch_buffer_free(out);
 	}
 
 	free(link_header);
@@ -453,7 +450,7 @@ gcli_fetch_with_method(
 	/* if the user is not interested in the result, free the temporary
 	 * buffer */
 	if (!out)
-		free(tmp.data);
+		gcli_fetch_buffer_free(&tmp);
 
 	free(auth_header);
 
@@ -695,7 +692,7 @@ gcli_fetch_list(struct gcli_ctx *ctx, char *url, struct gcli_fetch_list_ctx *fl)
 			json_close(&stream);
 		}
 
-		free(buffer.data);
+		gcli_fetch_buffer_free(&buffer);
 		free(url);
 
 		if (rc < 0)
@@ -706,4 +703,15 @@ gcli_fetch_list(struct gcli_ctx *ctx, char *url, struct gcli_fetch_list_ctx *fl)
 	free(next_url);
 
 	return rc;
+}
+
+void
+gcli_fetch_buffer_free(struct gcli_fetch_buffer *const buffer)
+{
+	if (!buffer)
+		return;
+
+	free(buffer->data);
+	buffer->data = NULL;
+	buffer->length = 0;
 }

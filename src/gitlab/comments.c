@@ -35,8 +35,7 @@
 #include <templates/gitlab/comments.h>
 
 int
-gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_opts opts,
-                              struct gcli_fetch_buffer *const out)
+gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_opts opts)
 {
 	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL;
 	char const *type = NULL;
@@ -70,12 +69,45 @@ gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_o
 	                  gcli_get_apibase(ctx), e_owner, e_repo, type,
 	                  opts.target_id);
 
-	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, out);
+	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 
 	free(payload);
 	free(url);
 	free(e_owner);
 	free(e_repo);
+
+	return rc;
+}
+
+static void
+reverse_comment_list(struct gcli_comment_list *const list)
+{
+	struct gcli_comment *reversed =
+		calloc(list->comments_size, sizeof *list->comments);
+
+	for (size_t i = 0; i < list->comments_size; ++i)
+		reversed[i] = list->comments[list->comments_size - i - 1];
+
+	free(list->comments);
+	list->comments = reversed;
+}
+
+int
+gitlab_fetch_comments(struct gcli_ctx *ctx, char *url,
+                      struct gcli_comment_list *const out)
+{
+	struct gcli_fetch_list_ctx fl = {
+		.listp = &out->comments,
+		.sizep = &out->comments_size,
+		.parse = (parsefn)parse_gitlab_comments,
+		.max = -1,
+	};
+
+	/* Comments in the resulting list are in reverse on Gitlab
+	 * (most recent is first). */
+	int const rc = gcli_fetch_list(ctx, url, &fl);
+	if (rc == 0)
+		reverse_comment_list(out);
 
 	return rc;
 }
@@ -87,13 +119,6 @@ gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner, char const *repo
 	char *e_owner = gcli_urlencode(owner);
 	char *e_repo = gcli_urlencode(repo);
 
-	struct gcli_fetch_list_ctx fl = {
-			.listp = &out->comments,
-			.sizep = &out->comments_size,
-			.parse = (parsefn)parse_gitlab_comments,
-			.max = -1,
-	};
-
 	char *url = sn_asprintf(
 		"%s/projects/%s%%2F%s/merge_requests/%"PRIid"/notes",
 		gcli_get_apibase(ctx),
@@ -102,7 +127,7 @@ gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner, char const *repo
 	free(e_owner);
 	free(e_repo);
 
-	return gcli_fetch_list(ctx, url, &fl);
+	return gitlab_fetch_comments(ctx, url, out);
 }
 
 int
@@ -113,19 +138,13 @@ gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
 	char *e_owner = gcli_urlencode(owner);
 	char *e_repo = gcli_urlencode(repo);
 
-	struct gcli_fetch_list_ctx fl = {
-		.listp = &out->comments,
-		.sizep = &out->comments_size,
-		.parse = (parsefn)parse_gitlab_comments,
-		.max = -1,
-	};
-
 	char *url = sn_asprintf(
 		"%s/projects/%s%%2F%s/issues/%"PRIid"/notes",
 		gcli_get_apibase(ctx),
 		e_owner, e_repo, issue);
+
 	free(e_owner);
 	free(e_repo);
 
-	return gcli_fetch_list(ctx, url, &fl);
+	return gitlab_fetch_comments(ctx, url, out);
 }

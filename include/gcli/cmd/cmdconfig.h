@@ -58,6 +58,7 @@ sn_sv gcli_config_find_by_key(struct gcli_ctx *ctx, char const *section_name,
 
 char *gcli_config_get_editor(struct gcli_ctx *ctx);
 char *gcli_config_get_token(struct gcli_ctx *ctx);
+char *gcli_config_get_pager(struct gcli_ctx *ctx);
 char *gcli_config_get_account_name(struct gcli_ctx *ctx);
 sn_sv gcli_config_get_upstream(struct gcli_ctx *ctx);
 sn_sv gcli_config_get_base(struct gcli_ctx *ctx);
@@ -66,6 +67,8 @@ sn_sv gcli_config_get_override_default_account(struct gcli_ctx *ctx);
 bool gcli_config_pr_inhibit_delete_source_branch(struct gcli_ctx *ctx);
 int gcli_config_get_repo(struct gcli_ctx *ctx, char const **, char const **);
 int gcli_config_have_colours(struct gcli_ctx *ctx);
+int gcli_config_display_progress_spinner(struct gcli_ctx *ctx);
+bool gcli_config_enable_experimental(struct gcli_ctx *ctx);
 struct gcli_config_entries const *gcli_config_get_section_entries(
 	struct gcli_ctx *ctx, char const *section_name);
 

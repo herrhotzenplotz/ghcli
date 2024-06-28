@@ -24,7 +24,7 @@ to list, create, edit or delete labels for Pull Requests/Merge
 Requests and issues in repositories in various git forges such as
 GitHub, GitLab and Gitea. Without any action specified,
 .Nm
-will list all defined labels in the given or autodetected repository.
+will list all defined labels in the given or auto-detected repository.
 .Sh OPTIONS
 .Bl -tag -width indent
 .It Fl o , -owner Ar owner
@@ -40,7 +40,7 @@ combination with
 .Sh SUBCOMMANDS
 .Bl -tag -width indent
 .It Cm create
-Create a new label in the given or autodetected repository.
+Create a new label in the given or auto-detected repository.
 .Pp
 The following flags must be specified:
 .Bl -tag -width indent
@@ -59,7 +59,7 @@ Set the colour of the label to the given
 is expected to be a 6 digit hexadecimal RGB colour code.
 .El
 .It Cm delete
-Delete the specified label in the given or autodetected repository.
+Delete the specified label in the given or auto-detected repository.
 .Pp
 There are no flags for this subcommand.
 .El

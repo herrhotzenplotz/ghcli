@@ -72,7 +72,7 @@ fetch_all(char *_url)
 
 		fwrite(buffer.data, buffer.length, 1, stdout);
 
-		free(buffer.data);
+		gcli_fetch_buffer_free(&buffer);
 
 		if (url != _url)
 			free(url);

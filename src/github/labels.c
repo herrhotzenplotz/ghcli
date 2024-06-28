@@ -110,7 +110,7 @@ github_create_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	free(url);
 	free(payload);
-	free(buffer.data);
+	gcli_fetch_buffer_free(&buffer);
 
 	return rc;
 }
