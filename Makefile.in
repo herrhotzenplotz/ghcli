@@ -39,7 +39,8 @@ CSTDFLAGS_FOR_BUILD=	$(CSTDFLAGS_$(CCOM_FOR_BUILD))
 
 ############## CFLAGS ########################
 ENV_CFLAGS=		@ENV_CFLAGS@
-CFLAGS=			$(CSTDFLAGS) $(COPTFLAGS) -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS)
+CFLAGS_clang=		-Wno-gnu-zero-variadic-macro-arguments
+CFLAGS=			$(CSTDFLAGS) $(COPTFLAGS) $(CFLAGS_$(CCOM)) -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS)
 
 ENV_CFLAGS_FOR_BUILD=	@ENV_CFLAGS_FOR_BUILD@
 CFLAGS_FOR_BUILD=	$(CSTDFLAGS_FOR_BUILD) $(COPTFLAGS_FOR_BUILD) -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS_FOR_BUILD)
