@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+	<title>GCLI Tutorial | Creating a Pull Request</title>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+	<link rel="prev" href="06-Commenting.html" />
+	<link rel="next" href="{{NEXTURL}}" />
+	<!-- Shamelessly stolen from: http://bettermotherfuckingwebsite.com/ -->
+	<style>
+		body {
+			margin:5% auto;
+			background: #f2f2f2;
+			color: #444444;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			font-size: 16px;
+			line-height: 1.8;
+			text-shadow: 0 1px 0 #ffffff; max-width: 73%;
+		}
+		pre {
+			line-height: 1.2;
+		}
+		a {
+			border-bottom: 1px solid #444444;
+			color: #444444;
+			text-decoration: none;
+		}
+		a:hover {
+			border-bottom: 0;
+		}
+	</style>
+</head>
+
+<body>
+<nav style=text-align:right>
+<a href="06-Commenting.html" title="Interacting and commenting">⇐ Previous</a>
+<a href="index.html">Table of contents</a>
+<a href="08-Other-forges.html" title="Other forges (Gitea, Gitlab, Bugzilla)">Next ⇒</a>
+</nav>
+<hr />
+<h1>Creating a pull request</h1>
+<p>Creating a pull request with gcli is usually as simple as running</p>
+<pre><code>$ gcli pulls create
+</code></pre>
+<h2>Preparation</h2>
+<p>Suppose you have a git repository forked and cloned:</p>
+<pre><code>$ git clone git@github.com:contour-terminal/contour
+$ cd contour
+$ gcli forks create --into herrhotzenplotz
+</code></pre>
+<p>Then you do some work on whatever feature you're planning to submit:</p>
+<pre><code>$ git checkout -b my-amazing-feature
+&lt;hackhackhack&gt;
+$ git add -p
+$ git commit
+</code></pre>
+<h2>Push your changes</h2>
+<p>You then push your changes to your fork:</p>
+<pre><code>$ git push origin my-amazing-feature
+</code></pre>
+<h2>Create the pull request</h2>
+<p>Now you can run the command to create the pull request:</p>
+<pre><code>$ gcli pulls create
+From (owner:branch) [herrhotzenplotz:my-amazing-feature]:
+Owner [contour-terminal]:
+Repository [contour]:
+To Branch [master]:
+Title: Add new amazing feature
+Enable automerge? [yN]:
+</code></pre>
+<p>Most of the defaults you should be able to simply accept. This
+assumes that you have the source branch checked out locally and
+remotes are configured appropriately.</p>
+<p>Otherwise you can just change the defaults by entering the correct
+values.</p>
+<h2>Enter original post</h2>
+<p>After you entered all the meta data of the pull request gcli will
+drop you into your editor and lets you enter a message for the pull
+request.</p>
+<h2>Submit</h2>
+<p>After you saved and exit type <code>y</code> and hit enter to submit the pull
+request.</p>
+<br />
+<hr />
+<nav style=text-align:right>
+<a href="06-Commenting.html" title="Interacting and commenting">⇐ Previous</a>
+<a href="index.html">Table of contents</a>
+<a href="08-Other-forges.html" title="Other forges (Gitea, Gitlab, Bugzilla)">Next ⇒</a>
+</nav>
+</body>
+</html>
