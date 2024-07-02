@@ -56,6 +56,14 @@ gcli_comments_free(struct gcli_comment_list *const list)
 }
 
 int
+gcli_get_issue_comment(struct gcli_ctx *ctx, char const *const owner,
+                       char const *repo, gcli_id const issue_id,
+                       gcli_id const comment_id, struct gcli_comment *const out)
+{
+	gcli_null_check_call(get_issue_comment, ctx, owner, repo, issue_id, comment_id, out);
+}
+
+int
 gcli_get_issue_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
                         gcli_id const issue, struct gcli_comment_list *out)
 {

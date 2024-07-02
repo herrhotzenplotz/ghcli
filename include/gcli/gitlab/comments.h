@@ -40,6 +40,10 @@
 int gitlab_perform_submit_comment(struct gcli_ctx *ctx,
                                   struct gcli_submit_comment_opts const *opts);
 
+int gitlab_get_issue_comment(struct gcli_ctx *ctx, char const *owner,
+                             char const *repo, gcli_id issue_id,
+                             gcli_id comment_id, struct gcli_comment *out);
+
 int gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
                               char const *repo, gcli_id issue,
                               struct gcli_comment_list *out);

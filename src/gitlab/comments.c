@@ -149,3 +149,50 @@ gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
 
 	return gitlab_fetch_comments(ctx, url, out);
 }
+
+static int
+gitlab_fetch_comment(struct gcli_ctx *ctx, char const *const url,
+                     struct gcli_comment *const out)
+{
+	int rc = 0;
+	struct gcli_fetch_buffer buffer = {0};
+	struct json_stream stream = {0};
+
+	rc = gcli_fetch(ctx, url, NULL, &buffer);
+	if (rc < 0)
+		return rc;
+
+	json_open_buffer(&stream, buffer.data, buffer.length);
+	rc = parse_gitlab_comment(ctx, &stream, out);
+	json_close(&stream);
+
+	gcli_fetch_buffer_free(&buffer);
+
+	return rc;
+}
+
+int
+gitlab_get_issue_comment(struct gcli_ctx *ctx, char const *const owner,
+                         char const *const repo, gcli_id const issue_id,
+                         gcli_id const comment_id,
+                         struct gcli_comment *const out)
+{
+	char *url, *e_owner, *e_repo;
+	int rc;
+
+	e_owner = gcli_urlencode(owner);
+	e_repo = gcli_urlencode(repo);
+
+	url = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid"/notes/%"PRIid,
+	                  gcli_get_apibase(ctx), e_owner, e_repo, issue_id,
+	                  comment_id);
+
+	free(e_owner);
+	free(e_repo);
+
+	rc = gitlab_fetch_comment(ctx, url, out);
+
+	free(url);
+
+	return rc;
+}
