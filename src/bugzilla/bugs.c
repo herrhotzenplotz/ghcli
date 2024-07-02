@@ -140,6 +140,43 @@ error_fetch:
 	return rc;
 }
 
+int
+bugzilla_bug_get_comment(struct gcli_ctx *const ctx, char const *const product,
+                         char const *const component,
+                         enum comment_target_type const target_type,
+                         gcli_id const bug_id, gcli_id const comment_id,
+                         struct gcli_comment *const out)
+{
+	char *url = NULL;
+	int rc = 0;
+	struct gcli_fetch_buffer buffer = {0};
+	struct json_stream stream = {0};
+
+	(void) product;
+	(void) component;
+	(void) target_type;
+	(void) bug_id;
+
+	url = sn_asprintf("%s/rest/bug/comment/%"PRIid"?include_fields=_all",
+	                  gcli_get_apibase(ctx), comment_id);
+
+	rc = gcli_fetch(ctx, url, NULL, &buffer);
+	if (rc < 0)
+		goto error_fetch;
+
+	json_open_buffer(&stream, buffer.data, buffer.length);
+	rc = parse_bugzilla_single_comment(ctx, &stream, out);
+	json_close(&stream);
+
+	gcli_fetch_buffer_free(&buffer);
+
+error_fetch:
+	free(url);
+
+	return rc;
+
+}
+
 static int
 bugzilla_bug_get_op(struct gcli_ctx *ctx, gcli_id const bug_id, char **out)
 {

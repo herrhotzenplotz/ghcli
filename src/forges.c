@@ -374,6 +374,7 @@ bugzilla_forge_descriptor =
 	.search_issues             = bugzilla_get_bugs,
 	.get_issue_summary         = bugzilla_get_bug,
 	.get_issue_comments        = bugzilla_bug_get_comments,
+	.get_comment               = bugzilla_bug_get_comment,
 	.get_issue_attachments     = bugzilla_bug_get_attachments,
 	.perform_submit_issue      = bugzilla_bug_submit,
 	.issue_quirks              = GCLI_ISSUE_QUIRKS_COMMENTS
