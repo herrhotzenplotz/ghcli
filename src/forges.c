@@ -178,7 +178,7 @@ static struct gcli_forge_descriptor const
 gitlab_forge_descriptor =
 {
 	/* Comments */
-	.get_issue_comment         = gitlab_get_issue_comment,
+	.get_comment               = gitlab_get_comment,
 	.get_issue_comments        = gitlab_get_issue_comments,
 	.get_pull_comments         = gitlab_get_mr_comments,
 	.perform_submit_comment    = gitlab_perform_submit_comment,

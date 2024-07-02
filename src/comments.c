@@ -56,11 +56,12 @@ gcli_comments_free(struct gcli_comment_list *const list)
 }
 
 int
-gcli_get_issue_comment(struct gcli_ctx *ctx, char const *const owner,
-                       char const *repo, gcli_id const issue_id,
-                       gcli_id const comment_id, struct gcli_comment *const out)
+gcli_get_comment(struct gcli_ctx *ctx, char const *owner, char const *repo,
+                 enum comment_target_type target_type, gcli_id target_id,
+                 gcli_id comment_id, struct gcli_comment *out)
 {
-	gcli_null_check_call(get_issue_comment, ctx, owner, repo, issue_id, comment_id, out);
+	gcli_null_check_call(get_comment, ctx, owner, repo, target_type, target_id,
+	                     comment_id, out);
 }
 
 int

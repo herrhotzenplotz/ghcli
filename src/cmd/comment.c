@@ -52,18 +52,42 @@ usage(void)
 	fprintf(stderr, "  -r repo         The repository name\n");
 	fprintf(stderr, "  -p pr           PR id to comment under\n");
 	fprintf(stderr, "  -i issue        issue id to comment under\n");
+	fprintf(stderr, "  -R comment-id   Reply to the comment with the given ID\n");
 	fprintf(stderr, "  -y              Do not ask for confirmation\n");
 	version();
 	copyright();
 }
 
+struct submit_ctx {
+	struct gcli_submit_comment_opts opts;
+	struct gcli_comment reply_comment;
+};
+
+void
+gcli_print_prefixed(FILE *f, char const *const text, char const *const prefix)
+{
+	char const *bol = text;
+
+	while (bol) {
+		char const *const eol = strchr(bol, '\n');
+		size_t const len = eol ? (size_t)(eol - bol) : strlen(bol);
+
+		fprintf(f, "%s%.*s\n", prefix, (int)len, bol);
+
+		if (!eol)
+			break;
+
+		bol = eol + 1;
+	}
+}
+
 static void
 comment_init(struct gcli_ctx *ctx, FILE *f, void *_data)
 {
-	struct gcli_submit_comment_opts *info = _data;
+	struct submit_ctx *sctx = _data;
 	const char *target_type = NULL;
 
-	switch (info->target_type) {
+	switch (sctx->opts.target_type) {
 	case ISSUE_COMMENT:
 		target_type = "issue";
 		break;
@@ -84,29 +108,34 @@ comment_init(struct gcli_ctx *ctx, FILE *f, void *_data)
 	} break;
 	}
 
+	/* In case we reply to a comment, put the comment prefixed with
+	 * '> ' into the file first. */
+	if (sctx->reply_comment.body)
+		gcli_print_prefixed(f, sctx->reply_comment.body, "> ");
+
 	fprintf(
 		f,
 		"! Enter your comment above, save and exit.\n"
 		"! All lines with a leading '!' are discarded and will not\n"
 		"! appear in your comment.\n"
 		"! COMMENT IN : %s/%s %s #%"PRIid"\n",
-		info->owner, info->repo, target_type, info->target_id);
+		sctx->opts.owner, sctx->opts.repo, target_type, sctx->opts.target_id);
 }
 
 static char *
-gcli_comment_get_message(struct gcli_submit_comment_opts *info)
+gcli_comment_get_message(struct submit_ctx *info)
 {
 	return gcli_editor_get_user_message(g_clictx, comment_init, info);
 }
 
 static int
-comment_submit(struct gcli_submit_comment_opts opts, int always_yes)
+comment_submit(struct submit_ctx *sctx, int always_yes)
 {
 	int rc = 0;
 	char *message;
 
-	message = gcli_comment_get_message(&opts);
-	opts.message = message;
+	message = gcli_comment_get_message(sctx);
+	sctx->opts.message = message;
 
 	if (message == NULL)
 		errx(1, "gcli: empty message. aborting.");
@@ -114,17 +143,17 @@ comment_submit(struct gcli_submit_comment_opts opts, int always_yes)
 	fprintf(
 		stdout,
 		"You will be commenting the following in %s/%s #%"PRIid":\n%s\n",
-		opts.owner, opts.repo, opts.target_id, opts.message);
+		sctx->opts.owner, sctx->opts.repo, sctx->opts.target_id, sctx->opts.message);
 
 	if (!always_yes) {
 		if (!sn_yesno("Is this okay?"))
 			errx(1, "Aborted by user");
 	}
 
-	rc = gcli_comment_submit(g_clictx, &opts);
+	rc = gcli_comment_submit(g_clictx, &sctx->opts);
 
 	free(message);
-	opts.message = NULL;
+	sctx->opts.message = NULL;
 
 	return rc;
 }
@@ -179,10 +208,10 @@ gcli_print_comment_list(struct gcli_comment_list const *const list)
 int
 subcommand_comment(int argc, char *argv[])
 {
-	int ch, target_id = -1, rc = 0;
-	char const *repo = NULL, *owner = NULL;
+	int ch, rc = 0;
+	struct submit_ctx sctx = {0};
 	bool always_yes = false;
-	enum comment_target_type target_type;
+	gcli_id reply_to_id = 0;
 
 	struct option const options[] = {
 		{ .name    = "yes",
@@ -205,31 +234,41 @@ subcommand_comment(int argc, char *argv[])
 		  .has_arg = required_argument,
 		  .flag    = NULL,
 		  .val     = 'p' },
+		{ .name    = "in-reply-to",
+		  .has_arg = required_argument,
+		  .flag    = NULL,
+		  .val     = 'R' },
 		{0},
 	};
 
-	while ((ch = getopt_long(argc, argv, "yr:o:i:p:", options, NULL)) != -1) {
+	while ((ch = getopt_long(argc, argv, "yr:o:i:p:R:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'r':
-			repo = optarg;
+			 sctx.opts.repo = optarg;
 			break;
 		case 'o':
-			owner = optarg;
+			sctx.opts.owner = optarg;
 			break;
 		case 'p':
-			target_type = PR_COMMENT;
+			sctx.opts.target_type = PR_COMMENT;
 			goto parse_target_id;
 		case 'i':
-			target_type = ISSUE_COMMENT;
+			sctx.opts.target_type = ISSUE_COMMENT;
 		parse_target_id: {
 				char *endptr;
-				target_id = strtoul(optarg, &endptr, 10);
+				sctx.opts.target_id = strtoul(optarg, &endptr, 10);
 				if (endptr != optarg + strlen(optarg))
 					err(1, "gcli: error: Cannot parse issue/PR number");
 			} break;
 		case 'y':
 			always_yes = true;
 			break;
+		case 'R': {
+			char *endptr = NULL;
+			reply_to_id = strtoul(optarg, &endptr, 10);
+			if (endptr != optarg + strlen(optarg))
+				err(1, "gcli: error: cannot parse comment id");
+		} break;
 		default:
 			usage();
 			return EXIT_FAILURE;
@@ -239,20 +278,28 @@ subcommand_comment(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&owner, &repo);
+	check_owner_and_repo(&sctx.opts.owner, &sctx.opts.repo);
 
-	if (target_id < 0) {
+	if (!sctx.opts.target_id) {
 		fprintf(stderr, "gcli: error: missing issue/PR number (use -i/-p)\n");
 		usage();
 		return EXIT_FAILURE;
 	}
 
-	rc = comment_submit((struct gcli_submit_comment_opts) {
-			.owner = owner,
-			.repo = repo,
-			.target_type = target_type,
-			.target_id = target_id },
-		always_yes);
+	if (reply_to_id) {
+		rc = gcli_get_comment(g_clictx, sctx.opts.owner, sctx.opts.repo,
+                              sctx.opts.target_type, sctx.opts.target_id,
+		                      reply_to_id, &sctx.reply_comment);
+
+		if (rc < 0) {
+			errx(1, "gcli: error: failed to fetch comment for reply: %s",
+			     gcli_get_error(g_clictx));
+		}
+	}
+
+	rc = comment_submit(&sctx, always_yes);
+
+	gcli_comment_free(&sctx.reply_comment);
 
 	if (rc < 0)
 		errx(1, "gcli: error: failed to submit comment: %s", gcli_get_error(g_clictx));

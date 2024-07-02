@@ -80,12 +80,13 @@ struct gcli_forge_descriptor {
 		struct gcli_comment_list *out);
 
 	/**
-	 * Get a specific comment on an issue with the given ID */
-	int (*get_issue_comment)(
+	 * Get a specific comment on an issue or pull request with the given ID */
+	int (*get_comment)(
 		struct gcli_ctx *ctx,
 		char const *owner,
 		char const *repo,
-		gcli_id issue_id,
+		enum comment_target_type target_type,
+		gcli_id target_id,
 		gcli_id comment_id,
 		struct gcli_comment *out);
 

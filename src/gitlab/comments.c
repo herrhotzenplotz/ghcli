@@ -172,20 +172,28 @@ gitlab_fetch_comment(struct gcli_ctx *ctx, char const *const url,
 }
 
 int
-gitlab_get_issue_comment(struct gcli_ctx *ctx, char const *const owner,
-                         char const *const repo, gcli_id const issue_id,
-                         gcli_id const comment_id,
-                         struct gcli_comment *const out)
+gitlab_get_comment(struct gcli_ctx *ctx, char const *const owner, char const *const repo,
+                   enum comment_target_type const target_type, gcli_id const target_id,
+                   gcli_id const comment_id, struct gcli_comment *const out)
 {
-	char *url, *e_owner, *e_repo;
+	char *url, *e_owner, *e_repo, *target_str;
 	int rc;
 
 	e_owner = gcli_urlencode(owner);
 	e_repo = gcli_urlencode(repo);
 
-	url = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid"/notes/%"PRIid,
-	                  gcli_get_apibase(ctx), e_owner, e_repo, issue_id,
-	                  comment_id);
+	switch (target_type) {
+	case ISSUE_COMMENT:
+		target_str = "issues";
+		break;
+	case PR_COMMENT:
+		target_str = "merge_requests";
+		break;
+	}
+
+	url = sn_asprintf("%s/projects/%s%%2F%s/%s/%"PRIid"/notes/%"PRIid,
+	                  gcli_get_apibase(ctx), e_owner, e_repo, target_str,
+	                  target_id, comment_id);
 
 	free(e_owner);
 	free(e_repo);
