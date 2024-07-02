@@ -275,6 +275,7 @@ static struct gcli_forge_descriptor const
 gitea_forge_descriptor =
 {
 	/* Comments */
+	.get_comment               = gitea_get_comment,
 	.get_issue_comments        = gitea_get_comments,
 	.get_pull_comments         = gitea_get_comments,
 	.perform_submit_comment    = gitea_perform_submit_comment,

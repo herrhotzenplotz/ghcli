@@ -43,3 +43,13 @@ gitea_perform_submit_comment(struct gcli_ctx *ctx,
 {
 	return github_perform_submit_comment(ctx, opts);
 }
+
+int
+gitea_get_comment(struct gcli_ctx *ctx, char const *const owner,
+                  char const *const repo, enum comment_target_type target_type,
+                  gcli_id const target_id, gcli_id const comment_id,
+                  struct gcli_comment *out)
+{
+	return github_get_comment(ctx, owner, repo, target_type, target_id,
+	                          comment_id, out);
+}

@@ -37,6 +37,11 @@
 #include <gcli/comments.h>
 #include <gcli/curl.h>
 
+int gitea_get_comment(struct gcli_ctx *ctx, char const *owner,
+                      char const *repo, enum comment_target_type target_type,
+                      gcli_id target_id, gcli_id comment_id,
+                      struct gcli_comment *out);
+
 int gitea_get_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
                        gcli_id issue, struct gcli_comment_list *out);
 
