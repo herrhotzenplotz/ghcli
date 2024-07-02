@@ -2,6 +2,16 @@
 
 This changelog does not follow semantic versioning.
 
+## UNRELEASED
+
+### Added
+
+### Fixed
+
+### Changed
+
+### Removed
+
 ## 2.4.0 (2024-June-28)
 
 ### Added
