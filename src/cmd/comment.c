@@ -166,9 +166,11 @@ gcli_print_comment_list(struct gcli_comment_list const *const list)
 {
 	for (size_t i = 0; i < list->comments_size; ++i) {
 		printf("AUTHOR : %s%s%s\n"
-		       "DATE   : %s\n",
+		       "DATE   : %s\n"
+		       "ID     : %"PRIid"\n",
 		       gcli_setbold(), list->comments[i].author, gcli_resetbold(),
-		       list->comments[i].date);
+		       list->comments[i].date,
+		       list->comments[i].id);
 		pretty_print(list->comments[i].body, 9, 80, stdout);
 		putchar('\n');
 	}
