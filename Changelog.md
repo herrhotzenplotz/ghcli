@@ -6,6 +6,9 @@ This changelog does not follow semantic versioning.
 
 ### Added
 
+- Added a `-R` flag to the comment subcommand that allows you to
+  reply to a comment with the given ID.
+
 ### Fixed
 
 ### Changed
