@@ -103,3 +103,52 @@ github_get_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	return github_fetch_comments(ctx, url, out);
 }
+
+static int
+github_fetch_comment(struct gcli_ctx *ctx, char const *const url,
+                     struct gcli_comment *const out)
+{
+	struct gcli_fetch_buffer buffer = {0};
+	struct json_stream stream = {0};
+	int rc = 0;
+
+	rc = gcli_fetch(ctx, url, NULL, &buffer);
+	if (rc < 0)
+		return rc;
+
+	json_open_buffer(&stream, buffer.data, buffer.length);
+	rc = parse_github_comment(ctx, &stream, out);
+	json_close(&stream);
+
+	gcli_fetch_buffer_free(&buffer);
+
+	return rc;
+}
+
+int
+github_get_comment(struct gcli_ctx *ctx, char const *owner, char const *repo,
+                   enum comment_target_type target_type, gcli_id target_id,
+                   gcli_id comment_id, struct gcli_comment *out)
+{
+	char *e_owner = NULL, *e_repo = NULL, *url = NULL;
+	int rc = 0;
+
+	(void) target_type; /* target type and id ignored as pull requests are issues on GitHub */
+	(void) target_id;
+
+	e_owner = gcli_urlencode(owner);
+	e_repo = gcli_urlencode(repo);
+
+	url = sn_asprintf("%s/repos/%s/%s/issues/comments/%"PRIid,
+	                  gcli_get_apibase(ctx), e_owner, e_repo,
+	                  comment_id);
+
+	free(e_owner);
+	free(e_repo);
+
+	rc = github_fetch_comment(ctx, url, out);
+
+	free(url);
+
+	return rc;
+}

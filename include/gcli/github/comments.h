@@ -46,4 +46,8 @@ int github_get_comments(struct gcli_ctx *ctx, char const *owner, char const *rep
 int github_fetch_comments(struct gcli_ctx *ctx, char *url,
                           struct gcli_comment_list *const out);
 
+int github_get_comment(struct gcli_ctx *ctx, char const *repo, char const *owner,
+                       enum comment_target_type target_type, gcli_id target_id,
+                       gcli_id comment_id, struct gcli_comment *out);
+
 #endif /* GITHUB_COMMENTS_H */

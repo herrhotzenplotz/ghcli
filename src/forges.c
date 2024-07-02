@@ -79,6 +79,7 @@ static struct gcli_forge_descriptor const
 github_forge_descriptor =
 {
 	/* Comments */
+	.get_comment               = github_get_comment,
 	.get_issue_comments        = github_get_comments,
 	.get_pull_comments         = github_get_comments,
 	.perform_submit_comment    = github_perform_submit_comment,
