@@ -38,19 +38,19 @@
 
 int
 github_perform_submit_comment(struct gcli_ctx *ctx,
-                              struct gcli_submit_comment_opts opts)
+                              struct gcli_submit_comment_opts const *const opts)
 {
 	int rc = 0;
 	struct gcli_jsongen gen = {0};
-	char *e_owner = gcli_urlencode(opts.owner);
-	char *e_repo = gcli_urlencode(opts.repo);
+	char *e_owner = gcli_urlencode(opts->owner);
+	char *e_repo = gcli_urlencode(opts->repo);
 	char *payload = NULL, *url = NULL;
 
 	gcli_jsongen_init(&gen);
 	gcli_jsongen_begin_object(&gen);
 	{
 		gcli_jsongen_objmember(&gen, "body");
-		gcli_jsongen_string(&gen, opts.message);
+		gcli_jsongen_string(&gen, opts->message);
 	}
 	gcli_jsongen_end_object(&gen);
 
@@ -58,7 +58,7 @@ github_perform_submit_comment(struct gcli_ctx *ctx,
 	gcli_jsongen_free(&gen);
 
 	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid"/comments",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, opts.target_id);
+	                  gcli_get_apibase(ctx), e_owner, e_repo, opts->target_id);
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 

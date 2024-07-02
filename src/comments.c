@@ -70,7 +70,7 @@ gcli_get_pull_comments(struct gcli_ctx *ctx, char const *owner, char const *repo
 }
 
 int
-gcli_comment_submit(struct gcli_ctx *ctx, struct gcli_submit_comment_opts opts)
+gcli_comment_submit(struct gcli_ctx *ctx, struct gcli_submit_comment_opts const *const opts)
 {
 	gcli_null_check_call(perform_submit_comment, ctx, opts);
 }

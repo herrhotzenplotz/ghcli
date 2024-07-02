@@ -59,7 +59,7 @@ struct gcli_forge_descriptor {
 	 * Submit a comment to a pull/mr or issue */
 	int (*perform_submit_comment)(
 		struct gcli_ctx *ctx,
-		struct gcli_submit_comment_opts opts);
+		struct gcli_submit_comment_opts const *opts);
 
 	/**
 	 * List comments on the given issue */

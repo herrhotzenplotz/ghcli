@@ -121,7 +121,7 @@ comment_submit(struct gcli_submit_comment_opts opts, int always_yes)
 			errx(1, "Aborted by user");
 	}
 
-	rc = gcli_comment_submit(g_clictx, opts);
+	rc = gcli_comment_submit(g_clictx, &opts);
 
 	free(message);
 	opts.message = NULL;

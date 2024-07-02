@@ -72,6 +72,6 @@ int gcli_get_pull_comments(struct gcli_ctx *ctx, char const *owner,
                            char const *repo, gcli_id issue,
                            struct gcli_comment_list *out);
 
-int gcli_comment_submit(struct gcli_ctx *ctx, struct gcli_submit_comment_opts opts);
+int gcli_comment_submit(struct gcli_ctx *ctx, struct gcli_submit_comment_opts const *opts);
 
 #endif /* COMMENTS_H */

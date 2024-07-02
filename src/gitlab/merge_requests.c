@@ -1147,7 +1147,7 @@ err_jsongen_init:
 
 int
 gitlab_mr_create_review(struct gcli_ctx *ctx,
-                        struct gcli_pull_create_review_details const *details)
+                        struct gcli_pull_create_review_details const *const details)
 {
 	int rc;
 	struct gcli_diff_comment const *comment;
@@ -1172,7 +1172,7 @@ gitlab_mr_create_review(struct gcli_ctx *ctx,
 			.message = details->body,
 		};
 
-		rc = gitlab_perform_submit_comment(ctx, opts);
+		rc = gitlab_perform_submit_comment(ctx, &opts);
 		if (rc < 0)
 			return rc;
 	}

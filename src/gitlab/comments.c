@@ -35,17 +35,18 @@
 #include <templates/gitlab/comments.h>
 
 int
-gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_opts opts)
+gitlab_perform_submit_comment(struct gcli_ctx *ctx,
+                              struct gcli_submit_comment_opts const *const opts)
 {
 	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL;
 	char const *type = NULL;
 	struct gcli_jsongen gen = {0};
 	int rc = 0;
 
-	e_owner = gcli_urlencode(opts.owner);
-	e_repo = gcli_urlencode(opts.repo);
+	e_owner = gcli_urlencode(opts->owner);
+	e_repo = gcli_urlencode(opts->repo);
 
-	switch (opts.target_type) {
+	switch (opts->target_type) {
 	case ISSUE_COMMENT:
 		type = "issues";
 		break;
@@ -58,7 +59,7 @@ gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_o
 	gcli_jsongen_begin_object(&gen);
 	{
 		gcli_jsongen_objmember(&gen, "body");
-		gcli_jsongen_string(&gen, opts.message);
+		gcli_jsongen_string(&gen, opts->message);
 	}
 	gcli_jsongen_end_object(&gen);
 
@@ -67,7 +68,7 @@ gitlab_perform_submit_comment(struct gcli_ctx *ctx, struct gcli_submit_comment_o
 
 	url = sn_asprintf("%s/projects/%s%%2F%s/%s/%"PRIid"/notes",
 	                  gcli_get_apibase(ctx), e_owner, e_repo, type,
-	                  opts.target_id);
+	                  opts->target_id);
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 
