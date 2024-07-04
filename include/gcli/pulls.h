@@ -40,6 +40,7 @@
 
 #include <gcli/diffutil.h>
 #include <gcli/gcli.h>
+#include <gcli/path.h>
 #include <sn/sn.h>
 
 struct gcli_pull_list {
@@ -95,10 +96,9 @@ struct gcli_commit_list {
 
 /* Options to submit to the gh api for creating a PR */
 struct gcli_submit_pull_options {
-	char const *owner;
-	char const *repo;
+	struct gcli_path target_repo;
+	char const *target_branch;
 	char const *from;
-	char const *to;
 	char const *title;
 	char *body;
 	char **labels;
@@ -129,8 +129,7 @@ struct gcli_review_meta_line {
 };
 
 struct gcli_pull_create_review_details {
-	char const *owner, *repo;
-	gcli_id pull_id;
+	struct gcli_path path;
 	struct gcli_diff_comments comments;
 	char *body;       /* string containing the prelude message by the user */
 	TAILQ_HEAD(, gcli_review_meta_line) meta_lines;
@@ -151,7 +150,7 @@ struct gcli_pull_checks_list {
 	int forge_type;
 };
 
-int gcli_search_pulls(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gcli_search_pulls(struct gcli_ctx *ctx, struct gcli_path const *path,
                       struct gcli_pull_fetch_details const *details, int max,
                       struct gcli_pull_list *out);
 
@@ -159,23 +158,22 @@ void gcli_pull_free(struct gcli_pull *it);
 
 void gcli_pulls_free(struct gcli_pull_list *list);
 
-int gcli_pull_get_diff(struct gcli_ctx *ctx, FILE *fout, char const *owner,
-                       char const *repo, gcli_id pr_number);
+int gcli_pull_get_diff(struct gcli_ctx *ctx, FILE *fout,
+                       struct gcli_path const *path);
 
-int gcli_pull_get_checks(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, gcli_id pr_number,
+int gcli_pull_get_checks(struct gcli_ctx *ctx,
+                         struct gcli_path const *const path,
                          struct gcli_pull_checks_list *out);
 
 void gcli_pull_checks_free(struct gcli_pull_checks_list *list);
 
-int gcli_pull_get_commits(struct gcli_ctx *ctx, char const *owner,
-                          char const *repo, gcli_id pr_number,
+int gcli_pull_get_commits(struct gcli_ctx *ctx, struct gcli_path const *path,
                           struct gcli_commit_list *out);
 
 void gcli_commits_free(struct gcli_commit_list *list);
 
-int gcli_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                  gcli_id pr_number, struct gcli_pull *out);
+int gcli_get_pull(struct gcli_ctx *ctx, struct gcli_path const *path,
+                  struct gcli_pull *out);
 
 int gcli_pull_submit(struct gcli_ctx *ctx, struct gcli_submit_pull_options *);
 
@@ -184,49 +182,42 @@ enum gcli_merge_flags {
 	GCLI_PULL_MERGE_DELETEHEAD = 0x2, /* delete the source branch after merging */
 };
 
-int gcli_pull_merge(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id pr_number, enum gcli_merge_flags flags);
+int gcli_pull_merge(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                    enum gcli_merge_flags flags);
 
-int gcli_pull_close(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id pr_number);
+int gcli_pull_close(struct gcli_ctx *ctx, struct gcli_path const *const path);
 
-int gcli_pull_reopen(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                     gcli_id pr_number);
+int gcli_pull_reopen(struct gcli_ctx *ctx, struct gcli_path const *const path);
 
-int gcli_pull_add_labels(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, gcli_id pr_number,
+int gcli_pull_add_labels(struct gcli_ctx *ctx, struct gcli_path const *path,
                          char const *const labels[], size_t labels_size);
 
-int gcli_pull_remove_labels(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id pr_number,
+int gcli_pull_remove_labels(struct gcli_ctx *ctx, struct gcli_path const *path,
                             char const *const labels[], size_t labels_size);
 
-int gcli_pull_set_milestone(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id pr_number,
+int gcli_pull_set_milestone(struct gcli_ctx *ctx,
+                            struct gcli_path const *pull_path,
                             int milestone_id);
 
-int gcli_pull_clear_milestone(struct gcli_ctx *ctx, char const *owner,
-                              char const *repo, gcli_id pr_number);
+int gcli_pull_clear_milestone(struct gcli_ctx *ctx,
+                              struct gcli_path const *pull_path);
 
-int gcli_pull_add_reviewer(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id pr_number,
+int gcli_pull_add_reviewer(struct gcli_ctx *ctx, struct gcli_path const *path,
                            char const *username);
 
-int gcli_pull_get_patch(struct gcli_ctx *ctx, FILE *out, char const *owner,
-                        char const *repo, gcli_id pr_number);
+int gcli_pull_get_patch(struct gcli_ctx *ctx, FILE *out,
+                        struct gcli_path const *path);
 
-int gcli_pull_set_title(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, gcli_id pull, char const *new_title);
+int gcli_pull_set_title(struct gcli_ctx *ctx, struct gcli_path const *path,
+                        char const *new_title);
 
 int gcli_pull_create_review(struct gcli_ctx *ctx,
                             struct gcli_pull_create_review_details const *details);
 
-int gcli_pull_get_patch(struct gcli_ctx *ctx, FILE *out, char const *owner,
-                        char const *repo, gcli_id pr_number);
-
 char const *gcli_pull_get_meta_by_key(struct gcli_pull_create_review_details const *,
                                       char const *key);
 
-int gcli_pull_checkout(struct gcli_ctx *ctx, char const *remote, gcli_id pull);
+int gcli_pull_checkout(struct gcli_ctx *ctx, char const *remote,
+                       struct gcli_path const *const pull_path);
 
 #endif /* PULLS_H */

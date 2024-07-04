@@ -34,16 +34,18 @@
 #include <config.h>
 #endif
 
+#include <gcli/path.h>
 #include <gcli/releases.h>
 
-int github_get_releases(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, int max,
+int github_get_releases(struct gcli_ctx *ctx,
+                        struct gcli_path const *repo_path, int max,
                         struct gcli_release_list *list);
 
 int github_create_release(struct gcli_ctx *ctx,
                           struct gcli_new_release const *release);
 
-int github_delete_release(struct gcli_ctx *ctx, char const *owner,
-                          char const *repo, char const *id);
+int github_delete_release(struct gcli_ctx *ctx,
+                          struct gcli_path const *repo_path,
+                          char const *id);
 
 #endif /* GITHUB_RELEASES_H */

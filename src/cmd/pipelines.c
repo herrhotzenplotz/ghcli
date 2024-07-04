@@ -75,21 +75,6 @@ usage(void)
 	copyright();
 }
 
-int
-gitlab_mr_pipelines(char const *owner, char const *repo, int const mr_id)
-{
-	struct gitlab_pipeline_list list = {0};
-	int rc = 0;
-
-	rc = gitlab_get_mr_pipelines(g_clictx, owner, repo, mr_id, &list);
-	if (rc == 0)
-		gitlab_print_pipelines(&list);
-
-	gitlab_pipelines_free(&list);
-
-	return rc;
-}
-
 void
 gitlab_print_pipelines(struct gitlab_pipeline_list const *const list)
 {

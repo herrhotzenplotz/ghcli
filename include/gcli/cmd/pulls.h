@@ -46,7 +46,7 @@ void gcli_print_pull(struct gcli_pull const *pull);
 
 void gcli_pull_print_op(struct gcli_pull const *pull);
 
-int gcli_pull_checks(char const *owner, char const *repo, int pr_number);
+int gcli_pull_checks(struct gcli_path const *path);
 
 void gcli_print_commits(struct gcli_commit_list const *const list);
 

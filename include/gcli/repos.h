@@ -34,8 +34,9 @@
 #include <config.h>
 #endif
 
-#include <sn/sn.h>
 #include <gcli/gcli.h>
+#include <gcli/path.h>
+#include <sn/sn.h>
 
 #include <time.h>
 
@@ -71,13 +72,14 @@ int gcli_get_repos(struct gcli_ctx *ctx, char const *owner, int max,
 void gcli_repos_free(struct gcli_repo_list *list);
 void gcli_repo_free(struct gcli_repo *it);
 
-int gcli_repo_delete(struct gcli_ctx *ctx, char const *owner, char const *repo);
+int gcli_repo_delete(struct gcli_ctx *ctx, struct gcli_path const *path);
 
 int gcli_repo_create(struct gcli_ctx *ctx,
                      struct gcli_repo_create_options const *,
                      struct gcli_repo *out);
 
-int gcli_repo_set_visibility(struct gcli_ctx *ctx, char const *owner,
-                             char const *repo, gcli_repo_visibility visibility);
+int gcli_repo_set_visibility(struct gcli_ctx *ctx,
+                             struct gcli_path const *const path,
+                             gcli_repo_visibility visibility);
 
 #endif /* REPOS_H */

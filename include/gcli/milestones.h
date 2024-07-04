@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include <gcli/issues.h>
+#include <gcli/path.h>
 #include <gcli/pulls.h>
 
 struct gcli_milestone {
@@ -72,29 +73,27 @@ struct gcli_milestone_create_args {
 	char const *repo;
 };
 
-int gcli_get_milestones(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, int max,
-                        struct gcli_milestone_list *out);
+int gcli_get_milestones(struct gcli_ctx *ctx, struct gcli_path const *path,
+                        int max, struct gcli_milestone_list *out);
 
-int gcli_get_milestone(struct gcli_ctx *ctx, char const *owner,
-                       char const *repo, gcli_id milestone,
+int gcli_get_milestone(struct gcli_ctx *ctx, struct gcli_path const *path,
                        struct gcli_milestone *out);
 
 int gcli_create_milestone(struct gcli_ctx *ctx,
                           struct gcli_milestone_create_args const *args);
 
-int gcli_delete_milestone(struct gcli_ctx *ctx, char const *owner,
-                          char const *repo, gcli_id milestone);
+int gcli_delete_milestone(struct gcli_ctx *ctx,
+                          struct gcli_path const *const path);
 
 void gcli_free_milestone(struct gcli_milestone *it);
 void gcli_free_milestones(struct gcli_milestone_list *it);
 
-int gcli_milestone_get_issues(struct gcli_ctx *ctx, char const *owner,
-                              char const *repo, gcli_id milestone,
+int gcli_milestone_get_issues(struct gcli_ctx *ctx,
+                              struct gcli_path const *path,
                               struct gcli_issue_list *out);
 
-int gcli_milestone_set_duedate(struct gcli_ctx *ctx, char const *owner,
-                               char const *repo, gcli_id milestone,
+int gcli_milestone_set_duedate(struct gcli_ctx *ctx,
+                               struct gcli_path const *path,
                                char const *date);
 
 #endif /* GCLI_MILESTONES_H */

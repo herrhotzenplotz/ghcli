@@ -39,6 +39,7 @@
 #include <stdlib.h>
 
 #include <gcli/gcli.h>
+#include <gcli/path.h>
 
 struct gcli_label {
 	gcli_id id;
@@ -52,17 +53,17 @@ struct gcli_label_list {
 	size_t labels_size;
 };
 
-int gcli_get_labels(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gcli_get_labels(struct gcli_ctx *ctx, struct gcli_path const *path,
                     int max, struct gcli_label_list *out);
 
 void gcli_free_label(struct gcli_label *label);
 
 void gcli_free_labels(struct gcli_label_list *labels);
 
-int gcli_create_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gcli_create_label(struct gcli_ctx *ctx, struct gcli_path const *path,
                       struct gcli_label *label);
 
-int gcli_delete_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gcli_delete_label(struct gcli_ctx *ctx, struct gcli_path const *path,
                       char const *label);
 
 #endif /* LABELS_H */

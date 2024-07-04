@@ -35,6 +35,7 @@
 #endif
 
 #include <gcli/gcli.h>
+#include <gcli/path.h>
 
 #include <sn/sn.h>
 
@@ -52,7 +53,7 @@ struct github_check_list {
 	size_t checks_size;
 };
 
-int github_get_checks(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int github_get_checks(struct gcli_ctx *ctx, struct gcli_path const *repo_path,
                       char const *ref, int max,
                       struct github_check_list *checks);
 

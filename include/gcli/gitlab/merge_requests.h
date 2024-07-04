@@ -69,70 +69,62 @@ struct gitlab_mr_version_list {
 	size_t versions_size;
 };
 
+int gitlab_mr_make_url(struct gcli_ctx *ctx, struct gcli_path const *path,
+                       char **url, char const *const suffix_fmt, ...);
+
 int gitlab_fetch_mrs(struct gcli_ctx *ctx, char *url, int max,
                      struct gcli_pull_list *list);
 
-int gitlab_get_mrs(struct gcli_ctx *ctx, char const *owner,
-                   char const *reponame,
+int gitlab_get_mrs(struct gcli_ctx *ctx, struct gcli_path const *const path,
                    struct gcli_pull_fetch_details const *details,
-                   int max,
-                   struct gcli_pull_list *out);
+                   int max, struct gcli_pull_list *out);
 
-int gitlab_mr_get_diff(struct gcli_ctx *ctx, FILE *stream, char const *owner,
-                       char const *reponame, gcli_id mr_number);
+int gitlab_mr_get_diff(struct gcli_ctx *ctx, FILE *stream,
+                       struct gcli_path const *path);
 
-int gitlab_mr_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
-                        char const *reponame, gcli_id mr_number);
+int gitlab_mr_get_patch(struct gcli_ctx *ctx, FILE *stream,
+                        struct gcli_path const *path);
 
-int gitlab_mr_merge(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id mr_number, enum gcli_merge_flags flags);
+int gitlab_mr_merge(struct gcli_ctx *ctx, struct gcli_path const *path,
+                    enum gcli_merge_flags flags);
 
-int gitlab_mr_close(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id mr_number);
+int gitlab_mr_close(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int gitlab_mr_reopen(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                     gcli_id mr_number);
+int gitlab_mr_reopen(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int gitlab_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id mr_number, struct gcli_pull *out);
+int gitlab_get_pull(struct gcli_ctx *ctx, struct gcli_path const *path,
+                    struct gcli_pull *out);
 
-int gitlab_get_pull_commits(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id mr_number,
+int gitlab_get_pull_commits(struct gcli_ctx *ctx,
+                            struct gcli_path const *const path,
                             struct gcli_commit_list *out);
 
 int gitlab_perform_submit_mr(struct gcli_ctx *ctx, struct gcli_submit_pull_options *opts);
 
-int gitlab_mr_add_labels(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, gcli_id mr_number,
+int gitlab_mr_add_labels(struct gcli_ctx *ctx, struct gcli_path const *path,
                          char const *const labels[], size_t labels_size);
 
-int gitlab_mr_remove_labels(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id mr_number,
+int gitlab_mr_remove_labels(struct gcli_ctx *ctx, struct gcli_path const *path,
                             char const *const labels[], size_t labels_size);
 
-int gitlab_mr_set_milestone(struct  gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id mr_number,
+int gitlab_mr_set_milestone(struct  gcli_ctx *ctx, struct gcli_path const *path,
                             gcli_id milestone_id);
 
-int gitlab_mr_clear_milestone(struct gcli_ctx *ctx, char const *owner,
-                              char const *repo, gcli_id mr_number);
+int gitlab_mr_clear_milestone(struct gcli_ctx *ctx,
+                              struct gcli_path const *const mr_path);
 
-int gitlab_mr_add_reviewer(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id mr_number,
+int gitlab_mr_add_reviewer(struct gcli_ctx *ctx, struct gcli_path const *path,
                            char const *username);
 
-int gitlab_mr_set_title(struct gcli_ctx *ctx, char const *const owner,
-                        char const *const repo, gcli_id const id,
-                        char const *const new_title);
+int gitlab_mr_set_title(struct gcli_ctx *ctx, struct gcli_path const *path,
+                        char const *new_title);
 
 int gitlab_mr_create_review(struct gcli_ctx *ctx,
                             struct gcli_pull_create_review_details const *details);
 
-int gitlab_mr_approve(struct gcli_ctx *ctx, char const *owner,
-                      char const *repo, gcli_id const mr);
+int gitlab_mr_approve(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int gitlab_mr_unapprove(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, gcli_id const mr);
+int gitlab_mr_unapprove(struct gcli_ctx *ctx, struct gcli_path const *path);
 
 void gitlab_mr_version_free(struct gitlab_mr_version *);
 

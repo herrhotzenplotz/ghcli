@@ -34,8 +34,9 @@
 #include <config.h>
 #endif
 
-#include <sn/sn.h>
 #include <gcli/gcli.h>
+#include <gcli/path.h>
+#include <sn/sn.h>
 
 #include <time.h>
 
@@ -51,10 +52,11 @@ struct gcli_fork_list {
 	size_t forks_size;
 };
 
-int gcli_get_forks(struct gcli_ctx *ctx, char const *owner,
-                   char const *reponame, int max, struct gcli_fork_list *out);
+int gcli_get_forks(struct gcli_ctx *ctx, struct gcli_path const *path, int max,
+                   struct gcli_fork_list *out);
 
-int gcli_fork_create(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gcli_fork_create(struct gcli_ctx *ctx,
+                     struct gcli_path const *repo_path,
                      char const *in);
 
 void gcli_fork_delete(char const *owner,

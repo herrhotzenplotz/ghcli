@@ -29,6 +29,8 @@
 
 #include <gcli/gitlab/comments.h>
 #include <gcli/gitlab/config.h>
+#include <gcli/gitlab/issues.h>
+#include <gcli/gitlab/merge_requests.h>
 #include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 
@@ -38,22 +40,21 @@ int
 gitlab_perform_submit_comment(struct gcli_ctx *ctx,
                               struct gcli_submit_comment_opts const *const opts)
 {
-	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL;
-	char const *type = NULL;
+	char *url = NULL, *payload = NULL;
 	struct gcli_jsongen gen = {0};
 	int rc = 0;
 
-	e_owner = gcli_urlencode(opts->owner);
-	e_repo = gcli_urlencode(opts->repo);
-
 	switch (opts->target_type) {
 	case ISSUE_COMMENT:
-		type = "issues";
+		rc = gitlab_issue_make_url(ctx, &opts->target, &url, "/notes");
 		break;
 	case PR_COMMENT:
-		type = "merge_requests";
+		rc = gitlab_mr_make_url(ctx, &opts->target, &url, "/notes");
 		break;
 	}
+
+	if (rc < 0)
+		return rc;
 
 	gcli_jsongen_init(&gen);
 	gcli_jsongen_begin_object(&gen);
@@ -66,16 +67,10 @@ gitlab_perform_submit_comment(struct gcli_ctx *ctx,
 	payload = gcli_jsongen_to_string(&gen);
 	gcli_jsongen_free(&gen);
 
-	url = sn_asprintf("%s/projects/%s%%2F%s/%s/%"PRIid"/notes",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, type,
-	                  opts->target_id);
-
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 
 	free(payload);
 	free(url);
-	free(e_owner);
-	free(e_repo);
 
 	return rc;
 }
@@ -114,38 +109,31 @@ gitlab_fetch_comments(struct gcli_ctx *ctx, char *url,
 }
 
 int
-gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                       gcli_id const mr, struct gcli_comment_list *const out)
+gitlab_get_mr_comments(struct gcli_ctx *ctx,
+                       struct gcli_path const *const mr_path,
+                       struct gcli_comment_list *const out)
 {
-	char *e_owner = gcli_urlencode(owner);
-	char *e_repo = gcli_urlencode(repo);
+	char *url = NULL;
+	int rc = 0;
 
-	char *url = sn_asprintf(
-		"%s/projects/%s%%2F%s/merge_requests/%"PRIid"/notes",
-		gcli_get_apibase(ctx),
-		e_owner, e_repo, mr);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_mr_make_url(ctx, mr_path, &url, "/notes");
+	if (rc < 0)
+		return rc;
 
 	return gitlab_fetch_comments(ctx, url, out);
 }
 
 int
-gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
-                          char const *repo, gcli_id const issue,
+gitlab_get_issue_comments(struct gcli_ctx *ctx,
+                          struct gcli_path const *const issue_path,
                           struct gcli_comment_list *const out)
 {
-	char *e_owner = gcli_urlencode(owner);
-	char *e_repo = gcli_urlencode(repo);
+	char *url = NULL;
+	int rc = 0;
 
-	char *url = sn_asprintf(
-		"%s/projects/%s%%2F%s/issues/%"PRIid"/notes",
-		gcli_get_apibase(ctx),
-		e_owner, e_repo, issue);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_issue_make_url(ctx, issue_path, &url, "/notes");
+	if (rc < 0)
+		return rc;
 
 	return gitlab_fetch_comments(ctx, url, out);
 }
@@ -172,31 +160,26 @@ gitlab_fetch_comment(struct gcli_ctx *ctx, char const *const url,
 }
 
 int
-gitlab_get_comment(struct gcli_ctx *ctx, char const *const owner, char const *const repo,
-                   enum comment_target_type const target_type, gcli_id const target_id,
+gitlab_get_comment(struct gcli_ctx *ctx, struct gcli_path const *const target,
+                   enum comment_target_type const target_type,
                    gcli_id const comment_id, struct gcli_comment *const out)
 {
-	char *url, *e_owner, *e_repo, *target_str;
-	int rc;
-
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
+	char *url = NULL;
+	int rc = 0;
 
 	switch (target_type) {
 	case ISSUE_COMMENT:
-		target_str = "issues";
+		rc = gitlab_issue_make_url(ctx, target, &url, "/notes/%"PRIid,
+		                           comment_id);
 		break;
 	case PR_COMMENT:
-		target_str = "merge_requests";
+		rc = gitlab_mr_make_url(ctx, target, &url, "/notes/%"PRIid,
+		                        comment_id);
 		break;
 	}
 
-	url = sn_asprintf("%s/projects/%s%%2F%s/%s/%"PRIid"/notes/%"PRIid,
-	                  gcli_get_apibase(ctx), e_owner, e_repo, target_str,
-	                  target_id, comment_id);
-
-	free(e_owner);
-	free(e_repo);
+	if (rc < 0)
+		return rc;
 
 	rc = gitlab_fetch_comment(ctx, url, out);
 

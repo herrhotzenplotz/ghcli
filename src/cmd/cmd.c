@@ -110,6 +110,14 @@ check_owner_and_repo(const char **owner, const char **repo)
 	}
 }
 
+void
+check_path(struct gcli_path *path)
+{
+	check_owner_and_repo(
+		(char const **)&path->data.as_default.owner,
+		(char const **)&path->data.as_default.repo);
+}
+
 /* Parses (and updates) the given argument list into two seperate lists:
  *
  *   --add    -> add_labels
@@ -157,14 +165,12 @@ parse_labels_options(int *argc, char ***argv,
  * and repo subcommand. Ideally it should be moved into the 'repos'
  * code but I don't wanna make it exported from there. */
 void
-delete_repo(bool always_yes, const char *owner, const char *repo)
+delete_repo(bool always_yes, struct gcli_path const *const path)
 {
 	bool delete = false;
 
 	if (!always_yes) {
-		delete = sn_yesno(
-			"Are you sure you want to delete %s/%s?",
-			owner, repo);
+		delete = sn_yesno("Are you sure you want to delete the repo?");
 	} else {
 		delete = true;
 	}
@@ -172,7 +178,7 @@ delete_repo(bool always_yes, const char *owner, const char *repo)
 	if (!delete)
 		errx(1, "gcli: Operation aborted");
 
-	if (gcli_repo_delete(g_clictx, owner, repo) < 0)
+	if (gcli_repo_delete(g_clictx, path) < 0)
 		errx(1, "gcli: error: failed to delete repo");
 }
 

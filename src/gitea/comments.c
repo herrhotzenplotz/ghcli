@@ -31,10 +31,11 @@
 #include <gcli/github/comments.h>
 
 int
-gitea_get_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   gcli_id const issue, struct gcli_comment_list *const out)
+gitea_get_comments(struct gcli_ctx *ctx,
+                   struct gcli_path const *const issue_path,
+                   struct gcli_comment_list *const out)
 {
-	return github_get_comments(ctx, owner, repo, issue, out);
+	return github_get_comments(ctx, issue_path, out);
 }
 
 int
@@ -45,11 +46,9 @@ gitea_perform_submit_comment(struct gcli_ctx *ctx,
 }
 
 int
-gitea_get_comment(struct gcli_ctx *ctx, char const *const owner,
-                  char const *const repo, enum comment_target_type target_type,
-                  gcli_id const target_id, gcli_id const comment_id,
-                  struct gcli_comment *out)
+gitea_get_comment(struct gcli_ctx *ctx, struct gcli_path const *const target,
+                  enum comment_target_type target_type,
+                  gcli_id const comment_id, struct gcli_comment *out)
 {
-	return github_get_comment(ctx, owner, repo, target_type, target_id,
-	                          comment_id, out);
+	return github_get_comment(ctx, target, target_type, comment_id, out);
 }

@@ -35,10 +35,10 @@
 #include <stdlib.h>
 
 int
-gcli_get_releases(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gcli_get_releases(struct gcli_ctx *ctx, struct gcli_path const *const repo_path,
                   int const max, struct gcli_release_list *const list)
 {
-	gcli_null_check_call(get_releases, ctx, owner, repo, max, list);
+	gcli_null_check_call(get_releases, ctx, repo_path, max, list);
 }
 
 void
@@ -90,8 +90,9 @@ gcli_release_push_asset(struct gcli_ctx *ctx, struct gcli_new_release *const rel
 }
 
 int
-gcli_delete_release(struct gcli_ctx *ctx, char const *const owner,
-                    char const *const repo, char const *const id)
+gcli_delete_release(struct gcli_ctx *ctx,
+                    struct gcli_path const *const repo_path,
+                    char const *const id)
 {
-	gcli_null_check_call(delete_release, ctx, owner, repo, id);
+	gcli_null_check_call(delete_release, ctx, repo_path, id);
 }

@@ -107,8 +107,7 @@ int gitlab_job_download_artifacts(struct gcli_ctx *ctx, char const *owner,
                                   char const *repo, gcli_id jid,
                                   char const *outfile);
 
-int gitlab_get_mr_pipelines(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id mr_id,
+int gitlab_get_mr_pipelines(struct gcli_ctx *ctx, struct gcli_path const *path,
                             struct gitlab_pipeline_list *list);
 
 int gitlab_get_job(struct gcli_ctx *ctx, char const *owner, char const *repo,

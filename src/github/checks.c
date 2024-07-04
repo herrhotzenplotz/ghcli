@@ -34,6 +34,7 @@
 #include <gcli/curl.h>
 #include <gcli/github/checks.h>
 #include <gcli/github/checks.h>
+#include <gcli/github/repos.h>
 #include <gcli/json_util.h>
 
 #include <templates/github/checks.h>
@@ -41,7 +42,7 @@
 #include <pdjson/pdjson.h>
 
 int
-github_get_checks(struct gcli_ctx *ctx, char const *owner, char const *repo,
+github_get_checks(struct gcli_ctx *ctx, struct gcli_path const *const path,
                   char const *ref, int const max, struct github_check_list *const out)
 {
 	struct gcli_fetch_buffer buffer = {0};
@@ -50,9 +51,9 @@ github_get_checks(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	assert(out);
 
-	url = sn_asprintf("%s/repos/%s/%s/commits/%s/check-runs",
-	                  gcli_get_apibase(ctx),
-	                  owner, repo, ref);
+	rc = github_repo_make_url(ctx, path, &url, "/commits/%s/check-runs", ref);
+	if (rc < 0)
+		return rc;
 
 	do {
 		rc = gcli_fetch(ctx, url, &next_url, &buffer);

@@ -37,12 +37,19 @@
 #include <unistd.h>
 
 int
-gitlab_mr_checkout(struct gcli_ctx *ctx, char const *const remote, gcli_id const pr_id)
+gitlab_mr_checkout(struct gcli_ctx *ctx, char const *const remote,
+                   struct gcli_path const *const path)
 {
 	/* FIXME: this is more than not ideal! */
 	char *remote_ref, *local_ref, *refspec;
+	gcli_id pr_id;
 	int rc;
 	pid_t pid;
+
+	if (path->kind != GCLI_PATH_DEFAULT)
+		return gcli_error(ctx, "unsupported path kind for MR checkout");
+
+	pr_id = path->data.as_default.id;
 
 	remote_ref = sn_asprintf("merge-requests/%"PRIid"/head", pr_id);
 	local_ref = sn_asprintf("gitlab/mr/%"PRIid, pr_id);

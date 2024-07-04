@@ -30,6 +30,7 @@
 #ifndef GITHUB_CHECKOUT_H
 #define GITHUB_CHECKOUT_H
 
-int github_pull_checkout(struct gcli_ctx *ctx, char const *remote, gcli_id pull);
+int github_pull_checkout(struct gcli_ctx *ctx, char const *remote,
+                         struct gcli_path const *pull_path);
 
 #endif /* GITHUB_CHECKOUT_H */

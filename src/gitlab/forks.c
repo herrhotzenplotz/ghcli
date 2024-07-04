@@ -30,6 +30,8 @@
 #include <gcli/curl.h>
 #include <gcli/gitlab/config.h>
 #include <gcli/gitlab/forks.h>
+#include <gcli/gitlab/repos.h>
+#include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 
 #include <pdjson/pdjson.h>
@@ -37,12 +39,11 @@
 #include <templates/gitlab/forks.h>
 
 int
-gitlab_get_forks(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gitlab_get_forks(struct gcli_ctx *ctx, struct gcli_path const *const path,
                  int const max, struct gcli_fork_list *const list)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
+	int rc = 0;
 
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &list->forks,
@@ -51,49 +52,44 @@ gitlab_get_forks(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		.max = max,
 	};
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	*list = (struct gcli_fork_list) {0};
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/forks", gcli_get_apibase(ctx),
-	                  e_owner, e_repo);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_repo_make_url(ctx, path, &url, "/forks");
+	if (rc < 0)
+		return rc;
 
 	return gcli_fetch_list(ctx, url, &fl);
 }
 
 int
-gitlab_fork_create(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   char const *_in)
+gitlab_fork_create(struct gcli_ctx *ctx,
+                   struct gcli_path const *const repo_path,
+                   char const *const in)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	char *post_data = NULL;
-	sn_sv in = SV_NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
+	rc = gitlab_repo_make_url(ctx, repo_path, &url, "/fork");
+	if (rc < 0)
+		return rc;
 
-	url = sn_asprintf("%s/projects/%s%%2F%s/fork", gcli_get_apibase(ctx),
-	                  e_owner, e_repo);
-	if (_in) {
-		in = gcli_json_escape(SV((char *)_in));
-		post_data = sn_asprintf("{\"namespace_path\":\""SV_FMT"\"}",
-		                        SV_ARGS(in));
+	if (in) {
+		struct gcli_jsongen gen = {0};
+
+		gcli_jsongen_begin_object(&gen);
+		{
+			gcli_jsongen_objmember(&gen, "namespace_path");
+			gcli_jsongen_string(&gen, in);
+		}
+		gcli_jsongen_end_object(&gen);
+
+		post_data = gcli_jsongen_to_string(&gen);
+		gcli_jsongen_free(&gen);
 	}
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, post_data, NULL, NULL);
 
-	free(in.data);
 	free(url);
 	free(post_data);
-	free(e_owner);
-	free(e_repo);
 
 	return rc;
 }

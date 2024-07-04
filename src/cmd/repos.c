@@ -196,8 +196,7 @@ subcommand_repos_create(int argc, char *argv[])
 }
 
 static int
-action_delete(char const *const owner, char const *const repo, int *argc,
-              char ***argv)
+action_delete(struct gcli_path const *const path, int *argc, char ***argv)
 {
 	int ch;
 	bool always_yes = false;
@@ -223,7 +222,7 @@ action_delete(char const *const owner, char const *const repo, int *argc,
 	*argc -= optind;
 	*argv += optind;
 
-	delete_repo(always_yes, owner, repo);
+	delete_repo(always_yes, path);
 
 	return 0;
 }
@@ -244,8 +243,8 @@ parse_visibility(char const *str)
 /* Change the visibility level of a repository (e.g. public, private
  * etc) */
 static int
-action_set_visibility(char const *const owner, char const *const repo,
-                      int *argc , char ***argv)
+action_set_visibility(struct gcli_path const *const path, int *argc,
+                      char ***argv)
 {
 	char const *visblty_str;
 	gcli_repo_visibility visblty;
@@ -262,7 +261,7 @@ action_set_visibility(char const *const owner, char const *const repo,
 
 	visblty = parse_visibility(visblty_str);
 
-	if ((rc = gcli_repo_set_visibility(g_clictx, owner, repo, visblty)) < 0) {
+	if ((rc = gcli_repo_set_visibility(g_clictx, path, visblty)) < 0) {
 		fprintf(stderr, "gcli: error: failed to set visibility: %s\n",
 		        gcli_get_error(g_clictx));
 		return 1;
@@ -273,8 +272,7 @@ action_set_visibility(char const *const owner, char const *const repo,
 
 static struct action {
 	char const *const name;
-	int (*fn)(char const *const owner, char const *const repo, int *argc,
-	          char ***argv);
+	int (*fn)(struct gcli_path const *const path, int *argc, char ***argv);
 } const actions[] = {
 	{ .name = "delete",         .fn = action_delete },
 	{ .name = "set-visibility", .fn = action_set_visibility },
@@ -297,8 +295,8 @@ int
 subcommand_repos(int argc, char *argv[])
 {
 	int ch, n = 30;
-	char const *owner = NULL;
-	char const *repo = NULL;
+	char *owner = NULL;
+	char *repo = NULL;
 	struct gcli_repo_list repos = {0};
 	enum gcli_output_flags flags = 0;
 
@@ -391,7 +389,16 @@ subcommand_repos(int argc, char *argv[])
 		gcli_print_repos(flags, &repos, n);
 		gcli_repos_free(&repos);
 	} else {
-		check_owner_and_repo(&owner, &repo);
+		struct gcli_path path = {
+			.data = {
+				.as_default = {
+					.owner = owner,
+					.repo = repo,
+				},
+			},
+		};
+
+		check_path(&path);
 
 		while (argc) {
 			struct action const *action = find_action(argv[0]);
@@ -402,7 +409,7 @@ subcommand_repos(int argc, char *argv[])
 				return EXIT_FAILURE;
 			}
 
-			rc = action->fn(owner, repo, &argc, &argv);
+			rc = action->fn(&path, &argc, &argv);
 			if (rc)
 				return rc;
 		}

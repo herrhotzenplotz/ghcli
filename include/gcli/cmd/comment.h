@@ -37,8 +37,8 @@
 #include <gcli/comments.h>
 #include <gcli/gcli.h>
 
-int gcli_issue_comments(char const *owner, char const *repo, int issue);
-int gcli_pull_comments(char const *owner, char const *repo, int pull);
+int gcli_issue_comments(struct gcli_path const *path);
+int gcli_pull_comments(struct gcli_path const *pull_path);
 void gcli_print_comment_list(struct gcli_comment_list const *list);
 int subcommand_comment(int argc, char *argv[]);
 

@@ -29,6 +29,7 @@
 
 #include <gcli/gitea/config.h>
 #include <gcli/gitea/labels.h>
+#include <gcli/gitea/repos.h>
 #include <gcli/github/labels.h>
 #include <gcli/json_util.h>
 
@@ -36,22 +37,22 @@
 #include <sn/sn.h>
 
 int
-gitea_get_labels(struct gcli_ctx *ctx, char const *owner, char const *reponame,
+gitea_get_labels(struct gcli_ctx *ctx, struct gcli_path const *const path,
                  int max, struct gcli_label_list *const list)
 {
-	return github_get_labels(ctx, owner, reponame, max, list);
+	return github_get_labels(ctx, path, max, list);
 }
 
 int
-gitea_create_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gitea_create_label(struct gcli_ctx *ctx, struct gcli_path const *const path,
                    struct gcli_label *const label)
 {
-	return github_create_label(ctx, owner, repo, label);
+	return github_create_label(ctx, path, label);
 }
 
 int
-gitea_delete_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   char const *label)
+gitea_delete_label(struct gcli_ctx *ctx,
+                   struct gcli_path const *const repo_path, char const *label)
 {
 	char *url = NULL;
 	struct gcli_label_list list = {0};
@@ -60,7 +61,7 @@ gitea_delete_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	/* Gitea wants the id of the label, not its name. thus fetch all
 	 * the labels first to then find out what the id is we need. */
-	rc = gitea_get_labels(ctx, owner, repo, -1, &list);
+	rc = gitea_get_labels(ctx, repo_path, -1, &list);
 	if (rc < 0)
 		return rc;
 
@@ -79,10 +80,11 @@ gitea_delete_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		return gcli_error(ctx, "label '%s' does not exist", label);
 
 	/* DELETE /repos/{owner}/{repo}/labels/{} */
-	url = sn_asprintf("%s/repos/%s/%s/labels/%d", gcli_get_apibase(ctx),
-	                  owner, repo, id);
+	rc = gitea_repo_make_url(ctx, repo_path, &url, "/labels/%d", id);
 
-	rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
+	if (rc == 0) {
+		rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
+	}
 
 	free(url);
 

@@ -90,13 +90,13 @@ github_print_checks(struct github_check_list const *const list)
 }
 
 int
-github_checks(char const *const owner, char const *const repo,
-              char const *const ref, int const max)
+github_checks(struct gcli_path const *const path, char const *const ref,
+              int const max)
 {
 	struct github_check_list list = {0};
 	int rc = 0;
 
-	rc = github_get_checks(g_clictx, owner, repo, ref, max, &list);
+	rc = github_get_checks(g_clictx, path, ref, max, &list);
 	if (rc < 0)
 		return rc;
 
@@ -110,7 +110,7 @@ int
 subcommand_ci(int argc, char *argv[])
 {
 	int ch = 0;
-	char const *owner = NULL, *repo = NULL;
+	struct gcli_path repo_path = {0};
 	char const *ref = NULL;
 	int count = -1;             /* fetch all checks by default */
 
@@ -125,10 +125,10 @@ subcommand_ci(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "n:o:r:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			repo_path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			repo_path.data.as_default.repo = optarg;
 			break;
 		case 'n': {
 			char *endptr = NULL;
@@ -163,7 +163,7 @@ subcommand_ci(int argc, char *argv[])
 	/* Save the ref */
 	ref = argv[0];
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&repo_path);
 
 	/* Make sure we are actually talking about a github remote because
 	 * we might be incorrectly inferring it */
@@ -171,7 +171,7 @@ subcommand_ci(int argc, char *argv[])
 		errx(1, "gcli: error: The ci subcommand only works for GitHub. "
 		     "Use gcli -t github ... to force a GitHub remote.");
 
-	if (github_checks(owner, repo, ref, count) < 0)
+	if (github_checks(&repo_path, ref, count) < 0)
 		errx(1, "gcli: error: failed to get github checks: %s",
 		     gcli_get_error(g_clictx));
 

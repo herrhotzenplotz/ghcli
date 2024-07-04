@@ -137,22 +137,33 @@ sn_strndup(const char *it, size_t len)
 }
 
 char *
-sn_asprintf(const char *fmt, ...)
+sn_vasprintf(char const *const fmt, va_list vp)
 {
 	char tmp = 0, *result = NULL;
 	size_t actual = 0;
-	va_list vp;
+	va_list vp_copy;
 
-	va_start(vp, fmt);
-	actual = vsnprintf(&tmp, 1, fmt, vp);
-	va_end(vp);
+	va_copy(vp_copy, vp);
+
+	actual = vsnprintf(&tmp, 1, fmt, vp_copy);
 
 	result = calloc(1, actual + 1);
 	if (!result)
 		err(1, "calloc");
 
-	va_start(vp, fmt);
 	vsnprintf(result, actual + 1, fmt, vp);
+
+	return result;
+}
+
+char *
+sn_asprintf(const char *const fmt, ...)
+{
+	char *result;
+	va_list vp;
+
+	va_start(vp, fmt);
+	result = sn_vasprintf(fmt, vp);
 	va_end(vp);
 
 	return result;
