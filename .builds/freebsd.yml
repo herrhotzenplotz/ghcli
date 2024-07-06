@@ -1,8 +1,6 @@
 image: freebsd/14.x
 packages:
   - atf
-  - autoconf
-  - automake
   - ca_root_nss
   - curl
   - kyua
@@ -10,7 +8,6 @@ packages:
   - libssh2
   - libtool
   - libunistring
-  - m4
   - pkg
   - pkgconf
   - readline
@@ -19,15 +16,10 @@ sources:
 tasks:
   - build: |
       cd gcli
-      ./autogen.sh
-      {
-      CFLAGS='-std=c99 -pedantic -Wall -Wextra -Wno-misleading-indentation -Werror' \
-      CPPFLAGS='-D_XOPEN_SOURCE=600' \
-      LEX=flex YACC=byacc \
-      ./configure --disable-silent-rules || (cat config.log && exit 42)
-      }
-      make -j 4
+      ./configure --debug
+      make -j 4 all
 
   - check: |
       cd gcli
+      ./configure --debug
       make -j 4 distcheck
