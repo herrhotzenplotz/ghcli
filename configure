@@ -35,7 +35,7 @@ rel_srcdir="$(dirname ${0})"
 srcdir="$(${REALPATH} ${rel_srcdir})"
 
 tolower() {
-	tr '[[:upper:]]' '[[:lower:]]'
+	tr '[:upper:]' '[:lower:]'
 }
 
 die() {
