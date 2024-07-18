@@ -445,7 +445,8 @@ checkyes(char const *const tmp)
 	}
 
 	int is_yes = strcmp(tmp_lower, "1") == 0 ||
-		strcmp(tmp_lower, "yes") == 0;
+		strcmp(tmp_lower, "yes") == 0 ||
+		strcmp(tmp_lower, "true") == 0;
 
 	free(tmp_lower);
 	return is_yes;
