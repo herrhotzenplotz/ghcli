@@ -433,7 +433,7 @@ ensure_config(struct gcli_ctx *ctx)
 
 /** Check input for a value that indicates yes/true */
 static int
-checkyes(char const *const tmp)
+check_yes(char const *const tmp)
 {
 	size_t tmplen = strlen(tmp) + 1;
 	char *tmp_lower = malloc(tmplen);
@@ -474,13 +474,13 @@ readenv(struct gcli_config *cfg)
 	 * violate the definition to get expected and sane behaviour. */
 	tmp = getenv("NO_COLOR");
 	if (tmp && tmp[0] != '\0')
-		cfg->colours_disabled = checkyes(tmp);
+		cfg->colours_disabled = check_yes(tmp);
 
 	if ((tmp = getenv("GCLI_NOSPINNER")))
-		cfg->no_spinner = checkyes(tmp);
+		cfg->no_spinner = check_yes(tmp);
 
 	if ((tmp = getenv("GCLI_ENABLE_EXPERIMENTAL")))
-		cfg->enable_experimental = checkyes(tmp);
+		cfg->enable_experimental = check_yes(tmp);
 }
 
 int
@@ -1011,7 +1011,7 @@ gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
 	if (sn_sv_null(cfg_entry))
 		return 1;
 
-	if (checkyes(sn_sv_to_cstr(cfg_entry)))
+	if (check_yes(sn_sv_to_cstr(cfg_entry)))
 		return 0;
 
 	return 1;
@@ -1032,5 +1032,5 @@ gcli_config_enable_experimental(struct gcli_ctx *ctx)
 	if (sn_sv_null(cfg_entry))
 		return false;
 
-	return checkyes(sn_sv_to_cstr(cfg_entry));
+	return check_yes(sn_sv_to_cstr(cfg_entry));
 }
