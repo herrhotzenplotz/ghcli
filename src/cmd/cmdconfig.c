@@ -435,20 +435,20 @@ ensure_config(struct gcli_ctx *ctx)
 static int
 checkyes(char const *const tmp)
 {
-	static char const *const yeses[] = { "1", "y", "Y" };
+	size_t tmplen = strlen(tmp) + 1;
+	char *tmp_lower = malloc(tmplen);
 
-	if (strlen(tmp) == 3) {
-		if (tolower(tmp[0]) == 'y' && tolower(tmp[1]) == 'e' &&
-		    tolower(tmp[2]) == 's')
-			return 1;
+	strncpy(tmp_lower, tmp, tmplen);
+
+	for (size_t i = 0; i < tmplen - 1; ++i) {
+		tmp_lower[i] = tolower(tmp_lower[i]);
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(yeses); ++i) {
-		if (strcmp(yeses[i], tmp) == 0)
-			return 1;
-	}
+	int is_yes = strcmp(tmp_lower, "1") == 0 ||
+		strcmp(tmp_lower, "yes") == 0;
 
-	return 0;
+	free(tmp_lower);
+	return is_yes;
 }
 
 /* readenv: Read values of environment variables and pre-populate the
