@@ -9,12 +9,9 @@ PACKAGE_DATE="UNRELEASED"
 PACKAGE_STRING="gcli $PACKAGE_VERSION"
 PACKAGE_BUGREPORT="https://lists.sr.ht/~herrhotzenplotz/gcli-discuss"
 PACKAGE_URL="https://sr.ht/~herrhotzenplotz/gcli"
-echo "Configuring gcli $PACKAGE_VERSION" >&2
 
 find_program() {
 	varname=$1
-	shift
-	should_fail=$1
 	shift
 
 	printf "Checking for $varname ..." >&2
@@ -22,15 +19,17 @@ find_program() {
 		if (command -v $x >/dev/null 2>&1) && [ -x $(command -v $x) ]; then
 			printf " $x\n" >&2
 			echo $x
-			return
+			exit 0
 		fi
 	done
 	printf " not found\n" >&2
-	[ $should_fail -eq 1 ] && exit 1
+	exit 1
 
 }
 
-REALPATH=${REALPATH:-$(find_program realpath 1 realpath grealpath)}
+REALPATH=${REALPATH:-$(find_program realpath realpath grealpath)}
+[ $? -eq 0 ] || die "error: need realpath" # exit code of find_program()
+
 rel_srcdir="$(dirname ${0})"
 srcdir="$(${REALPATH} ${rel_srcdir})"
 
@@ -93,11 +92,11 @@ compiler_target() {
 find_package() {
 	printf "Checking for $1 ..." >&2
 	if ! $PKG_CONFIG --exists $1; then
-		if [ $3 -eq 0 ]; then
+		if [ "${3}" = optional ]; then
 			printf " not found\n"
 			export ${2}_FOUND=0
 			return
-		else
+		else # $3 = required
 			die "not found"
 		fi
 	fi
@@ -239,14 +238,16 @@ fi
 ############################################################################
 # LIBRARIES
 ############################################################################
-PKG_CONFIG=${PKG_CONFIG:-$(find_program pkg-config 1 pkg-config pkgconf)}
-find_package libcurl LIBCURL 1
-find_package atf-c LIBATFC 0
-find_package libcrypto LIBCRYPTO 1
+PKG_CONFIG=${PKG_CONFIG:-$(find_program pkg-config pkg-config pkgconf)}
+[ $? -eq 0 ] || die "error: need pkg-config or pkgconf"
+
+find_package libcurl LIBCURL required
+find_package atf-c LIBATFC optional
+find_package libcrypto LIBCRYPTO required
 
 # Look for libedit if not disabled
 if [ $ENABLE_LIBEDIT -eq 1 ]; then
-	find_package libedit LIBEDIT 0
+	find_package libedit LIBEDIT optional
 else
 	LIBEDIT_FOUND=0
 fi
@@ -256,7 +257,7 @@ fi
 if [ $LIBEDIT_FOUND -eq 1 ]; then
 	LIBREADLINE_FOUND=0
 elif [ $ENABLE_LIBREADLINE -eq 1 ]; then
-	find_package readline LIBREADLINE 0
+	find_package readline LIBREADLINE optional
 else
 	LIBREADLINE_FOUND=0
 fi
@@ -267,9 +268,10 @@ fi
 AR=${AR:-ar}
 RANLIB=${RANLIB:-ranlib}
 RM=${RM:-rm}
-KYUA=${KYUA:-$(find_program kyua 0 kyua)}
-CCACHE=${CCACHE:-$(find_program ccache 0 ccache)}
-INSTALL=${INSTALL:-$(find_program install 1 install ginstall)}
+KYUA=${KYUA:-$(find_program kyua kyua)}
+CCACHE=${CCACHE:-$(find_program ccache ccache)}
+INSTALL=${INSTALL:-$(find_program install install ginstall)}
+[ $? -eq 0 ] || die "error: need install program"
 
 ###################################################################
 # Configure Makefile
@@ -332,7 +334,7 @@ cat > config.h <<EOF
 #define HOSTOS "$HOST"
 EOF
 
-echo "Configuration Summary:"
+echo "Configuration summary for ${PACKAGE_STRING}:"
 echo ""
 echo "    Build system type: ${BUILD}"
 echo "     Host system type: ${HOST}"
