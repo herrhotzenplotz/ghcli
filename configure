@@ -31,6 +31,8 @@ find_program() {
 }
 
 REALPATH=${REALPATH:-$(find_program realpath 1 realpath grealpath)}
+[ $? -gt 0 ] && exit $? # exit code of find_program()
+
 rel_srcdir="$(dirname ${0})"
 srcdir="$(${REALPATH} ${rel_srcdir})"
 
