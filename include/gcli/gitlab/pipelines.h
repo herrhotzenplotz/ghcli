@@ -76,6 +76,10 @@ int gitlab_get_pipelines(struct gcli_ctx *ctx, char const *owner,
                          char const *repo, int max,
                          struct gitlab_pipeline_list *out);
 
+int gitlab_get_pipeline(struct gcli_ctx *ctx, char const *owner,
+                        char const *repo, gcli_id pipeline_id,
+                        struct gitlab_pipeline *out);
+
 void gitlab_pipeline_free(struct gitlab_pipeline *pipeline);
 void gitlab_pipelines_free(struct gitlab_pipeline_list *list);
 

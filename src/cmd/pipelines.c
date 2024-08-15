@@ -184,6 +184,25 @@ gitlab_print_job_status(struct gitlab_job const *const job)
 	gcli_dict_end(printer);
 }
 
+void
+gitlab_print_pipeline(struct gitlab_pipeline const *const pipeline)
+{
+	gcli_dict printer;
+
+	printer = gcli_dict_begin();
+
+	gcli_dict_add(printer,        "ID", 0, 0, "%"PRIid, pipeline->id);
+	gcli_dict_add_string(printer, "NAME", 0, 0, pipeline->name ? pipeline->name : "N/A");
+	gcli_dict_add_string(printer, "STATUS", GCLI_TBLCOL_STATECOLOURED, 0, pipeline->status);
+	gcli_dict_add_string(printer, "CREATED", 0, 0, pipeline->created_at);
+	gcli_dict_add_string(printer, "UPDATED", 0, 0, pipeline->updated_at);
+	gcli_dict_add_string(printer, "REF", GCLI_TBLCOL_COLOUREXPL, GCLI_COLOR_YELLOW, pipeline->ref);
+	gcli_dict_add_string(printer, "SHA", GCLI_TBLCOL_COLOUREXPL, GCLI_COLOR_YELLOW, pipeline->sha);
+	gcli_dict_add_string(printer, "SOURCE", 0, 0, pipeline->source);
+
+	gcli_dict_end(printer);
+}
+
 /* Pipeline actions */
 struct pipeline_action_ctx {
 	char const *const owner;
@@ -193,6 +212,27 @@ struct pipeline_action_ctx {
 	int argc;
 	char **argv;
 };
+
+static int
+action_pipeline_status(struct pipeline_action_ctx *ctx)
+{
+	int rc = 0;
+	struct gitlab_pipeline pipeline = {0};
+
+	rc = gitlab_get_pipeline(g_clictx, ctx->owner, ctx->repo,
+	                         ctx->pipeline_id, &pipeline);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to get pipeline: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return EXIT_FAILURE;
+	}
+
+	gitlab_print_pipeline(&pipeline);
+	gitlab_pipeline_free(&pipeline);
+
+	return EXIT_SUCCESS;
+}
 
 static int
 action_pipeline_jobs(struct pipeline_action_ctx *ctx)
@@ -241,6 +281,7 @@ static struct pipeline_action {
 	char const *const name;
 	int (*fn)(struct pipeline_action_ctx *ctx);
 } const pipeline_actions[] = {
+	{ .name = "status",   .fn = action_pipeline_status   },
 	{ .name = "jobs",     .fn = action_pipeline_jobs     },
 	{ .name = "children", .fn = action_pipeline_children },
 };
