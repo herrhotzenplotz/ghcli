@@ -82,6 +82,10 @@ int gitlab_get_pipeline_jobs(struct gcli_ctx *ctx, char const *owner,
                              char const *repo, gcli_id pipeline, int count,
                              struct gitlab_job_list *out);
 
+int gitlab_get_pipeline_children(struct gcli_ctx *ctx, char const *owner,
+                                 char const *repo, gcli_id pipeline, int count,
+                                 struct gitlab_pipeline_list *out);
+
 void gitlab_free_jobs(struct gitlab_job_list *jobs);
 void gitlab_free_job(struct gitlab_job *job);
 

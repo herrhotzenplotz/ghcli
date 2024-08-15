@@ -59,6 +59,7 @@ usage(void)
 	fprintf(stderr, "  -n number                Number of pipelines to fetch (-1 = everything)\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "PIPELINE ACTIONS:\n");
+	fprintf(stderr, "  children                 Print the list of child pipelines\n");
 	fprintf(stderr, "  jobs                     Print the list of jobs of this pipeline\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "JOB ACTIONS:\n");
@@ -213,11 +214,33 @@ action_pipeline_jobs(struct pipeline_action_ctx *ctx)
 	return EXIT_SUCCESS;
 }
 
+static int
+action_pipeline_children(struct pipeline_action_ctx *ctx)
+{
+	int rc = 0;
+	struct gitlab_pipeline_list children = {0};
+
+	rc = gitlab_get_pipeline_children(g_clictx, ctx->owner, ctx->repo,
+	                                  ctx->pipeline_id, -1, &children);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to get pipeline children: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return EXIT_FAILURE;
+	}
+
+	gitlab_print_pipelines(&children);
+	gitlab_pipelines_free(&children);
+
+	return EXIT_SUCCESS;
+}
+
 static struct pipeline_action {
 	char const *const name;
 	int (*fn)(struct pipeline_action_ctx *ctx);
 } const pipeline_actions[] = {
-	{ .name = "jobs", .fn = action_pipeline_jobs },
+	{ .name = "jobs",     .fn = action_pipeline_jobs     },
+	{ .name = "children", .fn = action_pipeline_children },
 };
 
 static struct pipeline_action const *

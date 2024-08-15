@@ -139,6 +139,31 @@ gitlab_get_pipeline_jobs(struct gcli_ctx *ctx, char const *owner,
 	return gcli_fetch_list(ctx, url, &fl);
 }
 
+int
+gitlab_get_pipeline_children(struct gcli_ctx *ctx, char const *owner,
+                             char const *repo, gcli_id pipeline, int count,
+                             struct gitlab_pipeline_list *out)
+{
+	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
+	struct gcli_fetch_list_ctx fl = {
+		.listp = &out->pipelines,
+		.sizep = &out->pipelines_size,
+		.max = count,
+		.parse = (parsefn)(parse_gitlab_pipeline_children),
+	};
+
+	e_owner = gcli_urlencode(owner);
+	e_repo = gcli_urlencode(repo);
+
+	url = sn_asprintf("%s/projects/%s%%2F%s/pipelines/%"PRIid"/bridges",
+	                  gcli_get_apibase(ctx), e_owner, e_repo, pipeline);
+
+	free(e_owner);
+	free(e_repo);
+
+	return gcli_fetch_list(ctx, url, &fl);
+}
+
 void
 gitlab_free_job(struct gitlab_job *const job)
 {
