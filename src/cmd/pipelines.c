@@ -59,6 +59,7 @@ usage(void)
 	fprintf(stderr, "  -n number                Number of pipelines to fetch (-1 = everything)\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "PIPELINE ACTIONS:\n");
+	fprintf(stderr, "  all                      Show status of this pipeline (including jobs and children)\n");
 	fprintf(stderr, "  children                 Print the list of child pipelines\n");
 	fprintf(stderr, "  jobs                     Print the list of jobs of this pipeline\n");
 	fprintf(stderr, "\n");
@@ -277,10 +278,37 @@ action_pipeline_children(struct pipeline_action_ctx *ctx)
 	return EXIT_SUCCESS;
 }
 
+static int
+action_pipeline_all(struct pipeline_action_ctx *ctx)
+{
+	int exit_code = 0;
+
+	exit_code = action_pipeline_status(ctx);
+	if (exit_code)
+		return exit_code;
+
+	fprintf(stdout, "\n");
+
+	fprintf(stdout, "JOBS\n");
+	exit_code = action_pipeline_jobs(ctx);
+	if (exit_code)
+		return exit_code;
+
+	fprintf(stdout, "\n");
+
+	fprintf(stdout, "CHILDREN\n");
+	exit_code = action_pipeline_children(ctx);
+	if (exit_code)
+		return exit_code;
+
+	return EXIT_SUCCESS;
+}
+
 static struct pipeline_action {
 	char const *const name;
 	int (*fn)(struct pipeline_action_ctx *ctx);
 } const pipeline_actions[] = {
+	{ .name = "all",      .fn = action_pipeline_all      },
 	{ .name = "status",   .fn = action_pipeline_status   },
 	{ .name = "jobs",     .fn = action_pipeline_jobs     },
 	{ .name = "children", .fn = action_pipeline_children },
