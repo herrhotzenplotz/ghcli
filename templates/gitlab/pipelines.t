@@ -37,7 +37,8 @@ array of struct gitlab_job use parse_gitlab_job;
 
 parser gitlab_pipeline_child is
 object of struct gitlab_pipeline with
-	("pipeline" => use parse_gitlab_pipeline);
+	("downstream_pipeline" => use parse_gitlab_pipeline,
+	 "name"                => name as string);
 
 parser gitlab_pipeline_children is
 array of struct gitlab_pipeline use parse_gitlab_pipeline_child;

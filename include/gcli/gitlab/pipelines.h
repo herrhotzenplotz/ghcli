@@ -44,6 +44,7 @@ struct gitlab_pipeline {
 	char *ref;
 	char *sha;
 	char *source;
+	char *name;
 };
 
 struct gitlab_pipeline_list {

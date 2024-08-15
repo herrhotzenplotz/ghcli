@@ -98,6 +98,7 @@ gitlab_print_pipelines(struct gitlab_pipeline_list const *const list)
 		{ .name = "STATUS",  .type = GCLI_TBLCOLTYPE_STRING, .flags = GCLI_TBLCOL_STATECOLOURED },
 		{ .name = "CREATED", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 		{ .name = "UPDATED", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "NAME",    .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 		{ .name = "REF",     .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 	};
 
@@ -116,6 +117,7 @@ gitlab_print_pipelines(struct gitlab_pipeline_list const *const list)
 		                 list->pipelines[i].status,
 		                 list->pipelines[i].created_at,
 		                 list->pipelines[i].updated_at,
+		                 list->pipelines[i].name,
 		                 list->pipelines[i].ref);
 	}
 
