@@ -148,6 +148,7 @@ PREFIX=/usr/local
 OPTIMISE=
 ENABLE_LIBEDIT=1
 ENABLE_LIBREADLINE=1
+ENABLE_LIBLOWDOWN=1
 
 # Parse flags
 while [ $# -gt 0 ]; do
@@ -174,6 +175,14 @@ while [ $# -gt 0 ]; do
 			;;
 		--disable-libreadline)
 			ENABLE_LIBREADLINE=0
+			shift
+			;;
+		--enable-liblowdown)
+			ENABLE_LIBLOWDOWN=1
+			shift
+			;;
+		--disable-liblowdown)
+			ENABLE_LIBLOWDOWN=0
 			shift
 			;;
 		--debug)
@@ -262,6 +271,13 @@ else
 	LIBREADLINE_FOUND=0
 fi
 
+# Lowdown
+if [ $ENABLE_LIBLOWDOWN -eq 1 ]; then
+	find_package lowdown LIBLOWDOWN optional
+else
+	LIBLOWDOWN_FOUND=0
+fi
+
 ###################################################################
 # TESTS and other programs
 ###################################################################
@@ -299,6 +315,9 @@ sed \
 	-e "s|@LIBREADLINE_FOUND@|$LIBREADLINE_FOUND|g" \
 	-e "s|@LIBREADLINE_CFLAGS@|$LIBREADLINE_CFLAGS|g" \
 	-e "s|@LIBREADLINE_LIBS@|$LIBREADLINE_LIBS|g" \
+	-e "s|@LIBLOWDOWN_FOUND@|$LIBLOWDOWN_FOUND|g" \
+	-e "s|@LIBLOWDOWN_CFLAGS@|$LIBLOWDOWN_CFLAGS|g" \
+	-e "s|@LIBLOWDOWN_LIBS@|$LIBLOWDOWN_LIBS|g" \
 	-e "s|@CONFIGURE_CMD_ARGS@|$CONFIGURE_CMD_ARGS|g" \
 	-e "s|@CC@|$CC|g" \
 	-e "s|@CCOM@|$CCOM|g" \
@@ -355,6 +374,11 @@ elif [ $LIBREADLINE_FOUND -eq 1 ]; then
 echo " Using libreadline:"
 echo "   LIBREADLINE_CFLAGS: ${LIBREADLINE_CFLAGS}"
 echo "     LIBREADLINE_LIBS: ${LIBREADLINE_LIBS}"
+fi
+if [ $LIBLOWDOWN_FOUND -eq 1 ]; then
+echo " Using lowdown:"
+echo "    LIBLOWDOWN_CFLAGS: ${LIBLOWDOWN_CFLAGS}"
+echo "      LIBLOWDOWN_LIBS: ${LIBLOWDOWN_LIBS}"
 fi
 echo ""
 echo "Configuration done. You may now run make."
