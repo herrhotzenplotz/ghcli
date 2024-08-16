@@ -45,7 +45,7 @@ Required dependencies:
 - libcurl
 - yacc (System V yacc, Berkeley Yacc or Bison should suffice)
 - lex (flex is preferred)
-- C99 Compiler and linker
+- C11 Compiler and linker
 - make
 - pkg-config
 
