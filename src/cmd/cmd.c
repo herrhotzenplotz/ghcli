@@ -35,6 +35,7 @@
 #include <gcli/cmd/cmdconfig.h>
 #include <gcli/repos.h>
 
+#include <ctype.h>
 #include <stdlib.h>
 
 #include <curl/curl.h>
@@ -149,4 +150,47 @@ delete_repo(bool always_yes, const char *owner, const char *repo)
 
 	if (gcli_repo_delete(g_clictx, owner, repo) < 0)
 		errx(1, "gcli: error: failed to delete repo");
+}
+
+static int
+word_length(const char *x)
+{
+	int l = 0;
+
+	while (*x && !isspace(*x++))
+		l++;
+	return l;
+}
+
+void
+gcli_pretty_print(const char *input, int indent, int maxlinelen, FILE *out)
+{
+	const char *it = input;
+
+	if (!it)
+		return;
+
+	while (*it) {
+		int linelength = indent;
+		fprintf(out, "%*.*s", indent, indent, "");
+
+		do {
+			int w = word_length(it) + 1;
+
+			if (it[w - 1] == '\n') {
+				fprintf(out, "%.*s", w - 1, it);
+				it += w;
+				break;
+			} else if (it[w - 1] == '\0') {
+				w -= 1;
+			}
+
+			fprintf(out, "%.*s", w, it);
+			it += w;
+			linelength += w;
+
+		} while (*it && (linelength < maxlinelen));
+
+		fputc('\n', out);
+	}
 }

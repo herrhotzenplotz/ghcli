@@ -200,7 +200,7 @@ gcli_print_comment_list(struct gcli_comment_list const *const list)
 		       gcli_setbold(), list->comments[i].author, gcli_resetbold(),
 		       list->comments[i].date,
 		       list->comments[i].id);
-		pretty_print(list->comments[i].body, 9, 80, stdout);
+		gcli_pretty_print(list->comments[i].body, 9, 80, stdout);
 		putchar('\n');
 	}
 }

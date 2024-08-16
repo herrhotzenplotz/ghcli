@@ -91,7 +91,7 @@ gcli_print_notifications(struct gcli_notification_list const *const list)
 
 		printf("\n");
 
-		pretty_print(list->notifications[i].title, 4, 80, stdout);
+		gcli_pretty_print(list->notifications[i].title, 4, 80, stdout);
 		putchar('\n');
 	}
 }
@@ -174,4 +174,3 @@ subcommand_status(int argc, char *argv[])
 
 	return EXIT_SUCCESS;
 }
-

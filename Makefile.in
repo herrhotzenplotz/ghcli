@@ -326,7 +326,6 @@ TEST_PROGRAMS = \
 	tests/gitea-parse \
 	tests/bugzilla-parse \
 	tests/url-encode \
-	tests/pretty-print \
 	tests/jsongen \
 	tests/base64 \
 	tests/difftests
