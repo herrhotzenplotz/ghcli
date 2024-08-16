@@ -396,5 +396,8 @@ install-auto: manpages gcli
 	$(INSTALL) -d $(BINDIR)
 	$(INSTALL) -m 0755 gcli $(BINDIR)
 	$(INSTALL) -d $(MANDIR)
+	$(INSTALL) -d $(MANDIR)/man5
+	$(INSTALL) -d $(MANDIR)/man1
 	# TODO: compress manual pages
-	$(INSTALL) -m 644 $(MANPAGES) $(MANDIR)
+	echo $(MANPAGES) | grep '\.1$$' | while read -r PAGE; do $(INSTALL) -m 644 $$PAGE $(MANDIR)/man1; done
+	echo $(MANPAGES) | grep '\.5$$' | while read -r PAGE; do $(INSTALL) -m 644 $$PAGE $(MANDIR)/man5; done
