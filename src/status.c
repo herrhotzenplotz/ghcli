@@ -79,7 +79,7 @@ notification_target_type_strings[MAX_GCLI_NOTIFICATION_TARGET] = {
 char const *
 gcli_notification_target_type_str(enum gcli_notification_target_type type)
 {
-	if (type < 0 || type > MAX_GCLI_NOTIFICATION_TARGET)
+	if (type > MAX_GCLI_NOTIFICATION_TARGET)
 		return NULL;
 
 	return notification_target_type_strings[type];
