@@ -436,24 +436,35 @@ github_issue_add_labels(struct gcli_ctx *ctx, char const *owner,
                         char const *repo, gcli_id const issue,
                         char const *const labels[], size_t const labels_size)
 {
-	char *url = NULL;
 	char *data = NULL;
-	char *list = NULL;
+	char *url = NULL;
 	int rc = 0;
+	struct gcli_jsongen gen = {0};
 
 	assert(labels_size > 0);
 
 	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid"/labels",
 	                  gcli_get_apibase(ctx), owner, repo, issue);
 
-	list = sn_join_with(labels, labels_size, "\",\"");
-	data = sn_asprintf("{ \"labels\": [\"%s\"]}", list);
+	gcli_jsongen_init(&gen);
+	gcli_jsongen_begin_object(&gen);
+	{
+		gcli_jsongen_objmember(&gen, "labels");
+		gcli_jsongen_begin_array(&gen);
+		for (size_t i = 0; i < labels_size; ++i) {
+			gcli_jsongen_string(&gen, labels[i]);
+		}
+		gcli_jsongen_end_array(&gen);
+	}
+	gcli_jsongen_end_object(&gen);
+
+	data = gcli_jsongen_to_string(&gen);
+	gcli_jsongen_free(&gen);
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, data, NULL, NULL);
 
 	free(url);
 	free(data);
-	free(list);
 
 	return rc;
 }

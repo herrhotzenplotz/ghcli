@@ -22,6 +22,9 @@ This changelog does not follow semantic versioning.
 
   Reported by: Alexey Ugnichev <alexey.ugnichev@gmail.com>
 
+- A bug genereting invalid JSON when adding labels to a GitHub issue
+  was fixed.
+
 ### Changed
 
 - The pipelines subcommand has been refactored to accept actions
