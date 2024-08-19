@@ -100,7 +100,11 @@ find_package() {
 			die "not found"
 		fi
 	fi
-	export ${2}_CFLAGS="$($PKG_CONFIG --cflags $1)"
+
+	# readline and possibly other dependencies in Debian (yikes)
+	# return -D_XOPEN_SOURCE which breaks builds. Rip it out -
+	# we know what we're doing... ha!
+	export ${2}_CFLAGS="$($PKG_CONFIG --cflags $1 | sed 's|-D_XOPEN_SOURCE=[[:digit:]]*||g')"
 	export ${2}_LIBS="$($PKG_CONFIG --libs $1)"
 	export ${2}_FOUND=1
 	printf " found\n" >&2
