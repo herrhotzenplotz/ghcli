@@ -11,7 +11,26 @@ This changelog does not follow semantic versioning.
 
 ### Fixed
 
+- In various configuration places and environment variables where
+  boolean values are accepted you can now specify `true` as a truthy
+  value.
+
+  Submitted by: Gavin-John Noonan <mail@gjnoonan.co.uk>
+
+- The configure script now exits gracefully whenever a required
+  program couldn't be found.
+
+  Reported by: Alexey Ugnichev <alexey.ugnichev@gmail.com>
+
 ### Changed
+
+- The pipelines subcommand has been refactored to accept actions
+  for pipelines. This allows cases where a pipeline triggers child
+  pipelines to be handled properly.
+
+  See `gcli-pipelines(1)` for documentation.
+
+  Reported by: Bence Ferdinandy <bence@ferdinandy.com>
 
 ### Removed
 
