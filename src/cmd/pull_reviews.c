@@ -145,7 +145,7 @@ process_series_prelude(char *prelude, struct gcli_pull_create_review_details *de
 			char *meta = calloc(line_len - gcli_pref_len + 1, 1);
 			memcpy(meta, bol + gcli_pref_len, line_len - gcli_pref_len);
 
-			ml = calloc(sizeof(*ml), 1);
+			ml = calloc(1, sizeof(*ml));
 			ml->entry = meta;
 
 			TAILQ_INSERT_TAIL(&details->meta_lines, ml, next);

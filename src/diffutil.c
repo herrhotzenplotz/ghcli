@@ -127,7 +127,7 @@ gcli_parse_patch(struct gcli_diff_parser *parser, struct gcli_patch *out)
 
 	/* TODO cleanup */
 	while (parser->hd[0] == 'd') {
-		struct gcli_diff *d = calloc(sizeof(*d), 1);
+		struct gcli_diff *d = calloc(1, sizeof(*d));
 
 		if (gcli_parse_diff(parser, d) < 0)
 			return -1;
@@ -620,7 +620,7 @@ gcli_parse_diff(struct gcli_diff_parser *parser, struct gcli_diff *out)
 	parser->diff_line_offset = 0;
 	TAILQ_INIT(&out->hunks);
 	while (parser->hd[0] == '@') {
-		struct gcli_diff_hunk *hunk = calloc(sizeof(*hunk), 1);
+		struct gcli_diff_hunk *hunk = calloc(1, sizeof(*hunk));
 
 		if (parse_hunk_range_info(parser, hunk) < 0) {
 			free(hunk);
@@ -674,7 +674,7 @@ gcli_parse_patch_series(struct gcli_diff_parser *parser,
 		return -1;
 
 	while (parser->hd[0] != '\0') {
-		struct gcli_patch *p = calloc(sizeof(*p), 1);
+		struct gcli_patch *p = calloc(1, sizeof(*p));
 
 		TAILQ_INSERT_TAIL(&series->patches, p, next);
 		if (gcli_parse_patch(parser, p) < 0)
@@ -777,7 +777,7 @@ static struct gcli_diff_comment *
 make_comment(struct comment_read_ctx *ctx, char *text,
              struct hunk_line_info const *line_info, int diff_line_offset)
 {
-	struct gcli_diff_comment *comment = calloc(sizeof(*comment), 1);
+	struct gcli_diff_comment *comment = calloc(1, sizeof(*comment));
 	comment->after.filename = strdup(ctx->diff->file_b);
 	comment->after.start_row = line_info->patched_line;
 	comment->after.end_row = line_info->patched_line;

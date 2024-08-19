@@ -236,7 +236,7 @@ init_local_config(struct gcli_ctx *ctx)
 
 		sn_sv value = sn_sv_trim(line);
 
-		struct gcli_config_entry *entry = calloc(sizeof(*entry), 1);
+		struct gcli_config_entry *entry = calloc(1, sizeof(*entry));
 		TAILQ_INSERT_TAIL(&dgcli->entries, entry, next);
 
 	    entry->key = key;
@@ -289,7 +289,7 @@ static void
 parse_section_entry(struct config_parser *input,
                     struct gcli_config_section *section)
 {
-	struct gcli_config_entry *entry = calloc(sizeof(*entry), 1);
+	struct gcli_config_entry *entry = calloc(1, sizeof(*entry));
 	TAILQ_INSERT_TAIL(&section->entries, entry, next);
 
 	sn_sv key = sn_sv_chop_until(&input->buffer, '=');
@@ -343,7 +343,7 @@ parse_config_section(struct gcli_config *cfg,
 {
 	struct gcli_config_section *section = NULL;
 
-	section = calloc(sizeof(*section), 1);
+	section = calloc(1, sizeof(*section));
 	TAILQ_INSERT_TAIL(&cfg->sections, section, next);
 
 	section->title = parse_section_title(input);
@@ -486,7 +486,7 @@ readenv(struct gcli_config *cfg)
 int
 gcli_config_init_ctx(struct gcli_ctx *ctx)
 {
-	struct cmd_ctx *cctx = calloc(sizeof(*cctx), 1);
+	struct cmd_ctx *cctx = calloc(1, sizeof(*cctx));
 	gcli_set_userdata(ctx, cctx);
 
 	cctx->config.sections =

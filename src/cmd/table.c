@@ -81,12 +81,12 @@ gcli_tbl_begin(struct gcli_tblcoldef const *const cols, size_t const cols_size)
 	struct gcli_tbl *tbl;
 
     /* Allocate the structure and fill in the handle */
-	tbl = calloc(sizeof(*tbl), 1);
+	tbl = calloc(1, sizeof(*tbl));
 	if (!tbl)
 		return NULL;
 
 	/* Reserve memory for the column sizes */
-	tbl->col_widths = calloc(sizeof(*tbl->col_widths), cols_size);
+	tbl->col_widths = calloc(cols_size, sizeof(*tbl->col_widths));
 	if (!tbl->col_widths) {
 		free(tbl);
 		return NULL;
@@ -194,7 +194,7 @@ gcli_tbl_add_row(gcli_tbl _table, ...)
 	struct gcli_tbl *table = (struct gcli_tbl *)(_table);
 
 	/* reserve array of cells */
-	row.cells = calloc(sizeof(*row.cells), table->cols_size);
+	row.cells = calloc(table->cols_size, sizeof(*row.cells));
 	if (!row.cells)
 		return -1;
 
@@ -357,7 +357,7 @@ struct gcli_dict {
 gcli_dict
 gcli_dict_begin(void)
 {
-	return calloc(sizeof(struct gcli_dict), 1);
+	return calloc(1, sizeof(struct gcli_dict));
 }
 
 static int
