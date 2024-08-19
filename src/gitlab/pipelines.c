@@ -74,6 +74,39 @@ gitlab_get_pipelines(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 int
+gitlab_get_pipeline(struct gcli_ctx *ctx, char const *owner,
+                    char const *repo, gcli_id pipeline_id,
+                    struct gitlab_pipeline *out)
+{
+	char *e_owner = gcli_urlencode(owner);
+	char *e_repo = gcli_urlencode(repo);
+	char *url = NULL;
+	int rc = 0;
+	struct gcli_fetch_buffer buffer = {0};
+	struct json_stream stream = {0};
+
+	url = sn_asprintf("%s/projects/%s%%2F%s/pipelines/%"PRIid,
+	                  gcli_get_apibase(ctx), e_owner, e_repo, pipeline_id);
+
+	free(e_owner);
+	free(e_repo);
+
+	rc = gcli_fetch(ctx, url, NULL, &buffer);
+	if (rc == 0) {
+		json_open_buffer(&stream, buffer.data, buffer.length);
+
+		rc = parse_gitlab_pipeline(ctx, &stream, out);
+
+		json_close(&stream);
+		gcli_fetch_buffer_free(&buffer);
+	}
+
+	free(url);
+
+	return rc;
+}
+
+int
 gitlab_get_mr_pipelines(struct gcli_ctx *ctx, char const *owner, char const *repo,
                         gcli_id const mr_id, struct gitlab_pipeline_list *const list)
 {
@@ -131,6 +164,31 @@ gitlab_get_pipeline_jobs(struct gcli_ctx *ctx, char const *owner,
 	e_repo = gcli_urlencode(repo);
 
 	url = sn_asprintf("%s/projects/%s%%2F%s/pipelines/%"PRIid"/jobs",
+	                  gcli_get_apibase(ctx), e_owner, e_repo, pipeline);
+
+	free(e_owner);
+	free(e_repo);
+
+	return gcli_fetch_list(ctx, url, &fl);
+}
+
+int
+gitlab_get_pipeline_children(struct gcli_ctx *ctx, char const *owner,
+                             char const *repo, gcli_id pipeline, int count,
+                             struct gitlab_pipeline_list *out)
+{
+	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
+	struct gcli_fetch_list_ctx fl = {
+		.listp = &out->pipelines,
+		.sizep = &out->pipelines_size,
+		.max = count,
+		.parse = (parsefn)(parse_gitlab_pipeline_children),
+	};
+
+	e_owner = gcli_urlencode(owner);
+	e_repo = gcli_urlencode(repo);
+
+	url = sn_asprintf("%s/projects/%s%%2F%s/pipelines/%"PRIid"/bridges",
 	                  gcli_get_apibase(ctx), e_owner, e_repo, pipeline);
 
 	free(e_owner);
