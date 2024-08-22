@@ -29,9 +29,11 @@
 
 #include <config.h>
 
+#include <errno.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <gcli/cmd/cmd.h>
@@ -59,6 +61,65 @@ djb2(unsigned char const *str)
 	return hash;
 }
 
+static int
+do_mkdir(char const *const path)
+{
+	struct stat sb = {0};
+
+	if (stat(path, &sb) < 0)
+		return mkdir(path, 0750);
+
+	if (S_ISDIR(sb.st_mode))
+		return 0;
+
+	errno = ENOTDIR;
+	return -1;
+}
+
+static int
+mkdir_p(char const *const dirname)
+{
+	char *d = NULL, *hd = NULL;
+	size_t l;
+
+	l = strlen(dirname);
+	d = hd = strdup(dirname);
+	if (*d == '/')
+		d++;
+
+	while (*d) {
+		char *p = strchr(d, '/');
+
+		if (!p || !(*p))
+			break;
+
+		*p = '\0';
+		if (do_mkdir(hd) < 0)
+			return -1;
+
+		*p = '/';
+		d = p+1;
+	}
+
+	if (dirname[l-1] != '/') {
+		if (do_mkdir(hd) < 0)
+			return -1;
+	}
+
+	free(hd);
+
+	return 0;
+}
+
+static void
+ensure_cache_dir_exists(void)
+{
+	char *dir = get_review_file_cache_dir();
+	if (mkdir_p(dir) < 0)
+		err(1, "gcli: error: could not create cache directory");
+
+	free(dir);
+}
 
 static char *
 make_review_diff_file_name(char const *const owner, char const *const repo,
@@ -263,6 +324,8 @@ do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
 		},
 		.diff_path = get_review_diff_file_name(owner, repo, pull_id),
 	};
+
+	ensure_cache_dir_exists();
 
 	TAILQ_INIT(&ctx.details.comments);
 

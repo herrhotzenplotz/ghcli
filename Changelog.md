@@ -25,6 +25,12 @@ This changelog does not follow semantic versioning.
 - A bug genereting invalid JSON when adding labels to a GitHub issue
   was fixed.
 
+- The reviews cache directory is now automatically created if it
+  doesn't exist avoiding a 'No such file or directory' error when
+  invoking the review action for the first time.
+
+  Reported by: Bence Ferdinandy <bence@ferdinandy.com>
+
 ### Changed
 
 - The pipelines subcommand has been refactored to accept actions
