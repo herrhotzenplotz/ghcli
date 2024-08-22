@@ -421,5 +421,16 @@ install-auto: manpages gcli
 	$(INSTALL) -d $(MANDIR)/man5
 	$(INSTALL) -d $(MANDIR)/man1
 	# TODO: compress manual pages
-	echo $(MANPAGES) | grep '\.1$$' | while read -r PAGE; do $(INSTALL) -m 644 $$PAGE $(MANDIR)/man1; done
-	echo $(MANPAGES) | grep '\.5$$' | while read -r PAGE; do $(INSTALL) -m 644 $$PAGE $(MANDIR)/man5; done
+	for PAGE in $(MANPAGES); do                               \
+		case $$PAGE in                                    \
+		*.1)                                              \
+			$(INSTALL) -m 644 $$PAGE $(MANDIR)/man1   \
+			;;                                        \
+		*.5)                                              \
+			$(INSTALL) -m 644 $$PAGE $(MANDIR)/man5   \
+			;;                                        \
+		*)                                                \
+			echo error installing man page $$PAGE >&2 \
+			;;                                        \
+		esac                                              \
+	done
