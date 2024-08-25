@@ -331,6 +331,7 @@ clean-auto:
 		$(TEST_PROGRAMS) \
 		$(MANPAGES)
 
+###### TEST SUITE #####################################
 TEST_PROGRAMS = \
 	tests/json-escape \
 	tests/github-parse \
@@ -342,7 +343,17 @@ TEST_PROGRAMS = \
 	tests/base64 \
 	tests/difftests
 
-$(TEST_PROGRAMS): libgcli.a $(TEST_PROGRAMS:=.tests.o)
+tests/json-escape: tests/json-escape.tests.o
+tests/github-parse: tests/github-parse.tests.o
+tests/gitlab-parse: tests/gitlab-parse.tests.o
+tests/gitea-parse: tests/gitea-parse.tests.o
+tests/bugzilla-parse: tests/bugzilla-parse.tests.o
+tests/url-encode: tests/url-encode.tests.o
+tests/jsongen: tests/jsongen.tests.o
+tests/base64: tests/base64.tests.o
+tests/difftests: tests/difftests.tests.o
+
+$(TEST_PROGRAMS): libgcli.a
 	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
 		$(LIBATFC_CFLAGS) $(LIBCURL_CFLAGS) $(LIBCRYPTO_CFLAGS) \
 		$(LDFLAGS) -o $@ $(@:=.tests.o) libgcli.a \
