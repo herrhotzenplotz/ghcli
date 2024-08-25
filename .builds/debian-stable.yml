@@ -20,4 +20,4 @@ tasks:
   - check: |
       cd gcli
       ./configure --debug
-      make -j 4 all
+      make -j 4 check
