@@ -523,7 +523,7 @@ read_hunk_body(struct gcli_diff_parser *parser, struct gcli_diff_hunk *hunk)
 		/* If it is a comment, don't count this line into the absolute diff
 		 * offset of the hunk */
 		if (line.start[0] == ' ' || line.start[0] == '+' ||
-		    line.start[0] == '-')
+		    line.start[0] == '-' || line.start[0] == '\\')
 		{
 			parser->diff_line_offset += 1;
 		}
@@ -925,6 +925,7 @@ gcli_hunk_get_comments(struct gcli_diff const *diff,
 		case '+':
 		case ' ':
 		case '-':
+		case '\\':
 			ctx.diff_line_offset += 1;
 			ctx.last_line_is_new = hd == '+';
 
