@@ -1022,6 +1022,28 @@ ATF_TC_BODY(bug_patch_series_fail_get_comments, tc)
 	ATF_REQUIRE(gcli_patch_series_get_comments(&series, &comments) == 0);
 }
 
+ATF_TC_WITHOUT_HEAD(bug_short_hunk_range);
+ATF_TC_BODY(bug_short_hunk_range, tc)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+
+	char const input[] =
+		"diff --git a/foo b/foo\n"
+		"index 30a503cf..05d233eb 100644\n"
+		"--- a/foo\n"
+		"+++ b/foo\n"
+		"@@ -1 +1 @@\n"
+		"-wat\n"
+		"+banana\n";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "input", &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&parser);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -1046,6 +1068,7 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, new_and_old_with_both_deletions_and_additions);
 	ATF_TP_ADD_TC(tp, patch_for_git_object_format_version_1);
 	ATF_TP_ADD_TC(tp, bug_patch_series_fail_get_comments);
+	ATF_TP_ADD_TC(tp, bug_short_hunk_range);
 
 	return atf_no_error();
 }

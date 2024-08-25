@@ -349,8 +349,9 @@ parse_hunk_range_info(struct gcli_diff_parser *parser,
 	if (read_number(&line, 10, &out->range_r_start) < 0)
 		return -1;
 
-	char const delim_r = *line.start++;
+	char const delim_r = *line.start;
 	if (delim_r == ',') {
+		line.start += 1;
 		if (read_number(&line, 10, &out->range_r_length) < 0)
 			return -1;
 	} else if (delim_r != ' ') {
