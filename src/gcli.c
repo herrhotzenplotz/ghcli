@@ -39,7 +39,7 @@ gcli_init(struct gcli_ctx **ctx,
           char *(*get_token)(struct gcli_ctx *),
           char *(*get_apibase)(struct gcli_ctx *))
 {
-	*ctx = calloc(sizeof (struct gcli_ctx), 1);
+	*ctx = calloc(1, sizeof (struct gcli_ctx));
 	if (!(*ctx))
 		return strerror(errno);
 

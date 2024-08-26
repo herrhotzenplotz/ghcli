@@ -1022,6 +1022,64 @@ ATF_TC_BODY(bug_patch_series_fail_get_comments, tc)
 	ATF_REQUIRE(gcli_patch_series_get_comments(&series, &comments) == 0);
 }
 
+ATF_TC_WITHOUT_HEAD(bug_short_hunk_range);
+ATF_TC_BODY(bug_short_hunk_range, tc)
+{
+	struct gcli_diff_parser parser = {0};
+	struct gcli_patch patch = {0};
+
+	char const input[] =
+		"diff --git a/foo b/foo\n"
+		"index 30a503cf..05d233eb 100644\n"
+		"--- a/foo\n"
+		"+++ b/foo\n"
+		"@@ -1 +1 @@\n"
+		"-wat\n"
+		"+banana\n";
+
+	ATF_REQUIRE(gcli_diff_parser_from_buffer(input, sizeof input, "input", &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&parser);
+}
+
+ATF_TC_WITHOUT_HEAD(bug_no_newline_at_end_of_file);
+ATF_TC_BODY(bug_no_newline_at_end_of_file, tc)
+{
+	struct gcli_patch patch = {0};
+	struct gcli_diff_parser parser = {0};
+	struct gcli_diff_comments comments = {0};
+	struct gcli_diff_comment *comment = NULL;
+
+	char const *const fname = "stuff_with_no_newline_in_diff.diff";
+
+	FILE *inf = open_sample(fname);
+	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
+	ATF_REQUIRE(gcli_parse_patch(&parser, &patch) == 0);
+
+	TAILQ_INIT(&comments);
+	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
+
+	comment = TAILQ_FIRST(&comments);
+	ATF_REQUIRE(comment);
+
+	ATF_CHECK(comment->before.start_row == 1);
+	ATF_CHECK(comment->before.end_row == 1);
+
+	ATF_CHECK(comment->after.start_row == 1);
+	ATF_CHECK(comment->after.end_row == 1);
+
+	ATF_CHECK_STREQ(comment->comment, "This is a comment\n");
+	ATF_CHECK_STREQ(comment->diff_text,
+	                "-this is a test file\n"
+	                "+this is a test file\n"
+	                "\\ No newline at end of file\n");
+
+	gcli_free_patch(&patch);
+	gcli_free_diff_parser(&parser);
+}
+
 ATF_TP_ADD_TCS(tp)
 {
 	ATF_TP_ADD_TC(tp, free_patch_cleans_up_properly);
@@ -1046,6 +1104,8 @@ ATF_TP_ADD_TCS(tp)
 	ATF_TP_ADD_TC(tp, new_and_old_with_both_deletions_and_additions);
 	ATF_TP_ADD_TC(tp, patch_for_git_object_format_version_1);
 	ATF_TP_ADD_TC(tp, bug_patch_series_fail_get_comments);
+	ATF_TP_ADD_TC(tp, bug_short_hunk_range);
+	ATF_TP_ADD_TC(tp, bug_no_newline_at_end_of_file);
 
 	return atf_no_error();
 }

@@ -158,49 +158,6 @@ sn_asprintf(const char *fmt, ...)
 	return result;
 }
 
-static int
-word_length(const char *x)
-{
-	int l = 0;
-
-	while (*x && !isspace(*x++))
-		l++;
-	return l;
-}
-
-void
-pretty_print(const char *input, int indent, int maxlinelen, FILE *out)
-{
-	const char *it = input;
-
-	if (!it)
-		return;
-
-	while (*it) {
-		int linelength = indent;
-		fprintf(out, "%*.*s", indent, indent, "");
-
-		do {
-			int w = word_length(it) + 1;
-
-			if (it[w - 1] == '\n') {
-				fprintf(out, "%.*s", w - 1, it);
-				it += w;
-				break;
-			} else if (it[w - 1] == '\0') {
-				w -= 1;
-			}
-
-			fprintf(out, "%.*s", w, it);
-			it += w;
-			linelength += w;
-
-		} while (*it && (linelength < maxlinelen));
-
-		fputc('\n', out);
-	}
-}
-
 int
 sn_mmap_file(const char *path, void **buffer)
 {

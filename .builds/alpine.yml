@@ -2,33 +2,23 @@ image: alpine/edge
 packages:
   - libcurl
   - gcc
-  - autoconf
-  - automake
-  - libtool
   - make
   - pkgconf
   - musl-dev
   - curl-dev
   - flex
   - bison
-  - xz
-  - gzip
-  - bzip2
   - libbsd-dev
   - kyua
   - atf-dev
+  - libedit-dev
 sources:
   - https://git.sr.ht/~herrhotzenplotz/gcli
 tasks:
   - build: |
       cd gcli
-      ./autogen.sh
-      {
-      CFLAGS='-std=c99 -pedantic -Wall -Wextra -Werror' \
-      CPPFLAGS='-D_XOPEN_SOURCE=600' \
-      ./configure --disable-silent-rules || (cat config.log && exit 42)
-      }
-      make -j
+      ./configure --debug
+      make -j all
   - check: |
       cd gcli
-      make -j distcheck
+      make -j check

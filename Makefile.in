@@ -31,9 +31,9 @@ COPTFLAGS_xlc_release=	-qpic -qoptimize=4
 COPTFLAGS=		$(COPTFLAGS_$(CCOM)_$(OPTIMISE))
 COPTFLAGS_FOR_BUILD=	$(COPTFLAGS_$(CCOM_FOR_BUILD)_$(OPTIMISE))
 
-CSTDFLAGS_gcc=		-std=c99 -pedantic
-CSTDFLAGS_clang=	-std=c99 -pedantic
-CSTDFLAGS_xlc=		-qlanglvl=stdc99
+CSTDFLAGS_gcc=		-std=c11 -pedantic
+CSTDFLAGS_clang=	-std=c11 -pedantic
+CSTDFLAGS_xlc=		-qlanglvl=stdc11
 CSTDFLAGS=		$(CSTDFLAGS_$(CCOM))
 CSTDFLAGS_FOR_BUILD=	$(CSTDFLAGS_$(CCOM_FOR_BUILD))
 
@@ -47,10 +47,10 @@ CFLAGS_FOR_BUILD=	$(CSTDFLAGS_FOR_BUILD) $(COPTFLAGS_FOR_BUILD) -I@SRCDIR@/inclu
 
 ############## CPPFLAGS ######################
 ENV_CPPFLAGS=		@ENV_CPPFLAGS@
-CPPFLAGS=		-DHAVE_CONFIG_H=1 -DHAVE_SYS_QUEUE_H=1 -DHAVE_GETOPT_H=1 -D_XOPEN_SOURCE=600 $(ENV_CPPFLAGS)
+CPPFLAGS=		-DHAVE_CONFIG_H=1 -DHAVE_SYS_QUEUE_H=1 -DHAVE_GETOPT_H=1 -D_XOPEN_SOURCE=700 $(ENV_CPPFLAGS)
 
 ENV_CPPFLAGS_FOR_BUILD=	@ENV_CPPFLAGS_FOR_BUILD@
-CPPFLAGS_FOR_BUILD=	-DHAVE_CONFIG_H -DYY_NO_UNPUT -DYY_NO_INPUT -D_XOPEN_SOURCE=600 $(ENV_CPPFLAGS_FOR_BUILD)
+CPPFLAGS_FOR_BUILD=	-DHAVE_CONFIG_H -DYY_NO_UNPUT -DYY_NO_INPUT -D_XOPEN_SOURCE=700 $(ENV_CPPFLAGS_FOR_BUILD)
 
 # CFLAGS for dependency tracking for various compilers
 CCDEPFLAGS_gcc=		-MD -MF ${@:.o=.d}
@@ -70,19 +70,28 @@ LIBATFC_LIBS=		@LIBATFC_LIBS@
 LIBEDIT_FOUND=		@LIBEDIT_FOUND@
 LIBEDIT_CFLAGS_1=	@LIBEDIT_CFLAGS@
 LIBEDIT_LIBS_1=		@LIBEDIT_LIBS@
-LIBEDIT_CFLAGS=		${LIBEDIT_CFLAGS_$(LIBEDIT_FOUND)}
-LIBEDIT_LIBS=		${LIBEDIT_LIBS_$(LIBEDIT_FOUND)}
+LIBEDIT_CFLAGS=		$(LIBEDIT_CFLAGS_$(LIBEDIT_FOUND))
+LIBEDIT_LIBS=		$(LIBEDIT_LIBS_$(LIBEDIT_FOUND))
 LIBEDIT_CPPFLAGS_1=	-DHAVE_LIBEDIT=1
-LIBEDIT_CPPFLAGS=	${LIBEDIT_CPPFLAGS_$(LIBEDIT_FOUND)}
+LIBEDIT_CPPFLAGS=	$(LIBEDIT_CPPFLAGS_$(LIBEDIT_FOUND))
 
 ############## READLINE #########################################
 LIBREADLINE_FOUND=	@LIBREADLINE_FOUND@
 LIBREADLINE_CFLAGS_1=	@LIBREADLINE_CFLAGS@
 LIBREADLINE_LIBS_1=	@LIBREADLINE_LIBS@
-LIBREADLINE_CFLAGS=	${LIBREADLINE_CFLAGS_$(LIBREADLINE_FOUND)}
-LIBREADLINE_LIBS=	${LIBREADLINE_LIBS_$(LIBREADLINE_FOUND)}
+LIBREADLINE_CFLAGS=	$(LIBREADLINE_CFLAGS_$(LIBREADLINE_FOUND))
+LIBREADLINE_LIBS=	$(LIBREADLINE_LIBS_$(LIBREADLINE_FOUND))
 LIBREADLINE_CPPFLAGS_1=	-DHAVE_LIBREADLINE=1
-LIBREADLINE_CPPFLAGS=	${LIBREADLINE_CPPFLAGS_$(LIBREADLINE_FOUND)}
+LIBREADLINE_CPPFLAGS=	$(LIBREADLINE_CPPFLAGS_$(LIBREADLINE_FOUND))
+
+############## LOWDOWN #########################################
+LIBLOWDOWN_FOUND=	@LIBLOWDOWN_FOUND@
+LIBLOWDOWN_CFLAGS_1=	@LIBLOWDOWN_CFLAGS@
+LIBLOWDOWN_LIBS_1=	@LIBLOWDOWN_LIBS@
+LIBLOWDOWN_CFLAGS=	$(LIBLOWDOWN_CFLAGS_$(LIBLOWDOWN_FOUND))
+LIBLOWDOWN_LIBS=	$(LIBLOWDOWN_LIBS_$(LIBLOWDOWN_FOUND))
+LIBLOWDOWN_CPPFLAGS_1=	-DHAVE_LIBLOWDOWN=1
+LIBLOWDOWN_CPPFLAGS=	$(LIBLOWDOWN_CPPFLAGS_$(LIBLOWDOWN_FOUND))
 
 ############## LIBCRYPTO ########################################
 LIBCRYPTO_CFLAGS=	@LIBCRYPTO_CFLAGS@
@@ -282,11 +291,12 @@ $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS): pgen
 gcli: libgcli.a $(GCLI_OBJS)
 	$(CCACHE) $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli \
 		$(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS) $(LIBEDIT_LIBS) \
-		$(LIBREADLINE_LIBS) $(LIBCRYPTO_LIBS)
+		$(LIBREADLINE_LIBS) $(LIBCRYPTO_LIBS) \
+		$(LIBLOWDOWN_LIBS)
 
 libgcli.a: $(LIBGCLI_OBJS)
-	$(AR) -rc libgcli.a $(LIBGCLI_OBJS)
-	$(RANLIB) libgcli.a
+	$(CCACHE) $(AR) -rc libgcli.a $(LIBGCLI_OBJS)
+	$(CCACHE) $(RANLIB) libgcli.a
 
 $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 
@@ -295,6 +305,7 @@ $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 	@mkdir -p $$(dirname $@)
 	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
 		$(LIBCURL_CFLAGS) $(LIBCRYPTO_CFLAGS) \
+		$(LIBLOWDOWN_CFLAGS) $(LIBLOWDOWN_CPPFLAGS) \
 		-DIN_LIBGCLI=1 -c -o $@ $<
 
 .c.gcli.o:
@@ -303,6 +314,7 @@ $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 		$(LIBEDIT_CPPFLAGS) $(LIBREADLINE_CPPFLAGS) \
 		$(LIBCURL_CFLAGS) $(LIBEDIT_CFLAGS) \
 		$(LIBREADLINE_CFLAGS) $(LIBCRYPTO_CFLAGS) \
+		$(LIBLOWDOWN_CFLAGS) $(LIBLOWDOWN_CPPFLAGS) \
 		-c -o $@ $<
 
 .c.pgen.o:
@@ -319,6 +331,7 @@ clean-auto:
 		$(TEST_PROGRAMS) \
 		$(MANPAGES)
 
+###### TEST SUITE #####################################
 TEST_PROGRAMS = \
 	tests/json-escape \
 	tests/github-parse \
@@ -326,12 +339,21 @@ TEST_PROGRAMS = \
 	tests/gitea-parse \
 	tests/bugzilla-parse \
 	tests/url-encode \
-	tests/pretty-print \
 	tests/jsongen \
 	tests/base64 \
 	tests/difftests
 
-$(TEST_PROGRAMS): libgcli.a $(TEST_PROGRAMS:=.tests.o)
+tests/json-escape: tests/json-escape.tests.o
+tests/github-parse: tests/github-parse.tests.o
+tests/gitlab-parse: tests/gitlab-parse.tests.o
+tests/gitea-parse: tests/gitea-parse.tests.o
+tests/bugzilla-parse: tests/bugzilla-parse.tests.o
+tests/url-encode: tests/url-encode.tests.o
+tests/jsongen: tests/jsongen.tests.o
+tests/base64: tests/base64.tests.o
+tests/difftests: tests/difftests.tests.o
+
+$(TEST_PROGRAMS): libgcli.a
 	$(CCACHE) $(CC) $(CFLAGS) $(CCDEPFLAGS) $(CPPFLAGS) \
 		$(LIBATFC_CFLAGS) $(LIBCURL_CFLAGS) $(LIBCRYPTO_CFLAGS) \
 		$(LDFLAGS) -o $@ $(@:=.tests.o) libgcli.a \
@@ -396,5 +418,19 @@ install-auto: manpages gcli
 	$(INSTALL) -d $(BINDIR)
 	$(INSTALL) -m 0755 gcli $(BINDIR)
 	$(INSTALL) -d $(MANDIR)
+	$(INSTALL) -d $(MANDIR)/man5
+	$(INSTALL) -d $(MANDIR)/man1
 	# TODO: compress manual pages
-	$(INSTALL) -m 644 $(MANPAGES) $(MANDIR)
+	for PAGE in $(MANPAGES); do                               \
+		case $$PAGE in                                    \
+		*.1)                                              \
+			$(INSTALL) -m 644 $$PAGE $(MANDIR)/man1   \
+			;;                                        \
+		*.5)                                              \
+			$(INSTALL) -m 644 $$PAGE $(MANDIR)/man5   \
+			;;                                        \
+		*)                                                \
+			echo error installing man page $$PAGE >&2 \
+			;;                                        \
+		esac                                              \
+	done

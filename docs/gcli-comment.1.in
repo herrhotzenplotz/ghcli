@@ -10,6 +10,7 @@
 .Op Fl y
 .Op Fl o Ar owner Fl r Ar repo
 .Op Fl i Ar issue | Fl p Ar PR
+.Op Fl R Ar comment
 .Sh DESCRIPTION
 .Nm
 can be used to add comments in the discussion under issues and pull
@@ -45,6 +46,12 @@ Create the comment under issue
 .It Fl p , -pull Ar pr
 Create the comment under PR
 .Ar #pr .
+.It Fl R , -in-reply-to Ar comment
+Create a reply to the comment with ID
+.Ar comment .
+This will put the refenced comment prefixed with
+.Dq "> "
+into the response file for you to edit.
 .El
 .Sh EXAMPLES
 Comment under PR #11 in the upstream repository:

@@ -2,6 +2,62 @@
 
 This changelog does not follow semantic versioning.
 
+## 2.5.0 (2024-Aug-26)
+
+### Added
+
+- Added a `-R` flag to the comment subcommand that allows you to
+  reply to a comment with the given ID.
+
+### Fixed
+
+- In various configuration places and environment variables where
+  boolean values are accepted you can now specify `true` as a truthy
+  value.
+
+  Submitted by: Gavin-John Noonan <mail@gjnoonan.co.uk>
+
+- The configure script now exits gracefully whenever a required
+  program couldn't be found.
+
+  Reported by: Alexey Ugnichev <alexey.ugnichev@gmail.com>
+
+- A bug genereting invalid JSON when adding labels to a GitHub issue
+  was fixed.
+
+- The reviews cache directory is now automatically created if it
+  doesn't exist avoiding a 'No such file or directory' error when
+  invoking the review action for the first time.
+
+  Reported by: Bence Ferdinandy <bence@ferdinandy.com>
+
+- A few bugs in the patch parser have been fixed:
+
+  - Under rare conditions hunk ranges were incorrectly parsed
+  - Parser errors when a diff included lines starting with a backslash
+    (e.g. when there is no newline at the end of file) were fixed
+
+  Reported by: Bence Ferdinandy <bence@ferdinandy.com>
+
+- The installation location of the manual pages of gcli has been
+  fixed. The latest release accidentially installed manual pages to
+  `${DESTDIR}${PREFIX}/share/man` instead of
+  `${DESTDIR}${PREFIX}/share/man/manX`.
+
+  Reported by: Bence Ferdinandy <bence@ferdinandy.com>
+
+### Changed
+
+- The pipelines subcommand has been refactored to accept actions
+  for pipelines. This allows cases where a pipeline triggers child
+  pipelines to be handled properly.
+
+  See `gcli-pipelines(1)` for documentation.
+
+  Reported by: Bence Ferdinandy <bence@ferdinandy.com>
+
+### Removed
+
 ## 2.4.0 (2024-June-28)
 
 ### Added

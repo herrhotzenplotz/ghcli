@@ -325,7 +325,7 @@ install_aliases(void)
 static void
 setup_subcommand_table(void)
 {
-	subcommands = calloc(sizeof(*subcommands), ARRAY_SIZE(default_subcommands));
+	subcommands = calloc(ARRAY_SIZE(default_subcommands), sizeof(*subcommands));
 	memcpy(subcommands, default_subcommands, sizeof(default_subcommands));
 	subcommands_size = ARRAY_SIZE(default_subcommands);
 }

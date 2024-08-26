@@ -7,10 +7,21 @@ following command:
 
     # pkg install gcli
 
+On NetBSD you can run:
+
+    # pkgin install gcli
+
+On Ubuntu, Debian, Devuan and the like you can run:
+
+    # apt install gcli
+
+On ArchLinux you can either use the AUR manually or use your favourite AUR helper:
+
+    # yay -S gcli
+
 ## Compile the source code
 
-Other operating systems currently require manual compilation and
-installation.
+Other operating systems may currently require manual compilation and installation.
 
 ### Windows NT Notes
 

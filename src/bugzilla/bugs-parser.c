@@ -188,3 +188,26 @@ parse_bugzilla_attachment_content_only_first(struct gcli_ctx *ctx,
 
 	return rc;
 }
+
+int
+parse_bugzilla_single_comments_array_only_first(struct gcli_ctx *ctx,
+                                                struct json_stream *stream,
+                                                struct gcli_comment *out)
+{
+	enum json_type next = JSON_NULL;
+	int rc = 0;
+
+	if ((next = json_next(stream)) != JSON_OBJECT)
+		return gcli_error(ctx, "expected bugzilla comments dictionary");
+
+	while ((next = json_next(stream)) == JSON_STRING) {
+		rc = parse_bugzilla_comment(ctx, stream, out);
+		if (rc < 0)
+			return rc;
+	}
+
+	if (next != JSON_OBJECT_END)
+		return gcli_error(ctx, "unclosed bugzilla comments dictionary");
+
+	return rc;
+}

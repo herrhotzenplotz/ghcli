@@ -105,9 +105,6 @@ char *sn_asprintf(const char *fmt, ...) PRINTF_FORMAT(1, 2);
 // modifies the underlying string
 char *sn_strip_suffix(char *it, const char *suffix);
 
-/* pretty functions */
-void pretty_print(const char *input, int indent, int maxlinelen, FILE *out);
-
 /* io file mapping */
 int sn_mmap_file(const char *path, void **buffer);
 int sn_read_file(char const *path, char **buffer);
