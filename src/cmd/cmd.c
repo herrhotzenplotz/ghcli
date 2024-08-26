@@ -47,6 +47,16 @@
 #include <lowdown.h>
 #endif
 
+#if defined(HAVE_LIBREADLINE) && !defined(HAVE_LIBEDIT)
+#define USE_READLINE 1
+#include <readline/readline.h>
+#endif
+
+#if defined(HAVE_LIBEDIT)
+#define USE_LIBEDIT 1
+#include <histedit.h>
+#endif
+
 void
 copyright(void)
 {
@@ -66,13 +76,20 @@ void
 longversion(void)
 {
 	version();
-	fprintf(stderr,
-	        "Using %s\n"
-	        "Using vendored pdjson library\n"
-	        "\n"
-	        "Project website: "PACKAGE_URL"\n"
-	        "Bug reports: "PACKAGE_BUGREPORT"\n",
-	        curl_version());
+	fprintf(stderr, "Using %s\n", curl_version());
+	fprintf(stderr, "Using vendored pdjson library\n");
+#ifdef USE_READLINE
+	fprintf(stderr, "Using readline version %d.%d\n", RL_VERSION_MAJOR, RL_VERSION_MINOR);
+#endif /* USE_READLINE */
+#ifdef USE_LIBEDIT
+	fprintf(stderr, "Using libedit version %d.%d\n", LIBEDIT_MAJOR, LIBEDIT_MINOR);
+#endif /* USE_LIBEDIT */
+#ifdef HAVE_LIBLOWDOWN
+	fprintf(stderr, "Using liblowdown\n");
+#endif /* HAVE_LIBLOWDOWN */
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Project website: "PACKAGE_URL"\n");
+	fprintf(stderr, "Bug reports: "PACKAGE_BUGREPORT"\n");
 }
 
 void
