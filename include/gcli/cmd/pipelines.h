@@ -35,7 +35,6 @@
 #include <gcli/gitlab/pipelines.h>
 
 void gitlab_print_pipelines(struct gitlab_pipeline_list const *const list);
-int gitlab_pipelines(char const *owner, char const *repo, int const count);
 
 int gitlab_mr_pipelines(char const *owner, char const *repo, int const mr_id);
 
@@ -44,7 +43,6 @@ int gitlab_pipeline_jobs(char const *owner, char const *repo, long pipeline,
 void gitlab_print_jobs(struct gitlab_job_list const *const list);
 
 void gitlab_print_job_status(struct gitlab_job const *const job);
-int gitlab_job_status(char const *owner, char const *repo, long const jid);
 
 int subcommand_pipelines(int argc, char *argv[]);
 

@@ -250,7 +250,7 @@ void
 gcli_pull_print_op(struct gcli_pull const *const pull)
 {
 	if (pull->body)
-		pretty_print(pull->body, 4, 80, stdout);
+		gcli_pretty_print(pull->body, 4, 80, stdout);
 }
 
 static void

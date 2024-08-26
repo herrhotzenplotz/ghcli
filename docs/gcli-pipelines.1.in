@@ -11,11 +11,11 @@
 .Nm
 .Fl p Ar pipeline-id
 .Op Fl o Ar owner Fl r Ar repo
-.Op Fl n Ar n
+.Ar pipeline-actions...
 .Nm
 .Fl j Ar job-id
 .Op Fl o Ar owner Fl r Ar repo
-.Ar actions...
+.Ar job-actions...
 .Sh DESCRIPTION
 .Nm
 is used to display data about the Continuous Integration (CI) service
@@ -41,7 +41,8 @@ to -1 will fetch all items. Default: 30. Note that on large
 repositories fetching all items can take a considerable amount of time
 and may result in rate limiting by the GitLab API.
 .It Fl p , -pipeline Ar pipeline-id
-List jobs in the given pipeline.
+Execute the given actions for the specified
+.Ar pipeline-id .
 .It Fl j , -jobs Ar job
 execute the given
 .Ar actions
@@ -49,7 +50,7 @@ for the specified
 .Ar job .
 .El
 .Sh ACTIONS
-.Ar actions...
+.Ar job-actions...
 may be one or more of the following:
 .Bl -tag -width artifacts
 .It Cm log
@@ -67,15 +68,34 @@ but it can be overridden by using the
 .Fl o
 flag.
 .El
+.Pp
+.Pp
+.Ar pipeline-actions...
+may be one or more of the following:
+.Bl -tag -width children
+.It Cm all
+Print a summary with all information about the pipeline.
+.It Cm status
+Print a short status summary of the pipeline.
+.It Cm jobs
+Print a list of jobs running in the pipeline.
+.It Cm children
+Print a list of child pipelines triggered by this pipeline.
+.El
 .Sh EXAMPLES
 Print a list of the last 30 pipelines in the current project:
 .Bd -literal -offset indent
 $ gcli pipelines
 .Ed
 .Pp
-List all jobs of pipeline #3316:
+Print a summary of pipeline 420:
 .Bd -literal -offset indent
-$ gcli pipelines -p3316
+$ gcli pipelines -p 420 all
+.Ed
+.Pp
+List only jobs of pipeline #3316:
+.Bd -literal -offset indent
+$ gcli pipelines -p3316 jobs
 .Ed
 .Pp
 Dump the log of Job #423141 in herrhotzenplotz/gcli:

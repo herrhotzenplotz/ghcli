@@ -51,6 +51,10 @@ int bugzilla_bug_get_comments(struct gcli_ctx *const ctx,
                               char const *const component, gcli_id const bug_id,
                               struct gcli_comment_list *out);
 
+int bugzilla_bug_get_comment(struct gcli_ctx *ctx, char const *product, char const *component,
+                             enum comment_target_type target_type, gcli_id target_id,
+                             gcli_id comment_id, struct gcli_comment *out);
+
 int bugzilla_bug_get_attachments(struct gcli_ctx *ctx, char const *const product,
                                  char const *const component,
                                  gcli_id const bug_id,

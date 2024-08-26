@@ -37,7 +37,7 @@ dist:
 
 debian-amd64:
   stage: testing
-  image: debian:bullseye
+  image: debian:bookworm
   script:
     - apt-get update
     - apt-get install -y --no-install-recommends build-essential libcurl4-openssl-dev pkgconf bison flex make libbsd-dev libatf-dev kyua libreadline-dev libssl-dev

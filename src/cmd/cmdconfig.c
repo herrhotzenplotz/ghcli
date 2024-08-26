@@ -236,7 +236,7 @@ init_local_config(struct gcli_ctx *ctx)
 
 		sn_sv value = sn_sv_trim(line);
 
-		struct gcli_config_entry *entry = calloc(sizeof(*entry), 1);
+		struct gcli_config_entry *entry = calloc(1, sizeof(*entry));
 		TAILQ_INSERT_TAIL(&dgcli->entries, entry, next);
 
 	    entry->key = key;
@@ -289,7 +289,7 @@ static void
 parse_section_entry(struct config_parser *input,
                     struct gcli_config_section *section)
 {
-	struct gcli_config_entry *entry = calloc(sizeof(*entry), 1);
+	struct gcli_config_entry *entry = calloc(1, sizeof(*entry));
 	TAILQ_INSERT_TAIL(&section->entries, entry, next);
 
 	sn_sv key = sn_sv_chop_until(&input->buffer, '=');
@@ -343,7 +343,7 @@ parse_config_section(struct gcli_config *cfg,
 {
 	struct gcli_config_section *section = NULL;
 
-	section = calloc(sizeof(*section), 1);
+	section = calloc(1, sizeof(*section));
 	TAILQ_INSERT_TAIL(&cfg->sections, section, next);
 
 	section->title = parse_section_title(input);
@@ -433,22 +433,23 @@ ensure_config(struct gcli_ctx *ctx)
 
 /** Check input for a value that indicates yes/true */
 static int
-checkyes(char const *const tmp)
+check_yes(char const *const tmp)
 {
-	static char const *const yeses[] = { "1", "y", "Y" };
+	size_t tmplen = strlen(tmp) + 1;
+	char *tmp_lower = malloc(tmplen);
 
-	if (strlen(tmp) == 3) {
-		if (tolower(tmp[0]) == 'y' && tolower(tmp[1]) == 'e' &&
-		    tolower(tmp[2]) == 's')
-			return 1;
+	strncpy(tmp_lower, tmp, tmplen);
+
+	for (size_t i = 0; i < tmplen - 1; ++i) {
+		tmp_lower[i] = tolower(tmp_lower[i]);
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(yeses); ++i) {
-		if (strcmp(yeses[i], tmp) == 0)
-			return 1;
-	}
+	int is_yes = strcmp(tmp_lower, "1") == 0 ||
+		strcmp(tmp_lower, "yes") == 0 ||
+		strcmp(tmp_lower, "true") == 0;
 
-	return 0;
+	free(tmp_lower);
+	return is_yes;
 }
 
 /* readenv: Read values of environment variables and pre-populate the
@@ -473,19 +474,19 @@ readenv(struct gcli_config *cfg)
 	 * violate the definition to get expected and sane behaviour. */
 	tmp = getenv("NO_COLOR");
 	if (tmp && tmp[0] != '\0')
-		cfg->colours_disabled = checkyes(tmp);
+		cfg->colours_disabled = check_yes(tmp);
 
 	if ((tmp = getenv("GCLI_NOSPINNER")))
-		cfg->no_spinner = checkyes(tmp);
+		cfg->no_spinner = check_yes(tmp);
 
 	if ((tmp = getenv("GCLI_ENABLE_EXPERIMENTAL")))
-		cfg->enable_experimental = checkyes(tmp);
+		cfg->enable_experimental = check_yes(tmp);
 }
 
 int
 gcli_config_init_ctx(struct gcli_ctx *ctx)
 {
-	struct cmd_ctx *cctx = calloc(sizeof(*cctx), 1);
+	struct cmd_ctx *cctx = calloc(1, sizeof(*cctx));
 	gcli_set_userdata(ctx, cctx);
 
 	cctx->config.sections =
@@ -1010,7 +1011,7 @@ gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
 	if (sn_sv_null(cfg_entry))
 		return 1;
 
-	if (checkyes(sn_sv_to_cstr(cfg_entry)))
+	if (check_yes(sn_sv_to_cstr(cfg_entry)))
 		return 0;
 
 	return 1;
@@ -1031,5 +1032,5 @@ gcli_config_enable_experimental(struct gcli_ctx *ctx)
 	if (sn_sv_null(cfg_entry))
 		return false;
 
-	return checkyes(sn_sv_to_cstr(cfg_entry));
+	return check_yes(sn_sv_to_cstr(cfg_entry));
 }

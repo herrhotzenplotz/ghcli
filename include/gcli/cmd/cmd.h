@@ -34,6 +34,8 @@
 #include <config.h>
 #endif
 
+#include <stdio.h>
+
 #include <gcli/gcli.h>
 
 #include <sn/sn.h>
@@ -64,5 +66,8 @@ void delete_repo(bool always_yes, const char *owner, const char *repo);
 
 /* List of subcommand entry points */
 int subcommand_api(int argc, char *argv[]);
+
+void gcli_pretty_print(char const *input, int indent, int maxlinelen,
+                       FILE *stream);
 
 #endif /* GCLI_CMD_CMD_H */

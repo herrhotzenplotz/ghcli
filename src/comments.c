@@ -56,6 +56,15 @@ gcli_comments_free(struct gcli_comment_list *const list)
 }
 
 int
+gcli_get_comment(struct gcli_ctx *ctx, char const *owner, char const *repo,
+                 enum comment_target_type target_type, gcli_id target_id,
+                 gcli_id comment_id, struct gcli_comment *out)
+{
+	gcli_null_check_call(get_comment, ctx, owner, repo, target_type, target_id,
+	                     comment_id, out);
+}
+
+int
 gcli_get_issue_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
                         gcli_id const issue, struct gcli_comment_list *out)
 {
@@ -70,7 +79,7 @@ gcli_get_pull_comments(struct gcli_ctx *ctx, char const *owner, char const *repo
 }
 
 int
-gcli_comment_submit(struct gcli_ctx *ctx, struct gcli_submit_comment_opts opts)
+gcli_comment_submit(struct gcli_ctx *ctx, struct gcli_submit_comment_opts const *const opts)
 {
 	gcli_null_check_call(perform_submit_comment, ctx, opts);
 }

@@ -80,3 +80,7 @@ object of struct gcli_attachment with
 
 parser bugzilla_bug_creation_result is
 object of gcli_id select "id" as id;
+
+parser bugzilla_single_comment is
+object of struct gcli_comment with
+	("comments" => use parse_bugzilla_single_comments_array_only_first);

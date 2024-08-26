@@ -211,14 +211,14 @@ Please use the BSD Style conventions for formatting your code. This means:
   I know we're not using punchcards anymore, however it makes the code
   way more readable.
 
-- Use C99
+- Use C11
 
-  Please don't use C11 or even more modern features. Reason being that
+  Please don't use C17 or even more modern features. Reason being that
   I want gcli to be portable to older platforms where either no modern
   compilers are available or where we have to rely on old gcc versions
-  and/or buggy vendor compilers. Notable forbidden features are
-  `_Static_assert` and anonymous unions. If you use the compiler flags
-  I mentioned above you should get notified by the compiler.
+  and/or buggy vendor compilers. This also means that GNU extensions
+  are forbidden. If you use the compiler flags I mentioned above
+  you should get notified by the compiler.
 
 There is a `.editorconfig` included in the source code that should
 automatically provide you with all needed

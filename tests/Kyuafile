@@ -31,10 +31,6 @@ atf_test_program{
 }
 
 atf_test_program{
-        name = 'pretty-print'
-}
-
-atf_test_program{
         name = 'jsongen'
 }
 

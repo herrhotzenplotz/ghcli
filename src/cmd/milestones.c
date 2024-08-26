@@ -128,7 +128,7 @@ gcli_print_milestone(struct gcli_milestone const *const milestone)
 
 	if (milestone->description && strlen(milestone->description)) {
 		printf("\nDESCRIPTION:\n");
-		pretty_print(milestone->description, 4, 80, stdout);
+		gcli_pretty_print(milestone->description, 4, 80, stdout);
 	}
 }
 

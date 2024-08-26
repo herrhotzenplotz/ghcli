@@ -35,9 +35,17 @@
 #include <gcli/cmd/cmdconfig.h>
 #include <gcli/repos.h>
 
+#include <ctype.h>
 #include <stdlib.h>
 
 #include <curl/curl.h>
+
+#ifdef HAVE_LIBLOWDOWN
+#include <sys/queue.h>
+
+#include <locale.h>
+#include <lowdown.h>
+#endif
 
 void
 copyright(void)
@@ -150,3 +158,94 @@ delete_repo(bool always_yes, const char *owner, const char *repo)
 	if (gcli_repo_delete(g_clictx, owner, repo) < 0)
 		errx(1, "gcli: error: failed to delete repo");
 }
+
+#ifdef HAVE_LIBLOWDOWN
+void
+gcli_pretty_print(char const *input, int indent, int maxlinelen, FILE *stream)
+{
+	size_t input_size;
+	struct lowdown_buf *out;
+	struct lowdown_doc *doc;
+	struct lowdown_node *n;
+	struct lowdown_opts opts = {0};
+	void *rndr;
+
+	input_size = strlen(input);
+
+	if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL)
+		err(1, NULL);
+
+	opts.feat |= LOWDOWN_FENCED|LOWDOWN_TASKLIST|LOWDOWN_TABLES;
+	if (!gcli_config_have_colours(g_clictx))
+		opts.oflags |= (LOWDOWN_TERM_NOANSI|LOWDOWN_TERM_NOCOLOUR);
+
+	opts.vmargin = 1;
+	opts.hmargin = indent - 4; /* somehow there's always 4 spaces being emitted by lowdown */
+	opts.cols = maxlinelen;
+
+	if ((doc = lowdown_doc_new(&opts)) == NULL)
+		err(1, NULL);
+
+	if ((n = lowdown_doc_parse(doc, NULL, input, input_size, NULL)) == NULL)
+		err(1, NULL);
+
+	if ((out = lowdown_buf_new(256)) == NULL)
+		err(1, NULL);
+
+	if ((rndr = lowdown_term_new(&opts)) == NULL)
+		err(1, NULL);
+
+	if (!lowdown_term_rndr(out, rndr, n))
+		err(1, NULL);
+
+	fwrite(out->data, 1, out->size, stream);
+
+	lowdown_term_free(rndr);
+	lowdown_buf_free(out);
+	lowdown_node_free(n);
+	lowdown_doc_free(doc);
+}
+#else
+static int
+word_length(const char *x)
+{
+	int l = 0;
+
+	while (*x && !isspace(*x++))
+		l++;
+	return l;
+}
+
+void
+gcli_pretty_print(const char *input, int indent, int maxlinelen, FILE *out)
+{
+	const char *it = input;
+
+	if (!it)
+		return;
+
+	while (*it) {
+		int linelength = indent;
+		fprintf(out, "%*.*s", indent, indent, "");
+
+		do {
+			int w = word_length(it) + 1;
+
+			if (it[w - 1] == '\n') {
+				fprintf(out, "%.*s", w - 1, it);
+				it += w;
+				break;
+			} else if (it[w - 1] == '\0') {
+				w -= 1;
+			}
+
+			fprintf(out, "%.*s", w, it);
+			it += w;
+			linelength += w;
+
+		} while (*it && (linelength < maxlinelen));
+
+		fputc('\n', out);
+	}
+}
+#endif

@@ -96,7 +96,7 @@ gcli_print_release(enum gcli_output_flags const flags,
 	/* body */
 	if (it->body) {
 		putchar('\n');
-		pretty_print(it->body, 13, 80, stdout);
+		gcli_pretty_print(it->body, 13, 80, stdout);
 	}
 
 	putchar('\n');

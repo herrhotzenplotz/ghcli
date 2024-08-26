@@ -208,7 +208,7 @@ void
 gcli_issue_print_op(struct gcli_issue const *const it)
 {
 	if (it->body)
-		pretty_print(it->body, 4, 80, stdout);
+		gcli_pretty_print(it->body, 4, 80, stdout);
 }
 
 static void
