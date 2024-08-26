@@ -31,6 +31,21 @@ This changelog does not follow semantic versioning.
 
   Reported by: Bence Ferdinandy <bence@ferdinandy.com>
 
+- A few bugs in the patch parser have been fixed:
+
+  - Under rare conditions hunk ranges were incorrectly parsed
+  - Parser errors when a diff included lines starting with a backslash
+    (e.g. when there is no newline at the end of file) were fixed
+
+  Reported by: Bence Ferdinandy <bence@ferdinandy.com>
+
+- The installation location of the manual pages of gcli has been
+  fixed. The latest release accidentially installed manual pages to
+  `${DESTDIR}${PREFIX}/share/man` instead of
+  `${DESTDIR}${PREFIX}/share/man/manX`.
+
+  Reported by: Bence Ferdinandy <bence@ferdinandy.com>
+
 ### Changed
 
 - The pipelines subcommand has been refactored to accept actions
