@@ -295,8 +295,8 @@ gcli: libgcli.a $(GCLI_OBJS)
 		$(LIBLOWDOWN_LIBS)
 
 libgcli.a: $(LIBGCLI_OBJS)
-	$(AR) -rc libgcli.a $(LIBGCLI_OBJS)
-	$(RANLIB) libgcli.a
+	$(CCACHE) $(AR) -rc libgcli.a $(LIBGCLI_OBJS)
+	$(CCACHE) $(RANLIB) libgcli.a
 
 $(LIBGCLI_OBJS): $(TEMPLATE_HEADERS) $(TEMPLATE_SRCS)
 
