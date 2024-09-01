@@ -269,11 +269,13 @@ print_comment_list(struct gcli_diff_comments const *comments)
 	struct gcli_diff_comment const *comment;
 
 	TAILQ_FOREACH(comment, comments, next) {
-		printf("%s: %d: %s\n%s\n\n",
-		       comment->after.filename, comment->after.start_row,
-		       comment->comment,
-		       comment->diff_text);
+		printf("=====================================\n");
+		printf("%s:%d:\n", comment->after.filename, comment->after.start_row);
+		gcli_pretty_print(comment->comment, 6, 80, stdout);
+		printf("The diff is:\n\n%s\n", comment->diff_text);
 	}
+
+	printf("=====================================\n");
 }
 
 static int
