@@ -142,8 +142,10 @@ comment_submit(struct submit_ctx *sctx, int always_yes)
 
 	fprintf(
 		stdout,
-		"You will be commenting the following in %s/%s #%"PRIid":\n%s\n",
-		sctx->opts.owner, sctx->opts.repo, sctx->opts.target_id, sctx->opts.message);
+		"You will be commenting the following in %s/%s #%"PRIid":\n",
+		sctx->opts.owner, sctx->opts.repo, sctx->opts.target_id);
+
+	gcli_pretty_print(sctx->opts.message, 4, 80, stdout);
 
 	if (!always_yes) {
 		if (!sn_yesno("Is this okay?"))
