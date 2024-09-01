@@ -37,6 +37,7 @@
 #include <unistd.h>
 
 #include <gcli/cmd/cmd.h>
+#include <gcli/cmd/colour.h>
 #include <gcli/cmd/editor.h>
 #include <gcli/diffutil.h>
 #include <gcli/pulls.h>
@@ -264,6 +265,37 @@ edit_diff(struct review_ctx *ctx)
 }
 
 static void
+gcli_pretty_print_diff(char const *const input)
+{
+	char const *hd = input;
+
+	for (;;) {
+		char const *eol;
+		char const *start_colour, *end_colour;
+		size_t linelen;
+
+		if (hd == NULL || *hd == '\0')
+			return;
+
+		eol = strchr(hd, '\n');
+		if (eol == NULL)
+			eol = hd + strlen(hd);
+
+		linelen = eol - hd;
+		end_colour = gcli_resetcolour();
+		if (*hd == '+')
+			start_colour = gcli_setcolour(GCLI_COLOR_GREEN);
+		else if (*hd == '-')
+			start_colour = gcli_setcolour(GCLI_COLOR_RED);
+		else
+			start_colour = "";
+
+		printf("%s%.*s%s\n", start_colour, (int)linelen, hd, end_colour);
+		hd = eol + 1;
+	}
+}
+
+static void
 print_comment_list(struct gcli_diff_comments const *comments)
 {
 	struct gcli_diff_comment const *comment;
@@ -272,7 +304,8 @@ print_comment_list(struct gcli_diff_comments const *comments)
 		printf("=====================================\n");
 		printf("%s:%d:\n", comment->after.filename, comment->after.start_row);
 		gcli_pretty_print(comment->comment, 6, 80, stdout);
-		printf("The diff is:\n\n%s\n", comment->diff_text);
+		printf("The diff is:\n\n");
+		gcli_pretty_print_diff(comment->diff_text);
 	}
 
 	printf("=====================================\n");
