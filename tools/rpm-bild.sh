@@ -1,5 +1,3 @@
-#!/bin/bash
-
 echo "installing dependencies"
 
 dnf install -y https://download.copr.fedorainfracloud.org/results/patrickl/libcurl-gnutls/fedora-40-x86_64/07356121-libcurl-gnutls/libcurl-gnutls-8.6.0-8.fc40.x86_64.rpm
@@ -13,9 +11,7 @@ dnf install -y ccache
 dnf install -y byacc
 dnf install -y rpmdevtools rpmlint
 dnf install -y libxml2-devel
-dnf install -y git
 dnf install -y tree
-dnf install -y tar
 
 echo "config gcli"
 rpmdev-setuptree
@@ -66,9 +62,8 @@ make install DESTDIR=\$RPM_BUILD_ROOT
 * Wed Aug 28 2024 herrhotzenplotz <email@example.com> - %{version}
 - gcli package new version.
 """ > ~/rpmbuild/SPECS/gcli.spec
-git clone https://github.com/herrhotzenplotz/gcli
-mv gcli "./gcli-$VERSION"
-tar -czvf ~/rpmbuild/SOURCES/gcli-$VERSION.tar.gz "./gcli-$VERSION"
+
+curl "https://herrhotzenplotz.de/gcli/releases/gcli-$VERSION/gcli-2.5.0.tar.gz" --output "~/rpmbuild/SOURCES/gcli-$VERSION.tar.gz"
 
 echo "build gcli"
 rpmbuild -bb ~/rpmbuild/SPECS/gcli.spec
