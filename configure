@@ -27,6 +27,11 @@ find_program() {
 
 }
 
+die() {
+	printf "%s\n" "${*}"
+	exit 1
+}
+
 REALPATH=${REALPATH:-$(find_program realpath realpath grealpath)}
 [ $? -eq 0 ] || die "error: need realpath" # exit code of find_program()
 
@@ -37,11 +42,6 @@ tolower() {
 	tr '[:upper:]' '[:lower:]'
 }
 
-die() {
-	printf "%s\n" "${*}"
-	exit 1
-}
-
 compiler_type() {
 	if ${1} -v 2>&1 | grep clang > /dev/null; then
 		echo "clang"
@@ -49,8 +49,9 @@ compiler_type() {
 		echo "gcc"
 	elif ${1} -qversion 2>&1 | grep 'IBM XL C' >/dev/null; then
 		echo "xlc"
+	elif ${1} -V 2>&1 | grep 'Studio' > /dev/null; then
+		echo "sunstudio"
 	else
-		# TODO: implement studio
 		echo "unknown"
 	fi
 }
@@ -81,6 +82,15 @@ compiler_target() {
 			[ -z "${xlc_as}" ] && die "failed to figure out assembler used by XL C"
 			$xlc_as --version 2>&1 | grep 'GNU assembler' >/dev/null || die "Can only derive compiler target from GNU assembler, please submit fix for your assembler"
 			$xlc_as --version 2>&1 | grep target | sed "s|.*\`\([^']*\)'.*|\1|"
+			;;
+		sunstudio)
+			# Only tested on Solaris 10 ... if this messes up on Linux or SunOS
+			# i86pc feel free to send a patch...
+			if $cc -V 2>&1 | grep SunOS_sparc > /dev/null; then
+				echo "sparc64-unknown-solaris"
+			else
+				echo "unknown-unknown-unknown"
+			fi
 			;;
 		*)
 			echo "unknown-unknown-unknown"
