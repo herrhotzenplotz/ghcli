@@ -90,3 +90,72 @@ Furthermore we can look at single issues:
 
 	$
 
+## GitLab
+
+### Configuring an account for use with a token
+
+First you need to generate a token:
+
+1. Click on your avatar in the top left corner
+1. Choose Preferences in the popup menu
+1. Select `Access tokens` in the preference menu
+1. Click the `Add new token` button
+1. Choose some reasonable values
+  - The token name can be your hostname e.g. `gcli $(hostname)`
+  - Clear the expiration date. It will be defaulted to some high value by GitLab.
+  - Select the `api` scope
+
+Now click `Create personal access token`. Save this token - **do not share it with anyone else**.
+
+You can now update your gcli config in `$HOME/.config/gcli/config`:
+
+```conf
+defaults {
+    gitlab-default-account=gitlab-com
+    ...
+}
+
+gitlab-com {
+    account=<your-username-at-gitlab>
+    token=<the-token-you-just-created>
+    forge-type=gitlab
+}
+```
+
+After that you should be able to run the following command:
+
+	$ gcli -t gitlab issues -o herrhotzenplotz -r gcli
+
+If this process errors out check the above steps. If you believe
+this is a bug, please report it at our issue tracker!
+
+## Gitea
+
+The steps here are roughly the same as with GitLab.
+
+To generate a token:
+
+1. Click your avatar in the top-right corner
+1. Choose `Settings` in the popup menu
+1. Select `Applications` in the menu on the left
+1. Under `Generate new token` enter a reasonable token name
+1. Click the `Generate token` button
+1. Save the token - **do not share it with anyone else**.
+
+You can now update your gcli config file in `$HOME/.config/gcli/config`:
+
+```conf
+defaults {
+	gitea-default-account=codeberg-org
+	...
+}
+
+codeberg-org {
+	account=<your-username-at-gitea>
+	token=<the-token-you-just-created>
+	forge-type=gitea
+	apibase=https://codeberg.org/api/v1
+}
+```
+
+The example here uses Codeberg. Update these fields as needed for your own use case.

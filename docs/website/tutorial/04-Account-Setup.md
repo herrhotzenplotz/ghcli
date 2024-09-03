@@ -3,6 +3,8 @@
 Creating issues on GitHub requires an account which we need to
 generate an authentication token for gcli.
 
+If you want to test this with a different forge than GitHub look at [the tutorial for other forges](./08-Other-forges.html).
+
 Log into your GitHub account and click on your account icon in the top
 right corner. Then choose the `Settings` option. Scroll down and
 choose `Developer settings` on the bottom of the left column. Under

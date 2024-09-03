@@ -99,7 +99,9 @@ the default values are:
 (optional) The username used to authenticate at the API.
 .It token
 (optional) A generated application token to use with this account.
-TODO: Document for each forge how to generate these.
+The gcli tutorial at
+.Lk https://herrhotzenplotz.de/gcli/tutorial
+has some documentation on how to generate thes tokens.
 .El
 .Ss Repository Local Configuration File
 For repository-local configuration you can use a special configuration
