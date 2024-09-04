@@ -218,6 +218,6 @@ char const *gcli_pull_get_meta_by_key(struct gcli_pull_create_review_details con
                                       char const *key);
 
 int gcli_pull_checkout(struct gcli_ctx *ctx, char const *remote,
-                       struct gcli_path const *const pull_path);
+                       struct gcli_path const *pull_path);
 
 #endif /* PULLS_H */

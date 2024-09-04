@@ -47,6 +47,11 @@ gitlab_mr_checkout(struct gcli_ctx *ctx, char const *const remote,
 	pid_t pid;
 
 	if (path->kind != GCLI_PATH_DEFAULT)
+		return gcli_error(ctx, "unsupported path kind for checkout");
+
+	pr_id = path->data.as_default.id;
+
+	if (path->kind != GCLI_PATH_DEFAULT)
 		return gcli_error(ctx, "unsupported path kind for MR checkout");
 
 	pr_id = path->data.as_default.id;

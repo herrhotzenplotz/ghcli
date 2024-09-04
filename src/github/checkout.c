@@ -28,6 +28,7 @@
  */
 
 #include <gcli/gcli.h>
+#include <gcli/path.h>
 #include <gcli/waitproc.h>
 
 #include <sn/sn.h>
@@ -36,12 +37,19 @@
 #include <unistd.h>
 
 int
-github_pull_checkout(struct gcli_ctx *ctx, char const *const remote, gcli_id const pr_id)
+github_pull_checkout(struct gcli_ctx *ctx, char const *const remote,
+                     struct gcli_path const *const path)
 {
 	/* FIXME: this is more than not ideal! */
 	char *remote_ref, *local_ref, *refspec;
 	int rc;
 	pid_t pid;
+	gcli_id pr_id;
+
+	if (path->kind != GCLI_PATH_DEFAULT)
+		return gcli_error(ctx, "unsupported path kind for checkout");
+
+	pr_id = path->data.as_default.id;
 
 	remote_ref = sn_asprintf("refs/pull/%"PRIid"/head", pr_id);
 	local_ref = sn_asprintf("github/pr/%"PRIid, pr_id);
