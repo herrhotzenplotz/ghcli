@@ -1057,7 +1057,7 @@ post_diff_comment(struct gcli_ctx *ctx,
 
 
 	/* /projects/:id/merge_requests/:merge_request_iid/discussions */
-	url = sn_asprintf("%s/projects/%s%%2F%s/merge_requests/%lu/discussions",
+	url = sn_asprintf("%s/projects/%s%%2F%s/merge_requests/%"PRIid"/discussions",
 	                  gcli_get_apibase(ctx), e_owner, e_repo,
 	                  details->pull_id);
 

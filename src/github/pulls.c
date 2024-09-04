@@ -235,7 +235,7 @@ github_print_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
 	e_repo  = gcli_urlencode(repo);
 
 	url = sn_asprintf(
-		"%s/repos/%s/%s/pulls/%lu",
+		"%s/repos/%s/%s/pulls/%"PRIid,
 		gcli_get_apibase(ctx),
 		e_owner, e_repo, pr_number);
 	rc = gcli_curl(ctx, stream, url, "Accept: application/vnd.github.v3.patch");
@@ -682,7 +682,7 @@ github_pull_create_review(struct gcli_ctx *ctx,
 	e_owner = gcli_urlencode(details->owner);
 	e_repo = gcli_urlencode(details->repo);
 
-	url = sn_asprintf("%s/repos/%s/%s/pulls/%lu/reviews",
+	url = sn_asprintf("%s/repos/%s/%s/pulls/%"PRIid"/reviews",
 	                  gcli_get_apibase(ctx), e_owner, e_repo,
 	                  details->pull_id);
 
