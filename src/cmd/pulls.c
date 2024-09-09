@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -98,6 +98,7 @@ usage(void)
 	fprintf(stderr, "  patch                  Display changes as patch series\n");
 	fprintf(stderr, "  title <new-title>      Change the title of the pull request\n");
 	fprintf(stderr, "  request-review <user>  Add <user> as a reviewer of the PR\n");
+	fprintf(stderr, "  checkout               Do a git-checkout of this PR (GitHub- and GitLab only)\n");
 	if (gcli_config_enable_experimental(g_clictx))
 		fprintf(stderr, "  review                 Start a review of this PR\n");
 
@@ -1091,6 +1092,24 @@ action_review(struct action_ctx *ctx)
 	do_review_session(ctx->owner, ctx->repo, ctx->pr);
 }
 
+static void
+action_checkout(struct action_ctx *ctx)
+{
+	char *remote;
+	int rc = 0;
+
+	rc = gcli_config_get_remote(g_clictx, &remote);
+	if (rc < 0)
+		errx(1, "gcli: error: %s", gcli_get_error(g_clictx));
+
+	if (gcli_pull_checkout(g_clictx, remote, ctx->pr) < 0) {
+		errx(1, "gcli: error: failed to checkout pull: %s",
+		     gcli_get_error(g_clictx));
+	}
+
+	free(remote);
+}
+
 static struct action {
 	char const *name;
 	void (*fn)(struct action_ctx *ctx);
@@ -1112,6 +1131,7 @@ static struct action {
 	{ .name = "request-review", .fn = action_request_review },
 	{ .name = "title",          .fn = action_title          },
 	{ .name = "review",         .fn = action_review         },
+	{ .name = "checkout",       .fn = action_checkout       },
 };
 
 static size_t const actions_size = ARRAY_SIZE(actions);

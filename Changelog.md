@@ -6,6 +6,9 @@ This changelog does not follow semantic versioning.
 
 ### Added
 
+- Added a `checkout` action to the `pulls` subcommand that allows
+  quickly checking out the target branch of a pull request.
+
 ### Fixed
 
 ### Changed

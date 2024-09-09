@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,34 +27,61 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCLI_CMD_GITCONFIG_H
-#define GCLI_CMD_GITCONFIG_H
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <gcli/gcli.h>
+#include <gcli/gitlab/checkout.h>
+#include <gcli/waitproc.h>
 
 #include <sn/sn.h>
 
-struct gcli_gitremote {
-	sn_sv name;
-	sn_sv owner;
-	sn_sv repo;
-	sn_sv url;
-	gcli_forge_type forge_type;
-};
+#include <stdlib.h>
+#include <unistd.h>
 
-sn_sv gcli_gitconfig_get_current_branch(void);
+int
+gitlab_mr_checkout(struct gcli_ctx *ctx, char const *const remote, gcli_id const pr_id)
+{
+	/* FIXME: this is more than not ideal! */
+	char *remote_ref, *local_ref, *refspec;
+	int rc;
+	pid_t pid;
 
-void gcli_gitconfig_add_fork_remote(char const *org, char const *repo);
+	remote_ref = sn_asprintf("merge-requests/%"PRIid"/head", pr_id);
+	local_ref = sn_asprintf("gitlab/mr/%"PRIid, pr_id);
+	refspec = sn_asprintf("%s:%s", remote_ref, local_ref);
 
-int gcli_gitconfig_get_forgetype(struct gcli_ctx *ctx, char const *remote_name);
+	pid = fork();
+	if (pid < 0)
+		return gcli_error(ctx, "could not fork");
 
-int gcli_gitconfig_repo_by_remote(struct gcli_ctx *ctx, char const *const remote_name,
-                                  char const **const owner, char const **const repo,
-                                  int *const forge);
+	if (pid == 0) {
+		rc = execlp("git", "git", "fetch", remote, refspec, NULL);
+		if (rc < 0)
+			exit(EXIT_FAILURE);
 
-int gcli_gitconfig_get_remote(struct gcli_ctx *ctx, gcli_forge_type type,
-                              char **remote);
+		/* NOTREACHED */
+	}
 
-#endif /* GCLI_CMD_GITCONFIG_H */
+	rc = gcli_wait_proc_ok(ctx, pid);
+	if (rc < 0)
+		return rc;
+
+	free(remote_ref); remote_ref = NULL;
+	free(refspec); refspec = NULL;
+
+	pid = fork();
+	if (pid < 0)
+		return gcli_error(ctx, "could not fork");
+
+	if (pid == 0) {
+		rc = execlp("git", "git", "checkout", "--track", local_ref, NULL);
+		if (rc < 0)
+			exit(EXIT_FAILURE);
+
+		/* NOTREACHED */
+	}
+
+	rc = gcli_wait_proc_ok(ctx, pid);
+
+	free(local_ref); local_ref = NULL;
+
+	return rc;
+}

@@ -139,6 +139,14 @@ implied:
 .Cm op ,
 .Cm commits and
 .Cm ci .
+.It Cm checkout
+Do a git checkout of the head branch associated with this pull request.
+This requires that
+.Xr git 1
+is available in the
+.Ev PATH
+and that the current working directory resides within a clone of the
+target repository.
 .It Cm commits
 Print the list of commits associated with the Pull Requests.
 .It Cm comments

@@ -131,6 +131,7 @@ LIBGCLI_SRCS = \
 	src/gitea/status.c \
 	src/github/api.c \
 	src/github/checks.c \
+	src/github/checkout.c \
 	src/github/comments.c \
 	src/github/config.c \
 	src/github/forks.c \
@@ -144,6 +145,7 @@ LIBGCLI_SRCS = \
 	src/github/sshkeys.c \
 	src/github/status.c \
 	src/gitlab/api.c \
+	src/gitlab/checkout.c \
 	src/gitlab/comments.c \
 	src/gitlab/config.c \
 	src/gitlab/forks.c \
@@ -178,6 +180,7 @@ LIBGCLI_SRCS = \
 	src/repos.c \
 	src/sshkeys.c \
 	src/status.c \
+	src/waitproc.c \
 	thirdparty/pdjson/pdjson.c \
 	thirdparty/sn/sn.c
 

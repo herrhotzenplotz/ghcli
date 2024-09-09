@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,34 +27,9 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCLI_CMD_GITCONFIG_H
-#define GCLI_CMD_GITCONFIG_H
+#ifndef GCLI_WAITPROC_H
+#define GCLI_WAITPROC_H
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+int gcli_wait_proc_ok(struct gcli_ctx *ctx, pid_t pid);
 
-#include <sn/sn.h>
-
-struct gcli_gitremote {
-	sn_sv name;
-	sn_sv owner;
-	sn_sv repo;
-	sn_sv url;
-	gcli_forge_type forge_type;
-};
-
-sn_sv gcli_gitconfig_get_current_branch(void);
-
-void gcli_gitconfig_add_fork_remote(char const *org, char const *repo);
-
-int gcli_gitconfig_get_forgetype(struct gcli_ctx *ctx, char const *remote_name);
-
-int gcli_gitconfig_repo_by_remote(struct gcli_ctx *ctx, char const *const remote_name,
-                                  char const **const owner, char const **const repo,
-                                  int *const forge);
-
-int gcli_gitconfig_get_remote(struct gcli_ctx *ctx, gcli_forge_type type,
-                              char **remote);
-
-#endif /* GCLI_CMD_GITCONFIG_H */
+#endif /* GCLI_WAITPROC_H */

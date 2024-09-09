@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,34 +27,35 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCLI_CMD_GITCONFIG_H
-#define GCLI_CMD_GITCONFIG_H
+#include <gcli/gcli.h>
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <errno.h>
+#include <string.h>
+#include <sys/wait.h>
 
-#include <sn/sn.h>
+int
+gcli_wait_proc_ok(struct gcli_ctx *ctx, pid_t pid)
+{
+	int status;
 
-struct gcli_gitremote {
-	sn_sv name;
-	sn_sv owner;
-	sn_sv repo;
-	sn_sv url;
-	gcli_forge_type forge_type;
-};
+	if (waitpid(pid, &status, WEXITED) == -1) {
+		return gcli_error(ctx, "failed to wait for child process: %s",
+		                  strerror(errno));
+	}
 
-sn_sv gcli_gitconfig_get_current_branch(void);
+	if (WIFEXITED(status)) {
+		int exit_code = WEXITSTATUS(status);
+		if (exit_code) {
+			return gcli_error(ctx, "child exited with error code %d",
+			                  WEXITSTATUS(status));
+		}
+		return 0;
+	}
 
-void gcli_gitconfig_add_fork_remote(char const *org, char const *repo);
+	if (WIFSIGNALED(status)) {
+		return gcli_error(ctx, "child exited due to signal %d",
+		                  WTERMSIG(status));
+	}
 
-int gcli_gitconfig_get_forgetype(struct gcli_ctx *ctx, char const *remote_name);
-
-int gcli_gitconfig_repo_by_remote(struct gcli_ctx *ctx, char const *const remote_name,
-                                  char const **const owner, char const **const repo,
-                                  int *const forge);
-
-int gcli_gitconfig_get_remote(struct gcli_ctx *ctx, gcli_forge_type type,
-                              char **remote);
-
-#endif /* GCLI_CMD_GITCONFIG_H */
+	return gcli_error(ctx, "unknown child status");
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -443,6 +443,12 @@ struct gcli_forge_descriptor {
 	int (*pull_create_review)(
 		struct gcli_ctx *ctx,
 		struct gcli_pull_create_review_details const *details);
+
+	/** Checkout this PR */
+	int (*pull_checkout)(
+		struct gcli_ctx *ctx,
+		char const *remote,
+		gcli_id pull);
 
 	/**
 	 * Get a list of releases in the given repo */

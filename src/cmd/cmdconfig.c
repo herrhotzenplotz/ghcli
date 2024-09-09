@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -928,6 +928,26 @@ gcli_config_get_forge_type(struct gcli_ctx *ctx)
 	}
 
 	return result;
+}
+
+int
+gcli_config_get_remote(struct gcli_ctx *ctx, char **remote)
+{
+	struct gcli_config *cfg;
+	gcli_forge_type type;
+	int rc;
+
+	cfg = ensure_config(ctx);
+
+	if (cfg->override_remote) {
+		*remote = strdup(cfg->override_remote);
+		return 0;
+	}
+
+	type = gcli_config_get_forge_type(ctx);
+	rc = gcli_gitconfig_get_remote(ctx, type, remote);
+
+	return rc;
 }
 
 int

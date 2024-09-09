@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -223,5 +223,7 @@ int gcli_pull_get_patch(struct gcli_ctx *ctx, FILE *out, char const *owner,
 
 char const *gcli_pull_get_meta_by_key(struct gcli_pull_create_review_details const *,
                                       char const *key);
+
+int gcli_pull_checkout(struct gcli_ctx *ctx, char const *remote, gcli_id pull);
 
 #endif /* PULLS_H */

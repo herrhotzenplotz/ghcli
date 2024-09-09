@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022, 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,6 +32,7 @@
 #include <gcli/forges.h>
 
 #include <gcli/github/api.h>
+#include <gcli/github/checkout.h>
 #include <gcli/github/comments.h>
 #include <gcli/github/config.h>
 #include <gcli/github/forks.h>
@@ -45,6 +46,7 @@
 #include <gcli/github/status.h>
 
 #include <gcli/gitlab/api.h>
+#include <gcli/gitlab/checkout.h>
 #include <gcli/gitlab/comments.h>
 #include <gcli/gitlab/config.h>
 #include <gcli/gitlab/forks.h>
@@ -125,6 +127,7 @@ github_forge_descriptor =
 	.pull_merge                = github_pull_merge,
 	.pull_reopen               = github_pull_reopen,
 	.pull_set_title            = github_pull_set_title,
+	.pull_checkout             = github_pull_checkout,
 
 	/* HACK: Here we can use the same functions as with issues because
 	 * PRs are the same as issues on Github and the functions have the
@@ -230,6 +233,7 @@ gitlab_forge_descriptor =
 	.pull_reopen               = gitlab_mr_reopen,
 	.pull_set_milestone        = gitlab_mr_set_milestone,
 	.pull_set_title            = gitlab_mr_set_title,
+	.pull_checkout             = gitlab_mr_checkout,
 
 	/* Releases */
 	.create_release            = gitlab_create_release,
