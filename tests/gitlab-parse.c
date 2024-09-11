@@ -97,7 +97,7 @@ ATF_TC_BODY(gitlab_simple_issue, tc)
 
 	ATF_CHECK(issue.number == 193);
 	ATF_CHECK_STREQ(issue.title, "Make notifications API use a list struct containing both the ptr and size");
-	ATF_CHECK_STREQ(issue.created_at, "2023-08-13T18:43:05.766Z");
+	ATF_CHECK_EQ(issue.created_at, 1691952185);
 	ATF_CHECK_STREQ(issue.author, "herrhotzenplotz");
 	ATF_CHECK_STREQ(issue.state, "closed");
 	ATF_CHECK(issue.comments == 2);

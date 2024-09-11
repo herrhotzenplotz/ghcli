@@ -84,9 +84,9 @@ ATF_TC_BODY(simple_github_issue, tc)
 
 	ATF_REQUIRE(parse_github_issue(ctx, &stream, &issue) == 0);
 
-	ATF_CHECK(issue.number = 115);
+	ATF_CHECK_EQ(issue.number, 115);
 	ATF_CHECK_STREQ(issue.title, "consider removing FILE *out from printing functions");
-	ATF_CHECK_STREQ(issue.created_at, "2022-03-22T16:06:10Z");
+	ATF_CHECK_EQ(issue.created_at, 1647965170);
 	ATF_CHECK_STREQ(issue.author, "herrhotzenplotz");
 	ATF_CHECK_STREQ(issue.state, "closed");
 	ATF_CHECK(issue.comments == 0);

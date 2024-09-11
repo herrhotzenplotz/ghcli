@@ -38,7 +38,6 @@ gcli_issue_free(struct gcli_issue *const it)
 {
 	free(it->product);
 	free(it->component);
-	free(it->created_at);
 	free(it->author);
 	free(it->state);
 	free(it->body);

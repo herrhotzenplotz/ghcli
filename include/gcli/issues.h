@@ -40,6 +40,7 @@
 #include <sn/sn.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include <gcli/attachments.h>
 
@@ -49,7 +50,7 @@ struct gcli_issue {
 	char *product;     /* only on Bugzilla */
 	char *component;   /* only on Bugzilla */
 	char *url;         /* only on Bugzilla */
-	char *created_at;
+	time_t created_at;
 	char *author;
 	char *state;
 	int comments;
