@@ -27,8 +27,9 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gcli/json_util.h>
+#include <gcli/date_time.h>
 #include <gcli/forges.h>
+#include <gcli/json_util.h>
 #include <sn/sn.h>
 
 #include <assert.h>
@@ -536,6 +537,30 @@ get_gitea_notification_target_type(struct gcli_ctx *ctx, json_stream *input,
 	}
 
 	free(tmp.data);
+
+	return rc;
+}
+
+int
+get_iso8601_time_(struct gcli_ctx *ctx, json_stream *input, time_t *out,
+                  char const *where)
+{
+	char *copy;
+	char const *it;
+	enum json_type type;
+	size_t len;
+	int rc = 0;
+
+	type = json_next(input);
+	if (type != JSON_STRING)
+		return gcli_error(ctx, "unexpected non-string field in %s", where);
+
+	it = json_get_string(input, &len);
+	copy = sn_strndup(it, len);
+
+	rc = gcli_parse_iso8601_date_time(ctx, copy, out);
+
+	free(copy);
 
 	return rc;
 }

@@ -27,9 +27,11 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <gcli/cmd/cmd.h>
 #include <gcli/cmd/colour.h>
 #include <gcli/cmd/table.h>
 
+#include <gcli/date_time.h>
 #include <gcli/gcli.h>
 
 #include <stdarg.h>
@@ -424,6 +426,20 @@ gcli_dict_add_string(gcli_dict list,
 {
 	return gcli_dict_add_row(list, key, flags, colour_args,
 	                         strdup(str ? str : "<empty>"));
+}
+
+int
+gcli_dict_add_timestamp(gcli_dict list, char const *key, int flags,
+                        uint32_t colour_args, time_t stamp)
+{
+	char *tmp = NULL;
+	int rc = 0;
+
+	rc = gcli_format_as_localtime(g_clictx, stamp, &tmp);
+	if (rc < 0)
+		return rc;
+
+	return gcli_dict_add_row(list, key, flags, colour_args, tmp);
 }
 
 int

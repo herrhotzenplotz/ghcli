@@ -36,6 +36,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <gcli/gcli.h>
 
@@ -97,6 +98,9 @@ int gcli_dict_add(gcli_dict list, char const *key, int flags,
 
 int gcli_dict_add_string(gcli_dict list, char const *key, int flags,
                          uint32_t colour_args, char const *str);
+
+int gcli_dict_add_timestamp(gcli_dict list, char const *key, int flags,
+                            uint32_t colour_args, time_t stamp);
 
 int gcli_dict_add_sv_list(gcli_dict dict, char const *key, sn_sv const *list,
                           size_t list_size);

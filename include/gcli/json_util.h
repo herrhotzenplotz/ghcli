@@ -58,6 +58,7 @@
 #define get_label(ctx, input, out)         get_label_(ctx, input, out, __func__)
 #define get_is_string(ctx, input, out)     ((void)ctx, (*out = json_next(input) == JSON_STRING), 1)
 #define get_int_to_string(ctx, input, out) get_int_to_string_(ctx, input, out, __func__)
+#define get_iso8601_time(ctx, input, out)  get_iso8601_time_(ctx, input, out, __func__)
 
 int get_int_(struct gcli_ctx *ctx, json_stream *input, int *out, char const *function);
 int get_id_(struct gcli_ctx *ctx, json_stream *input, gcli_id *out, char const *function);
@@ -71,6 +72,7 @@ int get_string_(struct gcli_ctx *ctx, json_stream *input, char **out, char const
 int get_sv_(struct gcli_ctx *ctx, json_stream *input, sn_sv *out, char const *function);
 int get_user_(struct gcli_ctx *ctx, json_stream *input, char **out, char const *function);
 int get_label_(struct gcli_ctx *ctx, json_stream *input, char const **out, char const *function);
+int get_iso8601_time_(struct gcli_ctx *ctx, json_stream *input, time_t *out, char const *function);
 int get_github_style_colour(struct gcli_ctx *ctx, json_stream *input, uint32_t *out);
 int get_gitlab_style_colour(struct gcli_ctx *ctx, json_stream *input, uint32_t *out);
 int get_github_is_pr(struct gcli_ctx *ctx, json_stream *input, int *out);
