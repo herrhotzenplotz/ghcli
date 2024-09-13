@@ -39,8 +39,8 @@
 struct gitlab_pipeline {
 	gcli_id id;
 	char *status;
-	char *created_at;
-	char *updated_at;
+	time_t created_at;
+	time_t updated_at;
 	char *ref;
 	char *sha;
 	char *source;
@@ -58,9 +58,9 @@ struct gitlab_job {
 	char *stage;
 	char *name;
 	char *ref;
-	char *created_at;
-	char *started_at;
-	char *finished_at;
+	time_t created_at;
+	time_t started_at;
+	time_t finished_at;
 	double duration;
 	char *runner_name;
 	char *runner_description;

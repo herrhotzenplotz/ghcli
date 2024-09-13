@@ -3,8 +3,8 @@ include "gcli/gitlab/pipelines.h";
 parser gitlab_pipeline is
 object of struct gitlab_pipeline with
 	("status"     => status as string,
-	 "created_at" => created_at as string,
-	 "updated_at" => updated_at as string,
+	 "created_at" => created_at as iso8601_time,
+	 "updated_at" => updated_at as iso8601_time,
 	 "ref"        => ref as string,
 	 "sha"        => sha as string,
 	 "source"     => source as string,
@@ -24,9 +24,9 @@ object of struct gitlab_job with
 	 "stage"       => stage as string,
 	 "name"        => name as string,
 	 "ref"         => ref as string,
-	 "created_at"  => created_at as string,
-	 "started_at"  => started_at as string,
-	 "finished_at" => finished_at as string,
+	 "created_at"  => created_at as iso8601_time,
+	 "started_at"  => started_at as iso8601_time,
+	 "finished_at" => finished_at as iso8601_time,
 	 "runner"      => use parse_gitlab_job_runner,
 	 "duration"    => duration as double,
 	 "id"          => id as id,

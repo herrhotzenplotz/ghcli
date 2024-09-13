@@ -252,8 +252,8 @@ ATF_TC_BODY(gitlab_simple_pipeline, tc)
 
 	ATF_CHECK(pipeline.id == 989897020);
 	ATF_CHECK_STREQ(pipeline.status, "failed");
-	ATF_CHECK_STREQ(pipeline.created_at, "2023-09-02T14:30:20.925Z");
-	ATF_CHECK_STREQ(pipeline.updated_at, "2023-09-02T14:31:40.328Z");
+	ATF_CHECK_EQ(pipeline.created_at, 1693665020);
+	ATF_CHECK_EQ(pipeline.updated_at, 1693665100);
 	ATF_CHECK_STREQ(pipeline.ref, "refs/merge-requests/219/head");
 	ATF_CHECK_STREQ(pipeline.sha, "742affb88a297a6b34201ad61c8b5b72ec6eb679");
 	ATF_CHECK_STREQ(pipeline.source, "merge_request_event");

@@ -128,8 +128,6 @@ void
 gitlab_pipeline_free(struct gitlab_pipeline *pipeline)
 {
 	free(pipeline->status);
-	free(pipeline->created_at);
-	free(pipeline->updated_at);
 	free(pipeline->ref);
 	free(pipeline->sha);
 	free(pipeline->source);
@@ -204,9 +202,6 @@ gitlab_free_job(struct gitlab_job *const job)
 	free(job->stage);
 	free(job->name);
 	free(job->ref);
-	free(job->created_at);
-	free(job->started_at);
-	free(job->finished_at);
 	free(job->runner_name);
 	free(job->runner_description);
 }
