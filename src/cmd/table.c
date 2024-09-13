@@ -157,7 +157,7 @@ tablerow_add_cell(struct gcli_tbl *const table,
 	case GCLI_TBLCOLTYPE_STRING: {
 		char *it = va_arg(*vp, char *);
 		if (!it)
-			it = "<empty>"; /* hack */
+			it = "N/A"; /* hack */
 		row->cells[col].text = strdup(it);
 		cell_size = strlen(it);
 	} break;
@@ -176,6 +176,15 @@ tablerow_add_cell(struct gcli_tbl *const table,
 			row->cells[col].text = strdup("no");
 			cell_size = 2;
 		}
+	} break;
+	case GCLI_TBLCOLTYPE_TIME_T: {
+		int rc = 0;
+		time_t val = va_arg(*vp, time_t);
+		rc = gcli_format_as_localtime(g_clictx, val, &row->cells[col].text);
+		if (rc < 0)
+			return rc;
+
+		cell_size =  strlen(row->cells[col].text);
 	} break;
 	default:
 		return -1;
@@ -258,8 +267,8 @@ dump_row(struct gcli_tbl const *const table, size_t const i)
 			printf("%s", gcli_setbold());
 
 		/* Print cell if it is not NULL, otherwise indicate it by
-		 * printing <empty> */
-		printf("%s", row->cells[col].text ? row->cells[col].text : "<empty>");
+		 * printing N/A */
+		printf("%s", row->cells[col].text ? row->cells[col].text : "N/A");
 
 		/* End colour */
 		if (table->cols[col].flags &
@@ -425,7 +434,7 @@ gcli_dict_add_string(gcli_dict list,
                      char const *const str)
 {
 	return gcli_dict_add_row(list, key, flags, colour_args,
-	                         strdup(str ? str : "<empty>"));
+	                         strdup(str ? str : "N/A"));
 }
 
 int

@@ -125,6 +125,12 @@ gcli_format_as_localtime(struct gcli_ctx *ctx, time_t timestamp, char **out)
 	struct tm tm_buf = {0};
 	size_t rc = 0;
 
+	/* if the timestamp is 0 we assume it is unset. */
+	if (timestamp == 0) {
+		*out = strdup("N/A");
+		return 0;
+	}
+
 	rc = strftime(tmp, sizeof tmp, "%Y-%b-%d %H:%M:%S",
 	              localtime_r(&timestamp, &tm_buf));
 

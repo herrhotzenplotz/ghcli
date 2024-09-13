@@ -68,6 +68,7 @@ enum gcli_tblcoltype {
 	GCLI_TBLCOLTYPE_LONG,       /* signed long int */
 	GCLI_TBLCOLTYPE_ID,         /* some ID type (uint64_t) */
 	GCLI_TBLCOLTYPE_STRING,     /* C string */
+	GCLI_TBLCOLTYPE_TIME_T,     /* a time_t unix timestamp */
 	GCLI_TBLCOLTYPE_DOUBLE,     /* double precision float */
 	GCLI_TBLCOLTYPE_BOOL,       /* yes/no */
 };
