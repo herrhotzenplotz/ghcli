@@ -97,7 +97,6 @@ gcli_pull_free(struct gcli_pull *const it)
 	free(it->state);
 	free(it->title);
 	free(it->body);
-	free(it->created_at);
 	free(it->commits_link);
 	free(it->head_label);
 	free(it->base_label);

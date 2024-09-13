@@ -186,14 +186,14 @@ gcli_pull_print(struct gcli_pull const *const it)
 
 	dict = gcli_dict_begin();
 
-	gcli_dict_add(dict,        "NUMBER", 0, 0, "%"PRIid, it->number);
-	gcli_dict_add_string(dict, "TITLE", 0, 0, it->title);
-	gcli_dict_add_string(dict, "HEAD", 0, 0, it->head_label);
-	gcli_dict_add_string(dict, "BASE", 0, 0, it->base_label);
-	gcli_dict_add_string(dict, "CREATED", 0, 0, it->created_at);
-	gcli_dict_add_string(dict, "AUTHOR", GCLI_TBLCOL_BOLD, 0, it->author);
-	gcli_dict_add_string(dict, "STATE", GCLI_TBLCOL_STATECOLOURED, 0, it->state);
-	gcli_dict_add(dict,        "COMMENTS", 0, 0, "%d", it->comments);
+	gcli_dict_add(dict,           "NUMBER", 0, 0, "%"PRIid, it->number);
+	gcli_dict_add_string(dict,    "TITLE", 0, 0, it->title);
+	gcli_dict_add_string(dict,    "HEAD", 0, 0, it->head_label);
+	gcli_dict_add_string(dict,    "BASE", 0, 0, it->base_label);
+	gcli_dict_add_timestamp(dict, "CREATED", 0, 0, it->created_at);
+	gcli_dict_add_string(dict,    "AUTHOR", GCLI_TBLCOL_BOLD, 0, it->author);
+	gcli_dict_add_string(dict,    "STATE", GCLI_TBLCOL_STATECOLOURED, 0, it->state);
+	gcli_dict_add(dict,           "COMMENTS", 0, 0, "%d", it->comments);
 
 	if (it->milestone)
 		gcli_dict_add_string(dict, "MILESTONE", 0, 0, it->milestone);

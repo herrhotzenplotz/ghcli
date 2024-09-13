@@ -129,7 +129,7 @@ ATF_TC_BODY(simple_github_pull, tc)
 	ATF_CHECK_STREQ(pull.state, "closed");
 	ATF_CHECK_STREQ(pull.title, "mark notifications as read/done");
 	ATF_CHECK_STREQ(pull.body, "Fixes #99\n");
-	ATF_CHECK_STREQ(pull.created_at, "2022-03-22T13:20:57Z");
+	ATF_CHECK_EQ(pull.created_at, 1647955257);
 	ATF_CHECK_STREQ(pull.head_label, "herrhotzenplotz:99");
 	ATF_CHECK_STREQ(pull.base_label, "herrhotzenplotz:trunk");
 	ATF_CHECK_STREQ(pull.head_sha, "a00f475af1e31d56c7a5839508a21e2b76a31e49");

@@ -59,7 +59,7 @@ ATF_TC_BODY(gitlab_simple_merge_request, tc)
 	ATF_CHECK_STREQ(pull.state, "merged");
 	ATF_CHECK_STREQ(pull.title, "Fix test suite");
 	ATF_CHECK_STREQ(pull.body, "This finally fixes the broken test suite");
-	ATF_CHECK_STREQ(pull.created_at, "2023-08-31T23:37:50.848Z");
+	ATF_CHECK_EQ(pull.created_at, 1693525070);
 	ATF_CHECK(pull.commits_link == NULL);
 	ATF_CHECK_STREQ(pull.head_label, "fix-test-suite");
 	ATF_CHECK_STREQ(pull.base_label, "trunk");
