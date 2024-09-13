@@ -552,6 +552,11 @@ get_iso8601_time_(struct gcli_ctx *ctx, json_stream *input, time_t *out,
 	int rc = 0;
 
 	type = json_next(input);
+	if (type == JSON_NULL) {
+		*out = 0;
+		return 0;
+	}
+
 	if (type != JSON_STRING)
 		return gcli_error(ctx, "unexpected non-string field in %s", where);
 
