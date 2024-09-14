@@ -27,13 +27,13 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-%option noyywrap
-
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <gcli/pgen.h>
+
 #include "y.tab.h"
 
 int yycol = 1, yyrow = 1;
@@ -44,6 +44,12 @@ yyerror(const char *msg)
 {
 	fprintf(stderr, "%s:%d:%d: error: %s\n", yyfile, yyrow, yycol, msg);
 	exit(1);
+}
+
+int
+yywrap(void)
+{
+	return 1;
 }
 
 %}

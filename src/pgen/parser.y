@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 #include <gcli/pgen.h>
+#include <sn/sn.h>
 
 FILE *outfile = NULL;
 char *outfilename = NULL;
@@ -177,7 +178,6 @@ obj_entry:    STRLIT FATARROW IDENT AS IDENT
 %%
 
 #include <assert.h>
-#include <err.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

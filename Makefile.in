@@ -19,43 +19,52 @@ KYUA                = @KYUA@
 RANLIB              = @RANLIB@
 RM                  = @RM@
 PREFIX              = @PREFIX@
+SHELL               = @SHELL@
 ################################################################################################
 
 ############## Optimiser / Warning flags #####
-COPTFLAGS_gcc_debug=	-O0 -g3 -pipe -Wall -Wextra -Werror -fPIC
-COPTFLAGS_gcc_release=	-O2 -pipe -fPIC
-COPTFLAGS_clang_debug=	-O0 -g3 -pipe -Wall -Wextra -Wno-gnu-zero-variadic-macro-arguments -Werror -fPIC
-COPTFLAGS_clang_release=-O2 -pipe -fPIC
-COPTFLAGS_xlc_debug=	-qpic -qcheck=all -qfulldebug -qnoopt -g -qhalt=w
-COPTFLAGS_xlc_release=	-qpic -qoptimize=4
-COPTFLAGS=		$(COPTFLAGS_$(CCOM)_$(OPTIMISE))
-COPTFLAGS_FOR_BUILD=	$(COPTFLAGS_$(CCOM_FOR_BUILD)_$(OPTIMISE))
+COPTFLAGS_gcc_debug=		-O0 -g3 -Wall -Wextra -Werror
+COPTFLAGS_gcc_release=		-O2
+COPTFLAGS_clang_debug=		-O0 -g3 -Wall -Wextra -Wno-gnu-zero-variadic-macro-arguments -Werror
+COPTFLAGS_clang_release=	-O2
+COPTFLAGS_xlc_debug=		-qpic -qcheck=all -qfulldebug -qnoopt -g -qhalt=w
+COPTFLAGS_xlc_release=		-qpic -qoptimize=4
+COPTFLAGS_sunstudio_debug=	-xO0 -g -xvector=%none
+COPTFLAGS_sunstudio_release=	-xO5
+COPTFLAGS=			$(COPTFLAGS_$(CCOM)_$(OPTIMISE))
+COPTFLAGS_FOR_BUILD=		$(COPTFLAGS_$(CCOM_FOR_BUILD)_$(OPTIMISE))
 
-CSTDFLAGS_gcc=		-std=c11 -pedantic
-CSTDFLAGS_clang=	-std=c11 -pedantic
-CSTDFLAGS_xlc=		-qlanglvl=stdc11
+CSTDFLAGS_gcc=		-std=c11 -pedantic -D_XOPEN_SOURCE=700
+CSTDFLAGS_clang=	-std=c11 -pedantic -D_XOPEN_SOURCE=700
+CSTDFLAGS_xlc=		-qlanglvl=stdc11 -D_XOPEN_SOURCE=700
+CSTDFLAGS_sunstudio=	-std=c11 -D_XOPEN_SOURCE=600 -pedantic=yes    # Oracle Compiler on Solaris doesn't support 700
 CSTDFLAGS=		$(CSTDFLAGS_$(CCOM))
 CSTDFLAGS_FOR_BUILD=	$(CSTDFLAGS_$(CCOM_FOR_BUILD))
 
 ############## CFLAGS ########################
 ENV_CFLAGS=		@ENV_CFLAGS@
-CFLAGS_clang=		-Wno-gnu-zero-variadic-macro-arguments
+CFLAGS_clang=		-Wno-gnu-zero-variadic-macro-arguments -fPIC -pipe
+CFLAGS_gcc=		-fPIC -pipe
+CFLAGS_sunstudio=	-m64 -errtags=yes -errfmt=error -errwarn=%all -xcode=pic32 -DPIC -xregs=no%appl
+CFLAGS_sunstudio +=	-erroff=E_TOKENLESS_MACRO                # Causes errors with TAILQ_HEAD(, ...)
+CFLAGS_sunstudio +=	-erroff=E_STATEMENT_NOT_REACHED          # Causes errors in pdjson.c
 CFLAGS=			$(CSTDFLAGS) $(COPTFLAGS) $(CFLAGS_$(CCOM)) -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS)
 
 ENV_CFLAGS_FOR_BUILD=	@ENV_CFLAGS_FOR_BUILD@
-CFLAGS_FOR_BUILD=	$(CSTDFLAGS_FOR_BUILD) $(COPTFLAGS_FOR_BUILD) -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS_FOR_BUILD)
+CFLAGS_FOR_BUILD=	$(CSTDFLAGS_FOR_BUILD) $(COPTFLAGS_FOR_BUILD) $(CFLAGS_$(CCOM)) -I@SRCDIR@/include -I@SRCDIR@/thirdparty -I. $(ENV_CFLAGS_FOR_BUILD)
 
 ############## CPPFLAGS ######################
 ENV_CPPFLAGS=		@ENV_CPPFLAGS@
-CPPFLAGS=		-DHAVE_CONFIG_H=1 -DHAVE_SYS_QUEUE_H=1 -DHAVE_GETOPT_H=1 -D_XOPEN_SOURCE=700 $(ENV_CPPFLAGS)
+CPPFLAGS=		-DHAVE_CONFIG_H=1 -DHAVE_SYS_QUEUE_H=1 -DHAVE_GETOPT_H=1 $(ENV_CPPFLAGS)
 
 ENV_CPPFLAGS_FOR_BUILD=	@ENV_CPPFLAGS_FOR_BUILD@
-CPPFLAGS_FOR_BUILD=	-DHAVE_CONFIG_H -DYY_NO_UNPUT -DYY_NO_INPUT -D_XOPEN_SOURCE=700 $(ENV_CPPFLAGS_FOR_BUILD)
+CPPFLAGS_FOR_BUILD=	-DHAVE_CONFIG_H -DYY_NO_UNPUT -DYY_NO_INPUT $(ENV_CPPFLAGS_FOR_BUILD)
 
 # CFLAGS for dependency tracking for various compilers
 CCDEPFLAGS_gcc=		-MD -MF ${@:.o=.d}
 CCDEPFLAGS_clang=	-MD -MF ${@:.o=.d}
 CCDEPFLAGS_xlc=		-qmakedep=gcc -MF ${@:.o=.d}
+CCDEPFLAGS_sunstudio=	-xMD -xMF ${@:.o=.d}
 CCDEPFLAGS_unknown=
 CCDEPFLAGS=		$(CCDEPFLAGS_$(CCOM))
 CCDEPFLAGS_FOR_BUILD=	$(CCDEPFLAGS_$(CCOM_FOR_BUILD))
@@ -247,6 +256,7 @@ PGEN_SRCS= \
 	src/pgen/dump_c.c \
 	src/pgen/dump_h.c \
 	src/pgen/dump_plain.c \
+	thirdparty/sn/sn.c \
 	lex.yy.c \
 	y.tab.c
 
@@ -256,7 +266,7 @@ TEMPLATE_SRCS=		${TEMPLATES:.t=.c}
 Makefile: @SRCDIR@/configure @SRCDIR@/Makefile.in
 	@echo "Reconfiguring Makefile"
 	env CC="${CC}" YACC="${YACC}" LEX="${LEX}" RM="${RM}" RANLIB="${RANLIB}" \
-		KYUA="${KYUA}" CFLAGS="${ENV_CFLAGS}" CPPFLAGS="${ENV_CPPFLAGS}" \
+		KYUA="${KYUA}" SHELL="${SHELL}" CFLAGS="${ENV_CFLAGS}" CPPFLAGS="${ENV_CPPFLAGS}" \
 		INSTALL="${INSTALL}" CC_FOR_BUILD="${CC_FOR_BUILD}" \
 		CFLAGS_FOR_BUILD="${ENV_CFLAGS_FOR_BUILD}" CPPFLAGS_FOR_BUILD="${ENV_CPPFLAGS_FOR_BUILD}" \
 		PKG_CONFIG="${ENV_PKG_CONFIG}" PKG_CONFIG_PATH="${ENV_PKG_CONFIG_PATH}" CCACHE="${CCACHE}" \
@@ -295,7 +305,8 @@ gcli: libgcli.a $(GCLI_OBJS)
 	$(CCACHE) $(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o gcli \
 		$(GCLI_OBJS) libgcli.a $(LIBCURL_LIBS) $(LIBEDIT_LIBS) \
 		$(LIBREADLINE_LIBS) $(LIBCRYPTO_LIBS) \
-		$(LIBLOWDOWN_LIBS)
+		$(LIBLOWDOWN_LIBS) \
+		-lrt
 
 libgcli.a: $(LIBGCLI_OBJS)
 	$(CCACHE) $(AR) -rc libgcli.a $(LIBGCLI_OBJS)

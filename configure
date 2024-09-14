@@ -301,6 +301,7 @@ RM=${RM:-rm}
 KYUA=${KYUA:-$(find_program kyua kyua)}
 CCACHE=${CCACHE:-$(find_program ccache ccache)}
 INSTALL=${INSTALL:-$(find_program install install ginstall)}
+SHELL=${SHELL:-$(find_program sh sh zsh bash)}
 [ $? -eq 0 ] || die "error: need install program"
 
 ###################################################################
@@ -349,6 +350,7 @@ sed \
 	-e "s|@RM@|$RM|g" \
 	-e "s|@KYUA@|$KYUA|g" \
 	-e "s|@INSTALL@|$INSTALL|g" \
+	-e "s|@SHELL@|$SHELL|g" \
 	-e "s|@PREFIX@|$PREFIX|g" \
 	-e "s|@PACKAGE_STRING@|$PACKAGE_STRING|g" \
 	-e "s|@PACKAGE_DATE@|$PACKAGE_DATE|g" \
