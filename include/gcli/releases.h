@@ -37,6 +37,8 @@
 #include <gcli/gcli.h>
 #include <sn/sn.h>
 
+#include <time.h>
+
 struct gcli_release_asset {
 	char *name;
 	char *url;
@@ -49,7 +51,7 @@ struct gcli_release {
 	char *name;
 	char *body;
 	char *author;
-	char *date;
+	time_t date;
 	char *upload_url;
 	bool draft;
 	bool prerelease;

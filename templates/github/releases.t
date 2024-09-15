@@ -11,7 +11,7 @@ object of struct gcli_release with
 	 "body"       => body as string,
 	 "id"         => id as int_to_string,
 	 "author"     => author as user,
-	 "created_at" => date as string,
+	 "created_at" => date as iso8601_time,
 	 "draft"      => draft as bool,
 	 "prerelease" => prerelease as bool,
 	 "assets"     => assets as array of gcli_release_asset

@@ -223,7 +223,7 @@ ATF_TC_BODY(simple_github_release, tc)
 	ATF_CHECK_STREQ(release.name, "1.2.0");
 	ATF_CHECK_STREQ(release.body, "# Version 1.2.0\n\nThis is version 1.2.0 of gcli.\n\n## Notes\n\nPlease test and report bugs.\n\nYou can download autotoolized tarballs at: https://herrhotzenplotz.de/gcli/releases/gcli-1.2.0/\n\n## Bug Fixes\n\n- Fix compile error when providing --with-libcurl without any arguments\n- Fix memory leaks in string processing functions\n- Fix missing nul termination in read-file function\n- Fix segmentation fault when clearing the milestone of a PR on Gitea\n- Fix missing documentation for milestone action in issues and pulls\n- Set the 'merged' flag properly when showing Gitlab merge requests\n\n## New features\n\n- Add a config subcommand for managing ssh keys (see gcli-config(1))\n- Show number of comments/notes in list of issues and PRs\n- Add support for milestone management in pull requests\n");
 	ATF_CHECK_STREQ(release.author, "herrhotzenplotz");
-	ATF_CHECK_STREQ(release.date, "2023-08-11T07:42:37Z");
+	ATF_CHECK_EQ(release.date, 1691739757);
 	ATF_CHECK_STREQ(release.upload_url, "https://uploads.github.com/repos/herrhotzenplotz/gcli/releases/116031718/assets{?name,label}");
 	ATF_CHECK(release.draft == false);
 	ATF_CHECK(release.prerelease == false);
