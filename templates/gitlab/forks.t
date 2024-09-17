@@ -8,7 +8,7 @@ parser gitlab_fork is
 object of struct gcli_fork with
 	("path_with_namespace" => full_name as string,
 	 "namespace"           => use parse_gitlab_fork_namespace,
-	 "created_at"          => date as string,
+	 "created_at"          => date as iso8601_time,
 	 "forks_count"         => forks as int);
 
 parser gitlab_forks is

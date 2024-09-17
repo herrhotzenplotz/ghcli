@@ -37,10 +37,12 @@
 #include <sn/sn.h>
 #include <gcli/gcli.h>
 
+#include <time.h>
+
 struct gcli_fork {
 	char *full_name;
 	char *owner;
-	char *date;
+	time_t date;
 	int forks;
 };
 

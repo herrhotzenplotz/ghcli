@@ -274,7 +274,7 @@ ATF_TC_BODY(simple_github_fork, tc)
 
 	ATF_CHECK_STREQ(fork.full_name, "gjnoonan/quick-lint-js");
 	ATF_CHECK_STREQ(fork.owner, "gjnoonan");
-	ATF_CHECK_STREQ(fork.date, "2023-05-11T05:37:41Z");
+	ATF_CHECK_EQ(fork.date, 1683783461);
 	ATF_CHECK(fork.forks == 0);
 
 	json_close(&stream);

@@ -202,7 +202,7 @@ ATF_TC_BODY(gitlab_simple_fork, tc)
 
 	ATF_CHECK_STREQ(fork.full_name, "gjnoonan/gcli");
 	ATF_CHECK_STREQ(fork.owner, "gjnoonan");
-	ATF_CHECK_STREQ(fork.date, "2022-10-02T13:54:20.517Z");
+	ATF_CHECK_EQ(fork.date, 1664718860);
 	ATF_CHECK(fork.forks == 0);
 
 	json_close(&stream);
