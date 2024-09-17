@@ -250,7 +250,7 @@ ATF_TC_BODY(simple_github_repo, tc)
 	ATF_CHECK_STREQ(repo.full_name, "herrhotzenplotz/gcli");
 	ATF_CHECK_STREQ(repo.name, "gcli");
 	ATF_CHECK_STREQ(repo.owner, "herrhotzenplotz");
-	ATF_CHECK_STREQ(repo.date, "2021-10-08T14:20:15Z");
+	ATF_CHECK_EQ(repo.date, 1633702815);
 	ATF_CHECK_STREQ(repo.visibility, "public");
 	ATF_CHECK(repo.is_fork == false);
 

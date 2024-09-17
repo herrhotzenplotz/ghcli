@@ -121,13 +121,13 @@ gcli_repo_print(struct gcli_repo const *it)
 	gcli_dict dict;
 
 	dict = gcli_dict_begin();
-	gcli_dict_add(dict, "ID",         0, 0, "%"PRIid, it->id);
-	gcli_dict_add(dict, "FULL NAME",  0, 0, "%s", it->full_name);
-	gcli_dict_add(dict, "NAME",       0, 0, "%s", it->name);
-	gcli_dict_add(dict, "OWNER",      0, 0, "%s", it->owner);
-	gcli_dict_add(dict, "DATE",       0, 0, "%s", it->date);
-	gcli_dict_add(dict, "VISIBILITY", 0, 0, "%s", it->visibility);
-	gcli_dict_add(dict, "IS FORK",    0, 0, "%s", sn_bool_yesno(it->is_fork));
+	gcli_dict_add(dict,           "ID",         0, 0, "%"PRIid, it->id);
+	gcli_dict_add(dict,           "FULL NAME",  0, 0, "%s", it->full_name);
+	gcli_dict_add(dict,           "NAME",       0, 0, "%s", it->name);
+	gcli_dict_add(dict,           "OWNER",      0, 0, "%s", it->owner);
+	gcli_dict_add_timestamp(dict, "DATE",       0, 0, it->date);
+	gcli_dict_add(dict,           "VISIBILITY", 0, 0, "%s", it->visibility);
+	gcli_dict_add(dict,           "IS FORK",    0, 0, "%s", sn_bool_yesno(it->is_fork));
 
 	gcli_dict_end(dict);
 }

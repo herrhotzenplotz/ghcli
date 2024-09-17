@@ -278,7 +278,7 @@ ATF_TC_BODY(gitlab_simple_repo, tc)
 	ATF_CHECK_STREQ(repo.full_name, "herrhotzenplotz/gcli");
 	ATF_CHECK_STREQ(repo.name, "gcli");
 	ATF_CHECK_STREQ(repo.owner, "herrhotzenplotz");
-	ATF_CHECK_STREQ(repo.date, "2022-03-22T16:57:59.891Z");
+	ATF_CHECK_EQ(repo.date, 1647968279);
 	ATF_CHECK_STREQ(repo.visibility, "public");
 	ATF_CHECK(repo.is_fork == false);
 

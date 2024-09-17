@@ -47,7 +47,6 @@ gcli_repo_free(struct gcli_repo *it)
 	free(it->full_name);
 	free(it->name);
 	free(it->owner);
-	free(it->date);
 	free(it->visibility);
 	memset(it, 0, sizeof(*it));
 }
