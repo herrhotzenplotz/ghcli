@@ -71,7 +71,7 @@ gcli_print_milestones(struct gcli_milestone_list const *const list, int max)
 	struct gcli_tblcoldef cols[] = {
 		{ .name = "ID",      .type = GCLI_TBLCOLTYPE_ID,     .flags = GCLI_TBLCOL_JUSTIFYR },
 		{ .name = "STATE",   .type = GCLI_TBLCOLTYPE_STRING, .flags = GCLI_TBLCOL_STATECOLOURED },
-		{ .name = "CREATED", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "CREATED", .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
 		{ .name = "TITLE",   .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 	};
 
@@ -107,14 +107,14 @@ gcli_print_milestone(struct gcli_milestone const *const milestone)
 	uint32_t const quirks = gcli_forge(g_clictx)->milestone_quirks;
 
 	dict = gcli_dict_begin();
-	gcli_dict_add(dict,        "ID", 0, 0, "%"PRIid, milestone->id);
-	gcli_dict_add_string(dict, "TITLE", 0, 0, milestone->title);
-	gcli_dict_add_string(dict, "STATE", GCLI_TBLCOL_STATECOLOURED, 0, milestone->state);
-	gcli_dict_add_string(dict, "CREATED", 0, 0, milestone->created_at);
-	gcli_dict_add_string(dict, "UPDATED", 0, 0, milestone->created_at);
+	gcli_dict_add(dict,           "ID", 0, 0, "%"PRIid, milestone->id);
+	gcli_dict_add_string(dict,    "TITLE", 0, 0, milestone->title);
+	gcli_dict_add_string(dict,    "STATE", GCLI_TBLCOL_STATECOLOURED, 0, milestone->state);
+	gcli_dict_add_timestamp(dict, "CREATED", 0, 0, milestone->created_at);
+	gcli_dict_add_timestamp(dict, "UPDATED", 0, 0, milestone->created_at);
 
 	if ((quirks & GCLI_MILESTONE_QUIRKS_DUEDATE) == 0)
-		gcli_dict_add_string(dict, "DUE", 0, 0, milestone->due_date);
+		gcli_dict_add_timestamp(dict, "DUE", 0, 0, milestone->due_date);
 
 	if ((quirks & GCLI_MILESTONE_QUIRKS_EXPIRED) == 0)
 		gcli_dict_add_string(dict, "EXPIRED", 0, 0, sn_bool_yesno(milestone->expired));

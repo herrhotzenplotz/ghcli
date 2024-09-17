@@ -191,10 +191,10 @@ ATF_TC_BODY(simple_github_milestone, tc)
 	ATF_CHECK(milestone.id == 1);
 	ATF_CHECK_STREQ(milestone.title, "Gitlab support");
 	ATF_CHECK_STREQ(milestone.state, "open");
-	ATF_CHECK_STREQ(milestone.created_at, "2021-12-14T07:02:05Z");
+	ATF_CHECK_EQ(milestone.created_at, 1639465325);
 	ATF_CHECK_STREQ(milestone.description, "");
-	ATF_CHECK_STREQ(milestone.updated_at, "2021-12-19T14:49:43Z");
-	ATF_CHECK(milestone.due_date == NULL);
+	ATF_CHECK_EQ(milestone.updated_at, 1639925383);
+	ATF_CHECK_EQ(milestone.due_date, 0);
 	ATF_CHECK(milestone.expired == false);
 	ATF_CHECK(milestone.open_issues == 0);
 	ATF_CHECK(milestone.closed_issues == 8);

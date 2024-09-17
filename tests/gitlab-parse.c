@@ -226,9 +226,9 @@ ATF_TC_BODY(gitlab_simple_milestone, tc)
 	ATF_CHECK_STREQ(milestone.state, "active");
 	ATF_CHECK_STREQ(milestone.description,
 	                "Things that need to be done for version 2");
-	ATF_CHECK_STREQ(milestone.created_at, "2023-02-05T19:08:20.379Z");
-	ATF_CHECK_STREQ(milestone.due_date, "<empty>");
-	ATF_CHECK_STREQ(milestone.updated_at, "2023-02-05T19:08:20.379Z");
+	ATF_CHECK_EQ(milestone.created_at, 1675624100);
+	ATF_CHECK_EQ(milestone.due_date, 0);
+	ATF_CHECK_EQ(milestone.updated_at, 1675624100);
 	ATF_CHECK(milestone.expired == false);
 
 	json_close(&stream);
