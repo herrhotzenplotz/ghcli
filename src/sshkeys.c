@@ -47,7 +47,6 @@ gcli_sshkeys_free_keys(struct gcli_sshkey_list *list)
 	for (size_t i = 0; i < list->keys_size; ++i) {
 		free(list->keys[i].title);
 		free(list->keys[i].key);
-		free(list->keys[i].created_at);
 	}
 
 	free(list->keys);
