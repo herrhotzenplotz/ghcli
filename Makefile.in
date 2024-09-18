@@ -411,12 +411,17 @@ BINDIR=	$(DESTDIR)$(PREFIX)$(bindir)
 MANDIR=	$(DESTDIR)$(PREFIX)$(mandir)
 
 .SUFFIXES: .in
-.PHONY: manpages
+.PHONY: manpages manpages-auto
 
 # phony target to ensure the makefile is updated with the correct
 # sed substitions.
+#
+# The -auto target here makes make not print "foo is up-to-date"
+# when they are up-to-date.
+manpages-auto: Makefile @SRCDIR@/configure $(MANPAGES)
+
 manpages: Makefile @SRCDIR@/configure
-	@$(MAKE) $(MANPAGES)
+	@$(MAKE) manpages-auto
 
 $(MANPAGES): @SRCDIR@/configure Makefile @SRCDIR@/${@:=.in}
 	@mkdir -p $$(dirname $@)
