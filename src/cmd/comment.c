@@ -36,6 +36,7 @@
 #include <gcli/cmd/editor.h>
 
 #include <gcli/comments.h>
+#include <gcli/date_time.h>
 #include <gcli/json_util.h>
 
 #include <assert.h>
@@ -196,14 +197,24 @@ void
 gcli_print_comment_list(struct gcli_comment_list const *const list)
 {
 	for (size_t i = 0; i < list->comments_size; ++i) {
+		int rc = 0;
+		char *date = NULL;
+
+		rc = gcli_format_as_localtime(g_clictx, list->comments[i].date,
+		                              &date);
+		if (rc < 0)
+			err(1, "gcli: error: couldn't format timestamp");
+
 		printf("AUTHOR : %s%s%s\n"
 		       "DATE   : %s\n"
 		       "ID     : %"PRIid"\n",
 		       gcli_setbold(), list->comments[i].author, gcli_resetbold(),
-		       list->comments[i].date,
+		       date,
 		       list->comments[i].id);
 		gcli_pretty_print(list->comments[i].body, 9, 80, stdout);
 		putchar('\n');
+
+		free(date);
 	}
 }
 

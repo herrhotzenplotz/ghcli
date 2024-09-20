@@ -34,7 +34,7 @@ parser bugzilla_comment is
 object of struct gcli_comment with
 	("id" => id as id,
 	 "text" => body as string,
-	 "creation_time" => date as string,
+	 "creation_time" => date as iso8601_time,
 	 "creator" => author as string);
 
 parser bugzilla_comments_internal_skip_first is

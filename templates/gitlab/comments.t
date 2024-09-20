@@ -2,7 +2,7 @@ include "gcli/gitlab/comments.h";
 
 parser gitlab_comment is
 object of struct gcli_comment with
-	("created_at" => date as string,
+	("created_at" => date as iso8601_time,
 	 "body"       => body as string,
 	 "author"     => author as user,
 	 "id"         => id as id);

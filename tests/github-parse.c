@@ -297,7 +297,7 @@ ATF_TC_BODY(simple_github_comment, tc)
 
 	ATF_CHECK(comment.id == 1424392601);
 	ATF_CHECK_STREQ(comment.author, "herrhotzenplotz");
-	ATF_CHECK_STREQ(comment.date, "2023-02-09T15:37:54Z");
+	ATF_CHECK_EQ(comment.date, 1675957074);
 	ATF_CHECK_STREQ(comment.body, "Hey,\n\nthe current trunk on Github might be a little outdated. I pushed the staging branch for version 1.0.0 from Gitlab to Github (cleanup-1.0). Could you try again with that branch and see if it still faults at the same place? If it does, please provide a full backtrace and if possible check with valgrind.\n");
 
 	json_close(&stream);

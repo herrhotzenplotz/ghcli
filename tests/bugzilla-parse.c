@@ -119,7 +119,7 @@ ATF_TC_BODY(bugzilla_comments, tc)
 	cmt = &list.comments[0];
 	ATF_CHECK_EQ(cmt->id, 1285943);
 	ATF_CHECK_STREQ(cmt->author, "zlei@FreeBSD.org");
-	ATF_CHECK_STREQ(cmt->date, "2023-11-27T17:20:15Z");
+	ATF_CHECK_EQ(cmt->date, 1701105615);
 	ATF_CHECK(cmt->body != NULL);
 
 	gcli_comments_free(&list);

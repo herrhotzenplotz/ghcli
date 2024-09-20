@@ -40,7 +40,6 @@ void
 gcli_comment_free(struct gcli_comment *const it)
 {
 	free(it->author);
-	free(it->date);
 	free(it->body);
 }
 
