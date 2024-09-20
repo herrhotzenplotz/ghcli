@@ -147,7 +147,7 @@ ATF_TC_BODY(bugzilla_attachments, tc)
 	ATF_CHECK_EQ(it->is_obsolete, true);
 	ATF_CHECK_STREQ(it->author, "nsonack@outlook.com");
 	ATF_CHECK_STREQ(it->content_type, "text/plain");
-	ATF_CHECK_STREQ(it->created_at, "2023-11-04T20:19:11Z");
+	ATF_CHECK_EQ(it->created_at, 1699129151);
 	ATF_CHECK_STREQ(it->file_name, "0001-devel-open62541-Update-to-version-1.3.8.patch");
 	ATF_CHECK_STREQ(it->summary, "Patch for updating the port");
 
@@ -156,7 +156,7 @@ ATF_TC_BODY(bugzilla_attachments, tc)
 	ATF_CHECK_EQ(it->is_obsolete, false);
 	ATF_CHECK_STREQ(it->author, "nsonack@outlook.com");
 	ATF_CHECK_STREQ(it->content_type, "text/plain");
-	ATF_CHECK_STREQ(it->created_at, "2023-12-08T17:10:06Z");
+	ATF_CHECK_EQ(it->created_at, 1702055406);
 	ATF_CHECK_STREQ(it->file_name, "0001-devel-open62541-Update-to-version-1.3.8.patch");
 	ATF_CHECK_STREQ(it->summary, "Patch v2 (now for version 1.3.9)");
 

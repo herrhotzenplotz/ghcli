@@ -647,7 +647,7 @@ gcli_print_attachments(struct gcli_attachment_list const *const list)
 	struct gcli_tblcoldef columns[] = {
 		{ .name = "ID",       .type = GCLI_TBLCOLTYPE_ID,     .flags = GCLI_TBLCOL_JUSTIFYR },
 		{ .name = "AUTHOR",   .type = GCLI_TBLCOLTYPE_STRING, .flags = GCLI_TBLCOL_BOLD     },
-		{ .name = "CREATED",  .type = GCLI_TBLCOLTYPE_STRING, .flags = 0                    },
+		{ .name = "CREATED",  .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0                    },
 		{ .name = "CONTENT",  .type = GCLI_TBLCOLTYPE_STRING, .flags = 0                    },
 		{ .name = "OBSOLETE", .type = GCLI_TBLCOLTYPE_BOOL,   .flags = 0                    },
 		{ .name = "FILENAME", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0                    },

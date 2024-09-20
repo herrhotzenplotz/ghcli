@@ -47,7 +47,6 @@ gcli_attachments_free(struct gcli_attachment_list *list)
 void
 gcli_attachment_free(struct gcli_attachment *it)
 {
-	free(it->created_at);
 	free(it->author);
 	free(it->file_name);
 	free(it->summary);

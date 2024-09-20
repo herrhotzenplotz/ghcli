@@ -65,7 +65,7 @@ object of struct gcli_attachment with
 	("id" => id as id,
 	 "summary" => summary as string,
 	 "file_name" => file_name as string,
-	 "creation_time" => created_at as string,
+	 "creation_time" => created_at as iso8601_time,
 	 "creator" => author as string,
 	 "content_type" => content_type as string,
 	 "is_obsolete" => is_obsolete as bool_relaxed,
