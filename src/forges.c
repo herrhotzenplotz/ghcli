@@ -103,8 +103,7 @@ github_forge_descriptor =
 	.issue_set_title           = github_issue_set_title,
 	.perform_submit_issue      = github_perform_submit_issue,
 	.issue_quirks              = GCLI_ISSUE_QUIRKS_PROD_COMP
-	                           | GCLI_ISSUE_QUIRKS_URL
-	                           | GCLI_ISSUE_QUIRKS_ATTACHMENTS,
+	                           | GCLI_ISSUE_QUIRKS_URL,
 
 	/* Milestones */
 	.create_milestone          = github_create_milestone,
@@ -204,8 +203,7 @@ gitlab_forge_descriptor =
 	.issue_set_title           = gitlab_issue_set_title,
 	.perform_submit_issue      = gitlab_perform_submit_issue,
 	.issue_quirks              = GCLI_ISSUE_QUIRKS_PROD_COMP
-	                           | GCLI_ISSUE_QUIRKS_URL
-	                           | GCLI_ISSUE_QUIRKS_ATTACHMENTS,
+	                           | GCLI_ISSUE_QUIRKS_URL,
 
 	/* Milestones */
 	.create_milestone          = gitlab_create_milestone,
@@ -301,8 +299,7 @@ gitea_forge_descriptor =
 	.issue_set_title           = gitea_issue_set_title,
 	.perform_submit_issue      = gitea_submit_issue,
 	.issue_quirks              = GCLI_ISSUE_QUIRKS_PROD_COMP
-	                           | GCLI_ISSUE_QUIRKS_URL
-	                           | GCLI_ISSUE_QUIRKS_ATTACHMENTS,
+	                           | GCLI_ISSUE_QUIRKS_URL,
 
 	/* Milestones */
 	.create_milestone          = gitea_create_milestone,

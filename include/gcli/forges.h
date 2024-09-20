@@ -209,7 +209,6 @@ struct gcli_forge_descriptor {
 		GCLI_ISSUE_QUIRKS_COMMENTS    = 0x2,
 		GCLI_ISSUE_QUIRKS_PROD_COMP   = 0x4,
 		GCLI_ISSUE_QUIRKS_URL         = 0x8,
-		GCLI_ISSUE_QUIRKS_ATTACHMENTS = 0x10,
 	} const issue_quirks;
 
 	/**
