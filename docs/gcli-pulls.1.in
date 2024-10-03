@@ -24,6 +24,7 @@
 .Op Fl t Ar branch
 .Op Fl f Ar owner:branch
 .Op Fl y
+.Op Fl R Ar reviewer
 .Op Ar "PR title..."
 .Sh DESCRIPTION
 Use
@@ -121,6 +122,12 @@ omit this flag and gcli will try to infer this information.
 Do not ask for confirmation before creating the PR. Assume yes.
 .It Fl a , -automerge
 Enable the automerge feature when creating the PR.
+.It Fl R , -reviewer Ar reviewer
+Add the given
+.Ar reviewer
+as a reviewer for the pull request that is to be created.
+To add multiple people as reviewers specify this option more than
+once, one for each reviewer.
 .It Ar "PR Title..."
 The title of the Pull Request or Merge Request.
 .El

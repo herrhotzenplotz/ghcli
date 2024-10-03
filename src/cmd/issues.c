@@ -50,7 +50,7 @@
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: gcli issues create [-o owner -r repo] [-y] [title...]\n");
+	fprintf(stderr, "usage: gcli issues create [-o owner -r repo] [-y] [-R reviewer] [title...]\n");
 	fprintf(stderr, "       gcli issues [-o owner -r repo] [-a] [-n number] [-A author] [-L label]\n");
 	fprintf(stderr, "                   [-M milestone] [-s] [search query...]\n");
 	fprintf(stderr, "       gcli issues [-o owner -r repo] -i issue actions...\n");
@@ -65,6 +65,8 @@ usage(void)
 	fprintf(stderr, "  -s                 Print (sort) in reverse order\n");
 	fprintf(stderr, "  -n number          Number of issues to fetch (-1 = everything)\n");
 	fprintf(stderr, "  -i issue           ID of issue to perform actions on\n");
+	fprintf(stderr, "  -R reviewer        Mark a person as a reviewer for the created PR\n");
+	fprintf(stderr, "                     Can be specified more than once.\n");
 	fprintf(stderr, "ACTIONS:\n");
 	fprintf(stderr, "  all                Display both status and and op\n");
 	fprintf(stderr, "  status             Display status information\n");

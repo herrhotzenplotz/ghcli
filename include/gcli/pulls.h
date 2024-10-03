@@ -102,6 +102,8 @@ struct gcli_submit_pull_options {
 	char *body;
 	char **labels;
 	size_t labels_size;
+	char **reviewers;
+	size_t reviewers_size;
 	int draft;
 	bool automerge;           /** Automatically merge the PR when a pipeline passes */
 };

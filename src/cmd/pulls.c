@@ -494,6 +494,22 @@ subcommand_pull_create_interactive(struct gcli_submit_pull_options *const opts)
 	opts->title = gcli_cmd_prompt("Title", GCLI_PROMPT_RESULT_MANDATORY);
 	opts->automerge = sn_yesno("Enable automerge?");
 
+	/* Reviewers */
+	for (;;) {
+		char *response;
+
+		response = gcli_cmd_prompt("Add reviewer? (name or leave empty)",
+		                           GCLI_PROMPT_RESULT_OPTIONAL);
+		if (response == NULL)
+			break;
+
+		opts->reviewers = realloc(
+			opts->reviewers,
+			(opts->reviewers_size + 1) * sizeof(*opts->reviewers));
+
+		opts->reviewers[opts->reviewers_size++] = response;
+	}
+
 	/* create_pull is going to pop up the editor */
 	rc = create_pull(opts, false);
 	if (rc < 0) {
@@ -541,10 +557,14 @@ subcommand_pull_create(int argc, char *argv[])
 		  .has_arg = required_argument,
 		  .flag = NULL,
 		  .val = 'a' },
+		{ .name = "reviewer",
+		  .has_arg = required_argument,
+		  .flag = NULL,
+		  .val = 'R' },
 		{0},
 	};
 
-	while ((ch = getopt_long(argc, argv, "ayf:t:do:r:l:", options, NULL)) != -1) {
+	while ((ch = getopt_long(argc, argv, "ayf:t:do:r:l:R:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'f':
 			opts.from = optarg;
@@ -565,6 +585,11 @@ subcommand_pull_create(int argc, char *argv[])
 			opts.labels = realloc(
 				opts.labels, sizeof(*opts.labels) * (opts.labels_size + 1));
 			opts.labels[opts.labels_size++] = optarg;
+			break;
+		case 'R': /* add a reviewer */
+			opts.reviewers = realloc(
+				opts.reviewers, sizeof(*opts.reviewers) * (opts.reviewers_size + 1));
+			opts.reviewers[opts.reviewers_size++] = optarg;
 			break;
 		case 'y':
 			always_yes = 1;
