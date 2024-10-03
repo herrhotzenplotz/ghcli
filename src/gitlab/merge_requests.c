@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -678,12 +678,30 @@ gitlab_perform_submit_mr(struct gcli_ctx *ctx, struct gcli_submit_pull_options *
 		gcli_jsongen_objmember(&gen, "target_project_id");
 		gcli_jsongen_number(&gen, target.id);
 
+		/* Labels if any */
 		if (opts->labels_size) {
 			gcli_jsongen_objmember(&gen, "labels");
 
 			gcli_jsongen_begin_array(&gen);
 			for (size_t i = 0; i < opts->labels_size; ++i)
 				gcli_jsongen_string(&gen, opts->labels[i]);
+			gcli_jsongen_end_array(&gen);
+		}
+
+		/* Reviewers if any */
+		if (opts->reviewers_size) {
+			gcli_jsongen_objmember(&gen, "reviewer_ids");
+
+			gcli_jsongen_begin_array(&gen);
+			for (size_t i = 0; i < opts->reviewers_size; ++i) {
+				int uid;
+
+				uid = gitlab_user_id(ctx, opts->reviewers[i]);
+				if (uid < 0)
+					return uid;
+
+				gcli_jsongen_number(&gen, uid);
+			}
 			gcli_jsongen_end_array(&gen);
 		}
 	}
