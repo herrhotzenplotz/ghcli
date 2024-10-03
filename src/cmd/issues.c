@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -275,7 +275,7 @@ subcommand_issue_create_interactive(struct gcli_submit_issue_options *const opts
 	if (!opts->repo)
 		opts->repo = gcli_cmd_prompt("Repository", deflt_repo);
 
-	opts->title = gcli_cmd_prompt("Title", NULL);
+	opts->title = gcli_cmd_prompt("Title", GCLI_PROMPT_RESULT_MANDATORY);
 
 	rc = create_issue(opts, false);
 	if (rc < 0) {

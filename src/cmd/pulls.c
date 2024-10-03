@@ -491,7 +491,7 @@ subcommand_pull_create_interactive(struct gcli_submit_pull_options *const opts)
 	}
 
 	/* Meta */
-	opts->title = gcli_cmd_prompt("Title", NULL);
+	opts->title = gcli_cmd_prompt("Title", GCLI_PROMPT_RESULT_MANDATORY);
 	opts->automerge = sn_yesno("Enable automerge?");
 
 	/* create_pull is going to pop up the editor */

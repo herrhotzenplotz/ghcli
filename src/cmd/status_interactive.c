@@ -95,7 +95,10 @@ handle_issue_notification(struct gcli_notification const *const notif)
 	gcli_issue_print_summary(&issue);
 
 	for (;;) {
-		user_input = gcli_cmd_prompt( "[%s] What? (status, discussion, quit)", NULL, notif->repository);
+		user_input = gcli_cmd_prompt(
+			"[%s] What? (status, discussion, quit)",
+			GCLI_PROMPT_RESULT_MANDATORY,
+			notif->repository);
 
 		if (strcmp(user_input, "quit") == 0 ||
 		    strcmp(user_input, "q") == 0) {
@@ -161,7 +164,8 @@ gcli_status_interactive(void)
 	print_notification_table(&list);
 
 	for (;;) {
-		user_input = gcli_cmd_prompt("Enter number, list or quit", NULL);
+		user_input = gcli_cmd_prompt("Enter number, list or quit",
+		                             GCLI_PROMPT_RESULT_MANDATORY);
 
 		if (strcmp(user_input, "q") == 0 ||
 		    strcmp(user_input, "quit") == 0) {

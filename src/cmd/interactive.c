@@ -135,31 +135,44 @@ get_input_line(char *const prompt)
  * capabilities. The prompt can be specified using a format string.
  * An optional default value can be specified. If the default value
  * is NULL the user will be repeatedly prompted until the input is
- * non-empty. */
+ * non-empty. If the default value is an empty string NULL will be
+ * returned if the user didn't give an answer. */
 char *
 gcli_cmd_prompt(char const *const fmt, char const *const deflt, ...)
 {
-	va_list vp;
+	bool want_exit;
 	char *result;
 	char prompt[256] = {0};
 	size_t prompt_len;
+	va_list vp;
 
 	va_start(vp, deflt);
 	vsnprintf(prompt, sizeof(prompt), fmt, vp);
 	va_end(vp);
 
 	prompt_len = strlen(prompt);
-	if (deflt) {
+	if (deflt && *deflt) {
 		snprintf(prompt + prompt_len, sizeof(prompt) - prompt_len, " [%s]: ", deflt);
 	} else {
 		strncat(prompt, ": ", sizeof(prompt) - prompt_len - 1);
 	}
 
-	do {
+	for (;;) {
 		result = get_input_line(prompt);
-	} while (deflt == NULL && result == NULL);
 
-	if (result == NULL)
+		want_exit =
+			/* default is empty string */
+			(deflt && *deflt == '\0') ||
+			/* result is empty but we have a default */
+			(result == NULL && deflt != NULL) ||
+			/* we have a non-empty response from the user */
+			(result != NULL);
+
+		if (want_exit)
+			break;
+	}
+
+	if (result == NULL && deflt && *deflt)
 		result = strdup(deflt);
 
 	return result;
