@@ -11,6 +11,9 @@ This changelog does not follow semantic versioning.
 
 ### Fixed
 
+- Fixed bad owner/repo when inferred repository information from
+  a git remote with an ssh-url contained a port number
+
 ### Changed
 
 ### Removed

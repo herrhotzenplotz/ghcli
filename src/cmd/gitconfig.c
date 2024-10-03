@@ -34,6 +34,7 @@
 #include <gcli/gcli.h>
 #include <sn/sn.h>
 
+#include <ctype.h>
 #include <dirent.h>
 #include <signal.h>
 #include <stdio.h>
@@ -331,6 +332,14 @@ ssh_extractor(struct gcli_gitremote *const remote, char const *prefix)
 	sn_sv_chop_until(&pair, ':');
 	pair.data   += 1;
 	pair.length -= 1;
+
+	/* sometimes we see port numbers in the SSH url */
+	if (isdigit(*pair.data)) {
+		sn_sv_chop_until(&pair, '/');
+
+		pair.data   += 1;
+		pair.length -= 1;
+	}
 
 	remote->owner = sn_sv_chop_until(&pair, '/');
 
