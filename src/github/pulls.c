@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -431,6 +431,52 @@ github_pull_set_automerge(struct gcli_ctx *const ctx, char const *const node_id)
 	return rc;
 }
 
+static int
+github_pull_add_reviewers(struct gcli_ctx *ctx, char const *owner,
+                          char const *repo, gcli_id pr_number,
+                          char const *const *users, size_t users_size)
+{
+	int rc = 0;
+	char *url, *payload, *e_owner, *e_repo;
+	struct gcli_jsongen gen = {0};
+
+	/* URL-encode repo and owner */
+	e_owner = gcli_urlencode(owner);
+	e_repo = gcli_urlencode(repo);
+
+	/* /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers */
+	url = sn_asprintf("%s/repos/%s/%s/pulls/%"PRIid"/requested_reviewers",
+	                  gcli_get_apibase(ctx), e_owner, e_repo, pr_number);
+
+	/* Generate payload */
+	gcli_jsongen_init(&gen);
+	gcli_jsongen_begin_object(&gen);
+	{
+		gcli_jsongen_objmember(&gen, "reviewers");
+
+		gcli_jsongen_begin_array(&gen);
+		for (size_t i = 0; i < users_size; ++i)
+			gcli_jsongen_string(&gen, users[i]);
+
+		gcli_jsongen_end_array(&gen);
+	}
+	gcli_jsongen_end_object(&gen);
+
+	payload = gcli_jsongen_to_string(&gen);
+	gcli_jsongen_free(&gen);
+
+	/* Perform request */
+	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
+
+	/* Cleanup */
+	free(payload);
+	free(url);
+	free(e_repo);
+	free(e_owner);
+
+	return rc;
+}
+
 int
 github_perform_submit_pull(struct gcli_ctx *ctx,
                            struct gcli_submit_pull_options *opts)
@@ -473,9 +519,12 @@ github_perform_submit_pull(struct gcli_ctx *ctx,
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, &buffer);
 
-	/* Add labels if requested. GitHub doesn't allow us to do this all
-	 * with one request. */
-	if (rc == 0 && (opts->labels_size || opts->automerge)) {
+	/* Add labels or reviewers if requested or set automerge.
+	 * GitHub doesn't allow us to do this all with one request. */
+	if (rc == 0 && (opts->labels_size ||
+	                opts->automerge ||
+	                opts->reviewers_size))
+	{
 		struct json_stream json = {0};
 		struct gcli_pull pull = {0};
 
@@ -483,9 +532,17 @@ github_perform_submit_pull(struct gcli_ctx *ctx,
 		parse_github_pull(ctx, &json, &pull);
 
 		if (opts->labels_size) {
-			rc = github_issue_add_labels(ctx, opts->owner, opts->repo, pull.id,
-			                             (char const *const *)opts->labels,
-			                             opts->labels_size);
+			rc = github_issue_add_labels(
+				ctx, opts->owner, opts->repo, pull.number,
+				(char const *const *)opts->labels,
+				opts->labels_size);
+		}
+
+		if (rc == 0 && opts->reviewers_size) {
+			rc = github_pull_add_reviewers(
+				ctx, opts->owner, opts->repo, pull.number,
+				(char const *const *)opts->reviewers,
+				opts->reviewers_size);
 		}
 
 		if (rc == 0 && opts->automerge) {
@@ -496,7 +553,6 @@ github_perform_submit_pull(struct gcli_ctx *ctx,
 		gcli_pull_free(&pull);
 		json_close(&json);
 	}
-
 
 	gcli_fetch_buffer_free(&buffer);
 	free(payload);
@@ -594,42 +650,8 @@ github_pull_add_reviewer(struct gcli_ctx *ctx, char const *owner,
                          char const *repo, gcli_id pr_number,
                          char const *username)
 {
-	int rc = 0;
-	char *url, *payload, *e_owner, *e_repo;
-	struct gcli_jsongen gen = {0};
-
-	/* URL-encode repo and owner */
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	/* /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers */
-	url = sn_asprintf("%s/repos/%s/%s/pulls/%"PRIid"/requested_reviewers",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, pr_number);
-
-	/* Generate payload */
-	gcli_jsongen_init(&gen);
-	gcli_jsongen_begin_object(&gen);
-	{
-		gcli_jsongen_objmember(&gen, "reviewers");
-		gcli_jsongen_begin_array(&gen);
-		gcli_jsongen_string(&gen, username);
-		gcli_jsongen_end_array(&gen);
-	}
-	gcli_jsongen_end_object(&gen);
-
-	payload = gcli_jsongen_to_string(&gen);
-	gcli_jsongen_free(&gen);
-
-	/* Perform request */
-	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
-
-	/* Cleanup */
-	free(payload);
-	free(url);
-	free(e_repo);
-	free(e_owner);
-
-	return rc;
+	return github_pull_add_reviewers(ctx, owner, repo, pr_number,
+	                                 &username, 1);
 }
 
 int
