@@ -9,6 +9,13 @@ This changelog does not follow semantic versioning.
 - Added a `checkout` action to the `pulls` subcommand that allows
   quickly checking out the target branch of a pull request.
 
+- Added a `-R` command line option to the `pulls create` subcommand
+  that allows specifying reviewers directly when creating the pull
+  request.
+  gcli now also asks for reviewers when creating a pull request
+  interactively.
+  See `gcli-pulls(1)`.
+
 ### Fixed
 
 - Fixed bad owner/repo when inferred repository information from
