@@ -37,7 +37,7 @@
 #include <gcli/gcli.h>
 
 struct gcli_gitlab_snippet {
-	int   id;
+	gcli_id id;
 	char *title;
 	char *filename;
 	char *date;

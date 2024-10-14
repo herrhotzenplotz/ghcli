@@ -92,7 +92,8 @@ int gcli_tbl_add_row(gcli_tbl table, ...);
 gcli_dict gcli_dict_begin(void);
 
 int gcli_dict_add(gcli_dict list, char const *key, int flags,
-                  uint32_t colour_args, char const *fmt, ...);
+                  uint32_t colour_args, char const *fmt, ...)
+                  PRINTF_FORMAT(5, 6);
 
 int gcli_dict_add_string(gcli_dict list, char const *key, int flags,
                          uint32_t colour_args, char const *str);
