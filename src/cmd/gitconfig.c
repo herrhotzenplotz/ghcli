@@ -303,7 +303,7 @@ http_extractor(struct gcli_gitremote *const remote, char const *prefix)
 	pair.length -= prefix_size;
 	pair.data   += prefix_size;
 
-	remote->owner = sn_sv_chop_until(&pair, '/');
+	remote->owner = sn_sv_chop_to_last(&pair, '/');
 
 	pair.data   += 1;
 	pair.length -= 1;
@@ -341,7 +341,7 @@ ssh_extractor(struct gcli_gitremote *const remote, char const *prefix)
 		pair.length -= 1;
 	}
 
-	remote->owner = sn_sv_chop_until(&pair, '/');
+	remote->owner = sn_sv_chop_to_last(&pair, '/');
 
 	pair.data   += 1;
 	pair.length -= 1;

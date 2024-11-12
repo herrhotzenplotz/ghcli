@@ -281,6 +281,22 @@ sn_sv_chop_until(sn_sv *it, char c)
 	return result;
 }
 
+sn_sv
+sn_sv_chop_to_last(sn_sv *it, char sep)
+{
+	sn_sv result = *it;
+
+	while (result.length) {
+		if (result.data[--result.length] == sep)
+			break;
+	}
+
+	it->length -= result.length;
+	it->data += result.length;
+
+	return result;
+}
+
 bool
 sn_sv_has_prefix(sn_sv it, const char *prefix)
 {

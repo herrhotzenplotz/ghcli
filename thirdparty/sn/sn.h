@@ -131,6 +131,7 @@ sn_sv_from_parts(char *buf, size_t len)
 sn_sv sn_sv_trim_front(sn_sv);
 sn_sv sn_sv_trim(sn_sv);
 sn_sv sn_sv_chop_until(sn_sv *, char);
+sn_sv sn_sv_chop_to_last(sn_sv *, char);
 bool sn_sv_has_prefix(sn_sv, const char *);
 bool sn_sv_eq(const sn_sv, const sn_sv);
 bool sn_sv_eq_to(const sn_sv, const char *);
