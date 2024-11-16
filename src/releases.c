@@ -48,7 +48,6 @@ gcli_release_free(struct gcli_release *release)
 	free(release->name);
 	free(release->body);
 	free(release->author);
-	free(release->date);
 	free(release->upload_url);
 
 	for (size_t i = 0; i < release->assets_size; ++i) {

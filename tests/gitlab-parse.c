@@ -59,7 +59,7 @@ ATF_TC_BODY(gitlab_simple_merge_request, tc)
 	ATF_CHECK_STREQ(pull.state, "merged");
 	ATF_CHECK_STREQ(pull.title, "Fix test suite");
 	ATF_CHECK_STREQ(pull.body, "This finally fixes the broken test suite");
-	ATF_CHECK_STREQ(pull.created_at, "2023-08-31T23:37:50.848Z");
+	ATF_CHECK_EQ(pull.created_at, 1693525070);
 	ATF_CHECK(pull.commits_link == NULL);
 	ATF_CHECK_STREQ(pull.head_label, "fix-test-suite");
 	ATF_CHECK_STREQ(pull.base_label, "trunk");
@@ -97,7 +97,7 @@ ATF_TC_BODY(gitlab_simple_issue, tc)
 
 	ATF_CHECK(issue.number == 193);
 	ATF_CHECK_STREQ(issue.title, "Make notifications API use a list struct containing both the ptr and size");
-	ATF_CHECK_STREQ(issue.created_at, "2023-08-13T18:43:05.766Z");
+	ATF_CHECK_EQ(issue.created_at, 1691952185);
 	ATF_CHECK_STREQ(issue.author, "herrhotzenplotz");
 	ATF_CHECK_STREQ(issue.state, "closed");
 	ATF_CHECK(issue.comments == 2);
@@ -179,7 +179,7 @@ ATF_TC_BODY(gitlab_simple_release, tc)
 	ATF_CHECK_STREQ(release.name, "1.2.0");
 	ATF_CHECK_STREQ(release.body, "# Version 1.2.0\n\nThis is version 1.2.0 of gcli.\n\n## Notes\n\nPlease test and report bugs.\n\nYou can download autotoolized tarballs at: https://herrhotzenplotz.de/gcli/releases/gcli-1.2.0/\n\n## Bug Fixes\n\n- Fix compile error when providing --with-libcurl without any arguments\n- Fix memory leaks in string processing functions\n- Fix missing nul termination in read-file function\n- Fix segmentation fault when clearing the milestone of a PR on Gitea\n- Fix missing documentation for milestone action in issues and pulls\n- Set the 'merged' flag properly when showing Gitlab merge requests\n\n## New features\n\n- Add a config subcommand for managing ssh keys (see gcli-config(1))\n- Show number of comments/notes in list of issues and PRs\n- Add support for milestone management in pull requests\n");
 	ATF_CHECK_STREQ(release.author, "herrhotzenplotz");
-	ATF_CHECK_STREQ(release.date, "2023-08-11T07:56:06.371Z");
+	ATF_CHECK_EQ(release.date, 1691740566);
 	ATF_CHECK(release.upload_url == NULL);
 	ATF_CHECK(release.draft == false);
 	ATF_CHECK(release.prerelease == false);
@@ -202,7 +202,7 @@ ATF_TC_BODY(gitlab_simple_fork, tc)
 
 	ATF_CHECK_STREQ(fork.full_name, "gjnoonan/gcli");
 	ATF_CHECK_STREQ(fork.owner, "gjnoonan");
-	ATF_CHECK_STREQ(fork.date, "2022-10-02T13:54:20.517Z");
+	ATF_CHECK_EQ(fork.date, 1664718860);
 	ATF_CHECK(fork.forks == 0);
 
 	json_close(&stream);
@@ -226,9 +226,9 @@ ATF_TC_BODY(gitlab_simple_milestone, tc)
 	ATF_CHECK_STREQ(milestone.state, "active");
 	ATF_CHECK_STREQ(milestone.description,
 	                "Things that need to be done for version 2");
-	ATF_CHECK_STREQ(milestone.created_at, "2023-02-05T19:08:20.379Z");
-	ATF_CHECK_STREQ(milestone.due_date, "<empty>");
-	ATF_CHECK_STREQ(milestone.updated_at, "2023-02-05T19:08:20.379Z");
+	ATF_CHECK_EQ(milestone.created_at, 1675624100);
+	ATF_CHECK_EQ(milestone.due_date, 0);
+	ATF_CHECK_EQ(milestone.updated_at, 1675624100);
 	ATF_CHECK(milestone.expired == false);
 
 	json_close(&stream);
@@ -252,8 +252,8 @@ ATF_TC_BODY(gitlab_simple_pipeline, tc)
 
 	ATF_CHECK(pipeline.id == 989897020);
 	ATF_CHECK_STREQ(pipeline.status, "failed");
-	ATF_CHECK_STREQ(pipeline.created_at, "2023-09-02T14:30:20.925Z");
-	ATF_CHECK_STREQ(pipeline.updated_at, "2023-09-02T14:31:40.328Z");
+	ATF_CHECK_EQ(pipeline.created_at, 1693665020);
+	ATF_CHECK_EQ(pipeline.updated_at, 1693665100);
 	ATF_CHECK_STREQ(pipeline.ref, "refs/merge-requests/219/head");
 	ATF_CHECK_STREQ(pipeline.sha, "742affb88a297a6b34201ad61c8b5b72ec6eb679");
 	ATF_CHECK_STREQ(pipeline.source, "merge_request_event");
@@ -278,7 +278,7 @@ ATF_TC_BODY(gitlab_simple_repo, tc)
 	ATF_CHECK_STREQ(repo.full_name, "herrhotzenplotz/gcli");
 	ATF_CHECK_STREQ(repo.name, "gcli");
 	ATF_CHECK_STREQ(repo.owner, "herrhotzenplotz");
-	ATF_CHECK_STREQ(repo.date, "2022-03-22T16:57:59.891Z");
+	ATF_CHECK_EQ(repo.date, 1647968279);
 	ATF_CHECK_STREQ(repo.visibility, "public");
 	ATF_CHECK(repo.is_fork == false);
 

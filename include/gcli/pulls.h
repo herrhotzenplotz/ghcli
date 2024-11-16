@@ -36,6 +36,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include <gcli/diffutil.h>
 #include <gcli/gcli.h>
@@ -51,7 +52,7 @@ struct gcli_pull {
 	char *state;
 	char *title;
 	char *body;
-	char *created_at;
+	time_t created_at;
 	char *commits_link;
 	char *head_label;
 	char *base_label;

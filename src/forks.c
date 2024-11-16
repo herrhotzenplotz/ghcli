@@ -52,7 +52,6 @@ gcli_fork_free(struct gcli_fork *fork)
 {
 	free(fork->full_name);
 	free(fork->owner);
-	free(fork->date);
 }
 
 void

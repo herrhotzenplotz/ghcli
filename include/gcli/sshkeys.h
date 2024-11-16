@@ -34,15 +34,16 @@
 #include <config.h>
 #endif
 
-#include <stddef.h>
-
 #include <gcli/gcli.h>
+
+#include <stddef.h>
+#include <time.h>
 
 struct gcli_sshkey {
 	gcli_id id;
 	char *title;
 	char *key;
-	char *created_at;
+	time_t created_at;
 };
 
 struct gcli_sshkey_list {

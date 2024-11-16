@@ -66,15 +66,9 @@ gcli_free_milestone(struct gcli_milestone *const it)
 	it->title = NULL;
 	free(it->state);
 	it->state = NULL;
-	free(it->created_at);
-	it->created_at = NULL;
 
 	free(it->description);
 	it->description = NULL;
-	free(it->updated_at);
-	it->updated_at = NULL;
-	free(it->due_date);
-	it->due_date = NULL;
 }
 
 void

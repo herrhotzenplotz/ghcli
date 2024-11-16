@@ -44,12 +44,12 @@ struct gcli_milestone {
 	gcli_id id;
 	char *title;
 	char *state;
-	char *created_at;
+	time_t created_at;
 
 	/* Extended info */
 	char *description;
-	char *updated_at;
-	char *due_date;
+	time_t updated_at;
+	time_t due_date;
 	bool expired;
 
 	/* Github and Gitea Specific */

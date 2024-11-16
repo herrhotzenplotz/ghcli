@@ -161,7 +161,7 @@ gcli_issue_print_summary(struct gcli_issue const *const it)
 	gcli_dict_add(dict, "NUMBER", 0, 0, "%"PRIid, it->number);
 	gcli_dict_add(dict, "TITLE", 0, 0, "%s", it->title);
 
-	gcli_dict_add(dict, "CREATED", 0, 0, "%s", it->created_at);
+	gcli_dict_add_timestamp(dict, "CREATED", 0, 0, it->created_at);
 
 	if ((quirks & GCLI_ISSUE_QUIRKS_PROD_COMP) == 0) {
 		gcli_dict_add(dict, "PRODUCT", 0, 0, "%s", it->product);
@@ -203,7 +203,6 @@ gcli_issue_print_summary(struct gcli_issue const *const it)
 
 	/* Dump the dictionary */
 	gcli_dict_end(dict);
-
 }
 
 void
@@ -648,7 +647,7 @@ gcli_print_attachments(struct gcli_attachment_list const *const list)
 	struct gcli_tblcoldef columns[] = {
 		{ .name = "ID",       .type = GCLI_TBLCOLTYPE_ID,     .flags = GCLI_TBLCOL_JUSTIFYR },
 		{ .name = "AUTHOR",   .type = GCLI_TBLCOLTYPE_STRING, .flags = GCLI_TBLCOL_BOLD     },
-		{ .name = "CREATED",  .type = GCLI_TBLCOLTYPE_STRING, .flags = 0                    },
+		{ .name = "CREATED",  .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0                    },
 		{ .name = "CONTENT",  .type = GCLI_TBLCOLTYPE_STRING, .flags = 0                    },
 		{ .name = "OBSOLETE", .type = GCLI_TBLCOLTYPE_BOOL,   .flags = 0                    },
 		{ .name = "FILENAME", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0                    },

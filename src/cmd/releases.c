@@ -77,13 +77,13 @@ gcli_print_release(enum gcli_output_flags const flags,
 
 	dict = gcli_dict_begin();
 
-	gcli_dict_add(dict,        "ID",         0, 0, "%s", it->id);
-	gcli_dict_add(dict,        "NAME",       0, 0, "%s", it->name);
-	gcli_dict_add(dict,        "AUTHOR",     0, 0, "%s", it->author);
-	gcli_dict_add(dict,        "DATE",       0, 0, "%s", it->date);
-	gcli_dict_add_string(dict, "DRAFT",      0, 0, sn_bool_yesno(it->draft));
-	gcli_dict_add_string(dict, "PRERELEASE", 0, 0, sn_bool_yesno(it->prerelease));
-	gcli_dict_add_string(dict, "ASSETS",     0, 0, "");
+	gcli_dict_add(dict,           "ID",         0, 0, "%s", it->id);
+	gcli_dict_add(dict,           "NAME",       0, 0, "%s", it->name);
+	gcli_dict_add(dict,           "AUTHOR",     0, 0, "%s", it->author);
+	gcli_dict_add_timestamp(dict, "DATE",       0, 0, it->date);
+	gcli_dict_add_string(dict,    "DRAFT",      0, 0, sn_bool_yesno(it->draft));
+	gcli_dict_add_string(dict,    "PRERELEASE", 0, 0, sn_bool_yesno(it->prerelease));
+	gcli_dict_add_string(dict,    "ASSETS",     0, 0, "");
 
 	/* asset urls */
 	for (size_t i = 0; i < it->assets_size; ++i) {
@@ -132,7 +132,7 @@ gcli_releases_print_short(enum gcli_output_flags const flags,
 	gcli_tbl table;
 	struct gcli_tblcoldef cols[] = {
 		{ .name = "ID",         .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
-		{ .name = "DATE",       .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "DATE",       .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
 		{ .name = "DRAFT",      .type = GCLI_TBLCOLTYPE_BOOL,   .flags = 0 },
 		{ .name = "PRERELEASE", .type = GCLI_TBLCOLTYPE_BOOL,   .flags = 0 },
 		{ .name = "NAME",       .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },

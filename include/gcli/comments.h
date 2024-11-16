@@ -38,12 +38,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <sn/sn.h>
 
 struct gcli_comment {
 	char *author;               /* Login name of the comment author */
-	char *date;                 /* Creation date of the comment     */
+	time_t date;                /* Creation date of the comment     */
 	gcli_id id;                 /* id of the comment                */
 	char *body;                 /* Raw text of the comment          */
 };

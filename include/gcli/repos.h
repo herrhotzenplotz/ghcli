@@ -37,12 +37,14 @@
 #include <sn/sn.h>
 #include <gcli/gcli.h>
 
+#include <time.h>
+
 struct gcli_repo {
 	gcli_id id;
 	char *full_name;
 	char *name;
 	char *owner;
-	char *date;
+	time_t date;
 	char *visibility;
 	bool is_fork;
 };

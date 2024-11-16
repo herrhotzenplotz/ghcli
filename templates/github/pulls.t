@@ -41,7 +41,7 @@ object of struct gcli_pull with
 	("title"         => title as string,
 	 "state"         => state as string,
 	 "body"          => body as string,
-	 "created_at"    => created_at as string,
+	 "created_at"    => created_at as iso8601_time,
 	 "number"        => number as id,
 	 "id"            => id as id,
 	 "node_id"       => node_id as string,
