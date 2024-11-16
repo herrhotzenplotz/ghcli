@@ -21,7 +21,14 @@ This changelog does not follow semantic versioning.
 - Fixed bad owner/repo when inferred repository information from
   a git remote with an ssh-url contained a port number
 
+- gcli now handles nested projects on Gitlab correctly
+
 ### Changed
+
+- gcli now uses `time_t` internally to represent timestamps. This
+  is visible to the user in that all timestamps are now printed
+  in the consistent format `YYYY-mmm-dd HH:MM:SS` instead of the
+  default format that each forge uses.
 
 ### Removed
 
