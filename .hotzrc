@@ -1,10 +1,7 @@
 # local kakrc for gcli
 
-# We build inside the build directory
-# cd build
-
 set-option global ctagscmd "uctags -R --fields=+S"
-set-option global ctagspaths "../include ../src ../thirdparty"
+set-option global ctagspaths "include src thirdparty"
 
 # Define the make cmd to be parallel but only use half of the available cpu cores
 evaluate-commands %sh{
