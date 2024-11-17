@@ -433,7 +433,7 @@ ensure_config(struct gcli_ctx *ctx)
 
 /** Check input for a value that indicates yes/true */
 static int
-check_yes(char const *const tmp)
+string_means_true(char const *const tmp)
 {
 	size_t tmplen = strlen(tmp) + 1;
 	char *tmp_lower = malloc(tmplen);
@@ -450,6 +450,12 @@ check_yes(char const *const tmp)
 
 	free(tmp_lower);
 	return is_yes;
+}
+
+static bool
+string_means_false(char const *const tmp)
+{
+	return !string_means_true(tmp);
 }
 
 /* readenv: Read values of environment variables and pre-populate the
@@ -474,13 +480,13 @@ readenv(struct gcli_config *cfg)
 	 * violate the definition to get expected and sane behaviour. */
 	tmp = getenv("NO_COLOR");
 	if (tmp && tmp[0] != '\0')
-		cfg->colours_disabled = check_yes(tmp);
+		cfg->colours_disabled = string_means_true(tmp);
 
 	if ((tmp = getenv("GCLI_NOSPINNER")))
-		cfg->no_spinner = check_yes(tmp);
+		cfg->no_spinner = string_means_true(tmp);
 
 	if ((tmp = getenv("GCLI_ENABLE_EXPERIMENTAL")))
-		cfg->enable_experimental = check_yes(tmp);
+		cfg->enable_experimental = string_means_true(tmp);
 }
 
 int
@@ -1000,19 +1006,19 @@ gcli_config_get_repo(struct gcli_ctx *ctx, char const **const owner,
 	return gcli_gitconfig_repo_by_remote(ctx, NULL, owner, repo, NULL);
 }
 
-int
+bool
 gcli_config_have_colours(struct gcli_ctx *ctx)
 {
-	static int tested_tty = 0;
+	static bool tested_tty = 0;
 	struct gcli_config *cfg;
 
 	cfg = ctx_config(ctx);
 
 	if (cfg->force_colours)
-		return 1;
+		return true;
 
 	if (cfg->colours_disabled)
-		return 0;
+		return false;
 
 	if (tested_tty)
 		return !cfg->colours_disabled;
@@ -1022,12 +1028,12 @@ gcli_config_have_colours(struct gcli_ctx *ctx)
 	else
 		cfg->colours_disabled = true;
 
-	tested_tty = 1;
+	tested_tty = true;
 
 	return !cfg->colours_disabled;
 }
 
-int
+bool
 gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
 {
 	ensure_config(ctx);
@@ -1036,16 +1042,16 @@ gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
 	cfg = ctx_config(ctx);
 
 	if (cfg->no_spinner)
-		return 0;
+		return false;
 
 	sn_sv cfg_entry = gcli_config_find_by_key(ctx, "defaults", "disable-spinner");
 	if (sn_sv_null(cfg_entry))
-		return 1;
+		return true;
 
-	if (check_yes(sn_sv_to_cstr(cfg_entry)))
-		return 0;
+	if (string_means_true(sn_sv_to_cstr(cfg_entry)))
+		return false;
 
-	return 1;
+	return true;
 }
 
 bool
@@ -1063,5 +1069,5 @@ gcli_config_enable_experimental(struct gcli_ctx *ctx)
 	if (sn_sv_null(cfg_entry))
 		return false;
 
-	return check_yes(sn_sv_to_cstr(cfg_entry));
+	return string_means_true(sn_sv_to_cstr(cfg_entry));
 }
