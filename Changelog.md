@@ -34,6 +34,13 @@ This changelog does not follow semantic versioning.
 
   Reported by: Jiří Štefka
 
+- The previously added Markdown rendering functionality through
+  liblowdown can now be disabled at runtime by providing a command
+  line flag, setting an environment variable or by setting a
+  configuration variable.
+
+  Reported-by: Gavin-John Noonan <mail@gjnoonan.co.uk>
+
 ### Changed
 
 - gcli now uses `time_t` internally to represent timestamps. This

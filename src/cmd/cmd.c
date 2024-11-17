@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -177,8 +177,8 @@ delete_repo(bool always_yes, const char *owner, const char *repo)
 }
 
 #ifdef HAVE_LIBLOWDOWN
-void
-gcli_pretty_print(char const *input, int indent, int maxlinelen, FILE *stream)
+static void
+gcli_render_markdown(char const *input, int indent, int maxlinelen, FILE *stream)
 {
 	size_t input_size;
 	struct lowdown_buf *out;
@@ -222,7 +222,8 @@ gcli_pretty_print(char const *input, int indent, int maxlinelen, FILE *stream)
 	lowdown_node_free(n);
 	lowdown_doc_free(doc);
 }
-#else
+#endif
+
 static int
 word_length(const char *x)
 {
@@ -240,6 +241,13 @@ gcli_pretty_print(const char *input, int indent, int maxlinelen, FILE *out)
 
 	if (!it)
 		return;
+
+#ifdef HAVE_LIBLOWDOWN
+	if (gcli_config_render_markdown(g_clictx)) {
+		gcli_render_markdown(input, indent, maxlinelen, out);
+		return;
+	}
+#endif
 
 	while (*it) {
 		int linelength = indent;
@@ -265,4 +273,3 @@ gcli_pretty_print(const char *input, int indent, int maxlinelen, FILE *out)
 		fputc('\n', out);
 	}
 }
-#endif

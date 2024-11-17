@@ -65,6 +65,7 @@ struct gcli_config {
 	int colours_disabled;       /* NO_COLOR set or output is not a TTY */
 	int force_colours;          /* -c option was given */
 	int no_spinner;             /* don't show a progress spinner */
+	int no_markdown;            /* do not render markdown (when built with lowdown) */
 	int enable_experimental;    /* enable experimental features */
 
 	sn_sv  buffer;
@@ -485,6 +486,9 @@ readenv(struct gcli_config *cfg)
 	if ((tmp = getenv("GCLI_NOSPINNER")))
 		cfg->no_spinner = string_means_true(tmp);
 
+	if ((tmp = getenv("GCLI_RENDER_MARKDOWN")))
+		cfg->no_markdown = string_means_false(tmp);
+
 	if ((tmp = getenv("GCLI_ENABLE_EXPERIMENTAL")))
 		cfg->enable_experimental = string_means_true(tmp);
 }
@@ -533,6 +537,10 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 		{ .name    = "no-spinner",
 		  .has_arg = no_argument,
 		  .flag    = &cfg->no_spinner,
+		  .val     = 1 },
+		{ .name    = "no-markdown",
+		  .has_arg = no_argument,
+		  .flag    = &cfg->no_markdown,
 		  .val     = 1 },
 		{ .name    = "type",
 		  .has_arg = required_argument,
@@ -1050,6 +1058,29 @@ gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
 
 	if (string_means_true(sn_sv_to_cstr(cfg_entry)))
 		return false;
+
+	return true;
+}
+
+bool
+gcli_config_render_markdown(struct gcli_ctx *ctx)
+{
+	ensure_config(ctx);
+
+	struct gcli_config *cfg;
+	cfg = ctx_config(ctx);
+
+	if (cfg->no_markdown)
+		return false;
+
+	sn_sv cfg_entry = gcli_config_find_by_key(ctx, "defaults", "render-markdown");
+	if (sn_sv_null(cfg_entry))
+		return true;
+
+	if (string_means_false(sn_sv_to_cstr(cfg_entry))) {
+		cfg->no_markdown = true;
+		return false;
+	}
 
 	return true;
 }
