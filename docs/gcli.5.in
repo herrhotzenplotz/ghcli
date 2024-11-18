@@ -151,14 +151,14 @@ defaults {
 herrhotzenplotz-gh {
 	account=herrhotzenplotz
 	token=foobar
-	apibase=https://api.github.com
+	api-base=https://api.github.com
 	forge-type=github
 }
 
 herrhotzenplotz-gl {
 	account=herrhotzenplotz
 	token=<valid gitlab api token>
-	apibase=https://gitlab.com/api/v4
+	api-base=https://gitlab.com/api/v4
 	forge-type=gitlab
 }
 .Ed

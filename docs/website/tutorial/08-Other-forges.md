@@ -23,7 +23,7 @@ correct URL in `$HOME/.config/gcli/config` by adding:
 
 	gentoo {
 		forge-type=bugzilla
-		apibase=https://bugs.gentoo.org/
+		api-base=https://bugs.gentoo.org/
 	}
 
 Now you can search the Gentoo Bugs:
@@ -154,7 +154,7 @@ codeberg-org {
 	account=<your-username-at-gitea>
 	token=<the-token-you-just-created>
 	forge-type=gitea
-	apibase=https://codeberg.org/api/v1
+	api-base=https://codeberg.org/api/v1
 }
 ```
 
