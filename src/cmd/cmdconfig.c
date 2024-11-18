@@ -748,8 +748,19 @@ gcli_config_get_apibase(struct gcli_ctx *ctx)
 	char *url = NULL;
 
 	if (acct) {
-		sn_sv url_sv = gcli_config_find_by_key(ctx, acct, "apibase");
-		if (url_sv.length)
+		sn_sv url_sv = {0};
+
+		url_sv = gcli_config_find_by_key(ctx, acct, "api-base");
+
+		/* https://github.com/herrhotzenplotz/gcli/issues/138
+		 *
+		 * Above is correct behaviour. Below is bad/buggy behaviour.
+		 * Check for the second (buggy) option apibase and
+		 * use it if needed. */
+		if (sn_sv_null(url_sv))
+			gcli_config_find_by_key(ctx, acct, "apibase");
+
+		if (!sn_sv_null(url_sv))
 			url = sn_sv_to_cstr(url_sv);
 	}
 
