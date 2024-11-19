@@ -23,6 +23,17 @@ This changelog does not follow semantic versioning.
 
 - gcli now handles nested projects on Gitlab correctly
 
+- The documentation in `gcli(5)` mentioned the forge option
+  `api-base` however it didn't work because of a typo in the
+  responsible code. Parts of the other documentation however was
+  using the incorrect option name without the option.  The config
+  option and related documentation has been fixed to spell `api-base`.
+  In order not to break existing configurations an alias has been
+  added such that `apibase` is also a valid name, however `api-base`
+  is preferred.
+
+  Reported by: Jiří Štefka
+
 ### Changed
 
 - gcli now uses `time_t` internally to represent timestamps. This
