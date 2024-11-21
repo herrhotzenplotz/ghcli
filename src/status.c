@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,6 +74,7 @@ notification_target_type_strings[MAX_GCLI_NOTIFICATION_TARGET] = {
 	[GCLI_NOTIFICATION_TARGET_COMMIT] = "Commit",
 	[GCLI_NOTIFICATION_TARGET_EPIC] = "Epic",
 	[GCLI_NOTIFICATION_TARGET_REPOSITORY] = "Repository",
+	[GCLI_NOTIFICATION_TARGET_RELEASE] = "Release",
 };
 
 char const *

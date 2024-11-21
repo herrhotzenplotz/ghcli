@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,6 +48,7 @@ enum gcli_notification_target_type {
 	GCLI_NOTIFICATION_TARGET_COMMIT,
 	GCLI_NOTIFICATION_TARGET_EPIC,
 	GCLI_NOTIFICATION_TARGET_REPOSITORY,
+	GCLI_NOTIFICATION_TARGET_RELEASE,
 
 	MAX_GCLI_NOTIFICATION_TARGET,
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -458,6 +458,9 @@ get_github_notification_target_type(struct gcli_ctx *ctx, json_stream *input,
 
 	} else if (sn_sv_eq_to(tmp, "PullRequest")) {
 		*out = GCLI_NOTIFICATION_TARGET_PULL_REQUEST;
+
+	} else if (sn_sv_eq_to(tmp, "Release")) {
+		*out = GCLI_NOTIFICATION_TARGET_RELEASE;
 
 	} else {
 		rc = gcli_error(
