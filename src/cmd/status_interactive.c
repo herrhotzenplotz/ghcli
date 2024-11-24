@@ -31,6 +31,7 @@
 #include <gcli/cmd/comment.h>
 #include <gcli/cmd/interactive.h>
 #include <gcli/cmd/issues.h>
+#include <gcli/cmd/pulls.h>
 #include <gcli/cmd/status_interactive.h>
 #include <gcli/cmd/table.h>
 
@@ -138,10 +139,68 @@ handle_issue_notification(struct gcli_notification const *const notif)
 	user_input = NULL;
 }
 
+static void
+handle_pull_notification(struct gcli_notification const *const notif)
+{
+	char *user_input = NULL;
+	int rc = 0;
+	struct gcli_pull pull = {0};
+
+	rc = gcli_get_pull(g_clictx, &notif->target, &pull);
+	if (rc < 0)
+		errx(1, "gcli: failed to fetch pull: %s", gcli_get_error(g_clictx));
+
+	gcli_pull_print(&pull);
+
+	for (;;) {
+		user_input = gcli_cmd_prompt(
+			"[%s] What? (status, discussion, quit)",
+			GCLI_PROMPT_RESULT_MANDATORY,
+			notif->repository);
+
+		if (strcmp(user_input, "quit") == 0 ||
+		    strcmp(user_input, "q") == 0) {
+			break;
+
+		} else if (strcmp(user_input, "status") == 0 ||
+		           strcmp(user_input, "s") == 0) {
+			gcli_pull_print(&pull);
+		} else if (strcmp(user_input, "discussion") == 0 ||
+		           strcmp(user_input, "d") == 0) {
+
+			struct gcli_comment_list comments = {0};
+
+			rc = gcli_get_pull_comments(
+				g_clictx,
+				&notif->target,
+				&comments);
+
+			if (rc < 0) {
+				errx(1, "gcli: failed to fetch comments: %s",
+				     gcli_get_error(g_clictx));
+			}
+
+			rc = gcli_cmd_into_pager(print_comment_list, &comments);
+			if (rc < 0)
+				errx(1, "gcli: cannot print comments");
+
+			gcli_comments_free(&comments);
+		}
+
+		free(user_input);
+		user_input = NULL;
+	}
+
+	gcli_pull_free(&pull);
+	free(user_input);
+	user_input = NULL;
+}
+
 typedef void (*notification_handler)(struct gcli_notification const *);
 static notification_handler
 notification_handlers[MAX_GCLI_NOTIFICATION_TARGET] = {
 	[GCLI_NOTIFICATION_TARGET_ISSUE] = handle_issue_notification,
+	[GCLI_NOTIFICATION_TARGET_PULL_REQUEST] = handle_pull_notification,
 };
 
 static void

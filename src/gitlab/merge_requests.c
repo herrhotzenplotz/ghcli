@@ -82,6 +82,13 @@ gitlab_mr_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
 		free(e_owner);
 		free(e_repo);
 	} break;
+	case GCLI_PATH_PID_ID: {
+		*url = sn_asprintf("%s/projects/%"PRIid"/merge_requests/%"PRIid"%s",
+		                   gcli_get_apibase(ctx),
+		                   path->data.as_pid_id.project_id,
+		                   path->data.as_pid_id.id,
+		                   suffix);
+	} break;
 	case GCLI_PATH_URL: {
 		*url = sn_asprintf("%s%s", path->data.as_url, suffix);
 	} break;
