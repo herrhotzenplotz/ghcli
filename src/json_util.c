@@ -572,3 +572,72 @@ get_iso8601_time_(struct gcli_ctx *ctx, json_stream *input, time_t *out,
 
 	return rc;
 }
+
+int
+get_url_path_(struct gcli_ctx *ctx, struct json_stream *input,
+              struct gcli_path *out, char const *function)
+{
+	char *copy;
+	char const *it;
+	enum json_type type;
+	size_t len;
+	int rc = 0;
+
+	type = json_next(input);
+	if (type == JSON_NULL) {
+		*out = (struct gcli_path){0};
+		return 0;
+	}
+
+	if (type != JSON_STRING)
+		return gcli_error(ctx, "unexpected non-string field in %s", function);
+
+	it = json_get_string(input, &len);
+	copy = sn_strndup(it, len);
+
+	out->kind = GCLI_PATH_URL;
+	out->data.as_url = copy;
+
+	return rc;
+}
+
+int
+get_gitlab_notification_target_(struct gcli_ctx *ctx,
+                                struct json_stream *input,
+                                struct gcli_path *out,
+                                char const *where)
+{
+	if (json_next(input) != JSON_OBJECT)
+		return gcli_error(ctx, "%s: notification target is not an object", where);
+
+	out->kind = GCLI_PATH_PID_ID;
+
+	while (json_next(input) == JSON_STRING) {
+		size_t len = 0;
+		char const *key = json_get_string(input, &len);
+
+		if (strncmp("iid", key, len) == 0) {
+			if (json_next(input) != JSON_NUMBER) {
+				return gcli_error(
+					ctx,
+					"%s: iid of the target is not a number",
+					where);
+			}
+
+			out->data.as_pid_id.id = (gcli_id) json_get_number(input);
+		} else if (strncmp("project_id", key, len) == 0) {
+			if (json_next(input) != JSON_NUMBER) {
+				return gcli_error(
+					ctx,
+					"%s: project_id of the target is not a number",
+					where);
+			}
+
+			out->data.as_pid_id.project_id = (gcli_id) json_get_number(input);
+		} else {
+			SKIP_OBJECT_VALUE(input);
+		}
+	}
+
+	return 0;
+}

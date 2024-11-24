@@ -466,13 +466,6 @@ struct gcli_forge_descriptor {
 		struct gcli_notification_list *notifications);
 
 	/**
-	 * *Given an issue notification grab the associated issue. */
-	int (*notification_get_issue)(
-		struct gcli_ctx *ctx,
-		struct gcli_notification const *const notification,
-		struct gcli_issue *out);
-
-	/**
 	 * Given a notification fetch the target's comments */
 	int (*notification_get_comments)(
 		struct gcli_ctx *ctx,

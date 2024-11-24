@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -68,6 +68,13 @@ gitlab_issue_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
 
 		free(e_owner);
 		free(e_repo);
+	} break;
+	case GCLI_PATH_PID_ID: {
+		*url = sn_asprintf("%s/projects/%"PRIid"/issues/%"PRIid"%s",
+		                   gcli_get_apibase(ctx),
+		                   path->data.as_pid_id.project_id,
+		                   path->data.as_pid_id.id,
+		                   suffix);
 	} break;
 	case GCLI_PATH_URL: {
 		*url = sn_asprintf("%s%s", path->data.as_url, suffix);

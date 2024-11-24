@@ -88,7 +88,7 @@ handle_issue_notification(struct gcli_notification const *const notif)
 	int rc = 0;
 	struct gcli_issue issue = {0};
 
-	rc = gcli_notification_get_issue(g_clictx, notif, &issue);
+	rc = gcli_get_issue(g_clictx, &notif->target, &issue);
 	if (rc < 0)
 		errx(1, "gcli: failed to fetch issue: %s", gcli_get_error(g_clictx));
 
@@ -109,11 +109,18 @@ handle_issue_notification(struct gcli_notification const *const notif)
 			gcli_issue_print_summary(&issue);
 		} else if (strcmp(user_input, "discussion") == 0 ||
 		           strcmp(user_input, "d") == 0) {
+
 			struct gcli_comment_list comments = {0};
 
-			rc = gcli_notification_get_comments(g_clictx, notif, &comments);
-			if (rc < 0)
-				errx(1, "gcli: failed to fetch comments: %s", gcli_get_error(g_clictx));
+			rc = gcli_get_issue_comments(
+				g_clictx,
+				&notif->target,
+				&comments);
+
+			if (rc < 0) {
+				errx(1, "gcli: failed to fetch comments: %s",
+				     gcli_get_error(g_clictx));
+			}
 
 			rc = gcli_cmd_into_pager(print_comment_list, &comments);
 			if (rc < 0)

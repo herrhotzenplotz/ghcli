@@ -62,11 +62,7 @@ struct gcli_notification {
 	char *repository;
 
 	/* target specific data */
-	struct {
-		gcli_id id;   /* The internal ID of the target data */
-		gcli_id project_id;
-		char *url;
-	} target;
+	struct gcli_path target;
 };
 
 struct gcli_notification_list {
@@ -80,12 +76,5 @@ int gcli_notification_mark_as_read(struct gcli_ctx *ctx, char const *id);
 void gcli_free_notification(struct gcli_notification *);
 void gcli_free_notifications(struct gcli_notification_list *);
 char const *gcli_notification_target_type_str(enum gcli_notification_target_type type);
-int gcli_notification_get_issue(struct gcli_ctx *ctx,
-                                struct gcli_notification const *notification,
-                                struct gcli_issue *out);
-
-int gcli_notification_get_comments(struct gcli_ctx *ctx,
-                                   struct gcli_notification const *const notification,
-                                   struct gcli_comment_list *comments);
 
 #endif /* STATUS_H */

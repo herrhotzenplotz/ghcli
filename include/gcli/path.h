@@ -39,6 +39,7 @@ struct gcli_path {
 		GCLI_PATH_URL,
 		GCLI_PATH_BUGZILLA,
 		GCLI_PATH_ID,
+		GCLI_PATH_PID_ID,
 	} kind;
 
 	union {
@@ -47,6 +48,11 @@ struct gcli_path {
 			char *repo;
 			gcli_id id;
 		} as_default;
+
+		struct {
+			gcli_id project_id;
+			gcli_id id;
+		} as_pid_id;
 
 		struct {
 			char *product;
