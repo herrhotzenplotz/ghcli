@@ -41,6 +41,16 @@ This changelog does not follow semantic versioning.
   in the consistent format `YYYY-mmm-dd HH:MM:SS` instead of the
   default format that each forge uses.
 
+- When searching for a usable editor gcli now consults the following
+  places in this order:
+
+  - gcli config file
+  - `$GIT_EDITOR`
+  - `$VISUAL`
+  - `$EDITOR`
+
+  Submitted by: remph <lhr@disroot.org>
+
 ### Removed
 
 ## 2.5.0 (2024-Aug-26)

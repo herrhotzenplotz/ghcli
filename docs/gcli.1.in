@@ -163,10 +163,11 @@ Other options specific to the context are documented in the respective
 man pages.
 .Sh ENVIRONMENT
 .Bl -tag -width XDG_CONFIG_HOME
-.It Ev EDITOR
+.It Ev GIT_EDITOR, VISUAL, EDITOR
 If the gcli config file does not name an editor,
 .Nm
-may use this editor.
+will search the named environment variables in this order and use
+the first that is set as the editor.
 .It Ev XDG_CONFIG_HOME
 There should be a subdirectory called gcli in the directory this
 environment variable points to where
