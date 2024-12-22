@@ -16,6 +16,9 @@ This changelog does not follow semantic versioning.
   interactively.
   See `gcli-pulls(1)`.
 
+- Support for pull requests has been added to the interactive
+  `status` subcommand.
+
 ### Fixed
 
 - Fixed bad owner/repo when inferred repository information from
@@ -41,6 +44,9 @@ This changelog does not follow semantic versioning.
 
   Reported-by: Gavin-John Noonan <mail@gjnoonan.co.uk>
 
+- The interactive status subcommand now doesn't crash anymore
+  for release notifications on Github.
+
 ### Changed
 
 - gcli now uses `time_t` internally to represent timestamps. This
@@ -57,6 +63,13 @@ This changelog does not follow semantic versioning.
   - `$EDITOR`
 
   Submitted by: remph <lhr@disroot.org>
+
+- gcli now uses a dedicated type for paths to objects on forges
+  internally. This change is a quite intrusive in the code base and
+  has been tested extensively over the past month in real scenarios.
+  If you encounter bugs where things can't be found, command line
+  option parsing seems to not work correctly anymore or stuff is
+  submitted incorrectly otherwise please report a bug.
 
 ### Removed
 
