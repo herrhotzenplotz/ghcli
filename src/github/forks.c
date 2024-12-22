@@ -30,6 +30,8 @@
 #include <gcli/curl.h>
 #include <gcli/github/config.h>
 #include <gcli/github/forks.h>
+#include <gcli/github/repos.h>
+#include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 
 #include <pdjson/pdjson.h>
@@ -37,12 +39,11 @@
 #include <templates/github/forks.h>
 
 int
-github_get_forks(struct  gcli_ctx *ctx, char const *owner, char const *repo,
+github_get_forks(struct  gcli_ctx *ctx, struct gcli_path const *const path,
                  int const max, struct gcli_fork_list *const list)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
+	int rc = 0;
 
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &list->forks,
@@ -51,51 +52,44 @@ github_get_forks(struct  gcli_ctx *ctx, char const *owner, char const *repo,
 		.parse = (parsefn)(parse_github_forks),
 	};
 
-	*list = (struct gcli_fork_list) {0};
-
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf(
-		"%s/repos/%s/%s/forks",
-		gcli_get_apibase(ctx),
-		e_owner, e_repo);
-
-	free(e_owner);
-	free(e_repo);
+	rc = github_repo_make_url(ctx, path, &url, "/forks");
+	if (rc < 0)
+		return rc;
 
 	return gcli_fetch_list(ctx, url, &fl);
 }
 
 int
-github_fork_create(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   char const *_in)
+github_fork_create(struct gcli_ctx *ctx,
+                   struct gcli_path const *const repo_path,
+                   char const *const in)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	char *post_data = NULL;
-	sn_sv in = SV_NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
 
-	url = sn_asprintf("%s/repos/%s/%s/forks",
-	                  gcli_get_apibase(ctx),
-	                  e_owner, e_repo);
-	if (_in) {
-		in = gcli_json_escape(SV((char *)_in));
-		post_data = sn_asprintf("{\"organization\":\""SV_FMT"\"}",
-		                        SV_ARGS(in));
+	rc = github_repo_make_url(ctx, repo_path, &url, "/forks");
+	if (rc < 0)
+		return rc;
+
+	if (in) {
+		struct gcli_jsongen gen = {0};
+
+		gcli_jsongen_begin_object(&gen);
+		{
+			gcli_jsongen_objmember(&gen, "organization");
+			gcli_jsongen_string(&gen, in);
+		}
+		gcli_jsongen_end_object(&gen);
+
+		post_data = gcli_jsongen_to_string(&gen);
+		gcli_jsongen_free(&gen);
 	}
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, post_data, NULL, NULL);
 
-	free(in.data);
 	free(url);
-	free(e_owner);
-	free(e_repo);
 	free(post_data);
 
 	return rc;

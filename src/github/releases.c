@@ -30,6 +30,7 @@
 #include <gcli/curl.h>
 #include <gcli/github/config.h>
 #include <gcli/github/releases.h>
+#include <gcli/github/repos.h>
 #include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 #include <pdjson/pdjson.h>
@@ -39,12 +40,11 @@
 #include <templates/github/releases.h>
 
 int
-github_get_releases(struct gcli_ctx *ctx, char const *owner, char const *repo,
+github_get_releases(struct gcli_ctx *ctx, struct gcli_path const *const path,
                     int const max, struct gcli_release_list *const list)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
+	int rc = 0;
 
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &list->releases,
@@ -55,16 +55,9 @@ github_get_releases(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	*list = (struct gcli_release_list) {0};
 
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf(
-		"%s/repos/%s/%s/releases",
-		gcli_get_apibase(ctx),
-		e_owner, e_repo);
-
-	free(e_owner);
-	free(e_repo);
+	rc = github_repo_make_url(ctx, path, &url, "/releases");
+	if (rc < 0)
+		return rc;
 
 	return gcli_fetch_list(ctx, url, &fl);
 }
@@ -206,26 +199,19 @@ out:
 }
 
 int
-github_delete_release(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                      char const *id)
+github_delete_release(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                      char const *const id)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf(
-		"%s/repos/%s/%s/releases/%s",
-		gcli_get_apibase(ctx), e_owner, e_repo, id);
+	rc = github_repo_make_url(ctx, path, &url, "/releases/%s", id);
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
 
 	free(url);
-	free(e_owner);
-	free(e_repo);
 
 	return rc;
 }

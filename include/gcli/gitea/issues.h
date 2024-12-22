@@ -36,43 +36,43 @@
 
 #include <gcli/issues.h>
 
-int gitea_issues_search(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gitea_issue_make_url(struct gcli_ctx *ctx, struct gcli_path const *path,
+                         char **url, char const *suffix_fmt, ...);
+
+int gitea_issues_search(struct gcli_ctx *ctx, struct gcli_path const *path,
                         struct gcli_issue_fetch_details const *details, int max,
                         struct gcli_issue_list *out);
 
-int gitea_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id issue_number,
+int gitea_get_issue_summary(struct gcli_ctx *ctx, struct gcli_path const *path,
                             struct gcli_issue *out);
 
 int gitea_submit_issue(struct gcli_ctx *ctx,
                        struct gcli_submit_issue_options *opts,
                        struct gcli_issue *out);
 
-int gitea_issue_close(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                      gcli_id issue_number);
+int gitea_issue_close(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int gitea_issue_reopen(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                       gcli_id issue_number);
+int gitea_issue_reopen(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int gitea_issue_assign(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                       gcli_id issue_number, char const *assignee);
+int gitea_issue_assign(struct gcli_ctx *ctx, struct gcli_path const *path,
+                       char const *assignee);
 
-int gitea_issue_add_labels(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id issue_number,
+int gitea_issue_add_labels(struct gcli_ctx *ctx, struct gcli_path const *path,
                            char const *const labels[], size_t labels_size);
 
-int gitea_issue_remove_labels(struct gcli_ctx *ctx, char const *owner,
-                              char const *repo, gcli_id issue,
+int gitea_issue_remove_labels(struct gcli_ctx *ctx,
+                              struct gcli_path const *path,
                               char const *const labels[], size_t labels_size);
 
-int gitea_issue_set_milestone(struct gcli_ctx *ctx, char const *owner,
-                              char const *repo, gcli_id issue, gcli_id milestone);
+int gitea_issue_set_milestone(struct gcli_ctx *ctx,
+                              struct gcli_path const *issue_path,
+                              gcli_id milestone);
 
-int gitea_issue_clear_milestone(struct gcli_ctx *ctx, char const *owner,
-                                char const *repo, gcli_id issue);
+int gitea_issue_clear_milestone(struct gcli_ctx *ctx,
+                                struct gcli_path const *const issue_path);
 
-int gitea_issue_set_title(struct gcli_ctx *ctx, char const *const owner,
-                          char const *const repo, gcli_id const issue,
+int gitea_issue_set_title(struct gcli_ctx *ctx,
+                          struct gcli_path const *const issue_path,
                           char const *const new_title);
 
 #endif /* GITEA_ISSUES_H */

@@ -164,17 +164,15 @@ gcli_print_pulls(enum gcli_output_flags const flags,
 }
 
 int
-gcli_pull_print_diff(FILE *stream, char const *owner, char const *reponame,
-                     int pr_number)
+gcli_pull_print_diff(FILE *stream, struct gcli_path const *const path)
 {
-	return gcli_pull_get_diff(g_clictx, stream, owner, reponame, pr_number);
+	return gcli_pull_get_diff(g_clictx, stream, path);
 }
 
 int
-gcli_pull_print_patch(FILE *stream, char const *owner, char const *reponame,
-                      int pr_number)
+gcli_pull_print_patch(FILE *stream, struct gcli_path const *const path)
 {
-	return gcli_pull_get_patch(g_clictx, stream, owner, reponame, pr_number);
+	return gcli_pull_get_patch(g_clictx, stream, path);
 }
 
 void
@@ -270,7 +268,7 @@ gcli_print_checks_list(struct gcli_pull_checks_list const *const list)
 }
 
 int
-gcli_pull_checks(char const *owner, char const *repo, int pr_number)
+gcli_pull_checks(struct gcli_path const *const path)
 {
 	struct gcli_pull_checks_list list = {0};
 	gcli_forge_type t = gcli_config_get_forge_type(g_clictx);
@@ -280,7 +278,7 @@ gcli_pull_checks(char const *owner, char const *repo, int pr_number)
 	switch (t) {
 	case GCLI_FORGE_GITHUB:
 	case GCLI_FORGE_GITLAB: {
-		int rc = gcli_pull_get_checks(g_clictx, owner, repo, pr_number, &list);
+		int rc = gcli_pull_get_checks(g_clictx, path, &list);
 		if (rc < 0)
 			return rc;
 
@@ -349,13 +347,12 @@ gcli_print_commits(struct gcli_commit_list const *const list)
 }
 
 int
-gcli_pull_commits(char const *owner, char const *repo,
-                  int const pr_number)
+gcli_pull_commits(struct gcli_path const *const path)
 {
 	struct gcli_commit_list commits = {0};
 	int rc = 0;
 
-	rc = gcli_pull_get_commits(g_clictx, owner, repo, pr_number, &commits);
+	rc = gcli_pull_get_commits(g_clictx, path, &commits);
 	if (rc < 0)
 		return rc;
 
@@ -385,6 +382,22 @@ gcli_pull_get_user_message(struct gcli_submit_pull_options *opts)
 	return gcli_editor_get_user_message(g_clictx, pull_init_user_file, opts);
 }
 
+/* Hack to retrieve the owner / name of the target repository.
+ * We may have to change this thing in the future as it is kinda silly. */
+static char const *
+pull_request_target_owner(struct gcli_path const *const repo_path)
+{
+	assert(repo_path->kind == GCLI_PATH_DEFAULT);
+	return repo_path->data.as_default.owner;
+}
+
+static char const *
+pull_request_target_repo(struct gcli_path const *const repo_path)
+{
+	assert(repo_path->kind == GCLI_PATH_DEFAULT);
+	return repo_path->data.as_default.repo;
+}
+
 static int
 create_pull(struct gcli_submit_pull_options *const opts, int always_yes)
 {
@@ -398,8 +411,10 @@ create_pull(struct gcli_submit_pull_options *const opts, int always_yes)
 	        "HEAD    : %s\n"
 	        "IN      : %s/%s\n"
 	        "MESSAGE :\n%s\n",
-	        opts->title, opts->to, opts->from,
-	        opts->owner, opts->repo, opts->body ? opts->body : "No message.");
+	        opts->title, opts->target_branch, opts->from,
+	        pull_request_target_owner(&opts->target_repo),
+	        pull_request_target_repo(&opts->target_repo),
+	        opts->body ? opts->body : "No message.");
 
 	fputc('\n', stdout);
 
@@ -470,13 +485,15 @@ subcommand_pull_create_interactive(struct gcli_submit_pull_options *const opts)
 	}
 
 	/* PR Target */
-	if (!opts->owner)
-		opts->owner = gcli_cmd_prompt("Owner", deflt_owner);
+	if (!opts->target_repo.data.as_default.owner)
+		opts->target_repo.data.as_default.owner =
+			gcli_cmd_prompt("Owner", deflt_owner);
 
-	if (!opts->repo)
-		opts->repo = gcli_cmd_prompt("Repository", deflt_repo);
+	if (!opts->target_repo.data.as_default.repo)
+		opts->target_repo.data.as_default.repo =
+			gcli_cmd_prompt("Repository", deflt_repo);
 
-	if (!opts->to) {
+	if (!opts->target_branch) {
 		char *tmp = NULL;
 		sn_sv base;
 
@@ -484,7 +501,7 @@ subcommand_pull_create_interactive(struct gcli_submit_pull_options *const opts)
 		if (base.length != 0)
 			tmp = sn_sv_to_cstr(base);
 
-		opts->to = gcli_cmd_prompt("To Branch", tmp);
+		opts->target_branch = gcli_cmd_prompt("To Branch", tmp);
 
 		free(tmp);
 		tmp = NULL;
@@ -570,16 +587,16 @@ subcommand_pull_create(int argc, char *argv[])
 			opts.from = optarg;
 			break;
 		case 't':
-			opts.to = optarg;
+			opts.target_branch = optarg;
 			break;
 		case 'd':
 			opts.draft = 1;
 			break;
 		case 'o':
-			opts.owner = optarg;
+			opts.target_repo.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			opts.repo = optarg;
+			opts.target_repo.data.as_default.repo = optarg;
 			break;
 		case 'l': /* add a label */
 			opts.labels = realloc(
@@ -612,17 +629,17 @@ subcommand_pull_create(int argc, char *argv[])
 	if (!opts.from)
 		opts.from = pr_try_derive_head();
 
-	if (!opts.to) {
+	if (!opts.target_branch) {
 		sn_sv base = gcli_config_get_base(g_clictx);
 		if (base.length == 0)
 			errx(1,
 			     "gcli: error: PR base is missing. Please either specify "
 			     "--to branch-name or set pr.base in .gcli.");
 
-		opts.to = sn_sv_to_cstr(base);
+		opts.target_branch = sn_sv_to_cstr(base);
 	}
 
-	check_owner_and_repo(&opts.owner, &opts.repo);
+	check_path(&opts.target_repo);
 
 	if (argc != 1) {
 		fprintf(stderr, "gcli: error: Missing title to PR\n");
@@ -643,22 +660,18 @@ subcommand_pull_create(int argc, char *argv[])
 
 /* Forward declaration */
 static int handle_pull_actions(int argc, char *argv[],
-                               char const *owner,
-                               char const *repo,
-                               int pr);
+                               struct gcli_path const *const path);
 
 int
 subcommand_pulls(int argc, char *argv[])
 {
 	char *endptr = NULL;
-	char const *owner = NULL;
-	char const *repo = NULL;
-	struct gcli_pull_list pulls = {0};
-	int ch = 0;
-	int pr = -1;
-	int n = 30;                 /* how many prs to fetch at least */
-	struct gcli_pull_fetch_details details = {0};
 	enum gcli_output_flags flags = 0;
+	int ch = 0;
+	int n = 30;                 /* how many prs to fetch at least */
+	struct gcli_path pull = {0};
+	struct gcli_pull_fetch_details details = {0};
+	struct gcli_pull_list pulls = {0};
 
 	/* detect whether we wanna create a PR */
 	if (argc > 1 && (strcmp(argv[1], "create") == 0)) {
@@ -710,17 +723,17 @@ subcommand_pulls(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "+n:o:r:i:asA:L:M:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			pull.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			pull.data.as_default.repo = optarg;
 			break;
 		case 'i': {
-			pr = strtoul(optarg, &endptr, 10);
+			pull.data.as_default.id = strtoul(optarg, &endptr, 10);
 			if (endptr != (optarg + strlen(optarg)))
 				err(1, "gcli: error: cannot parse pr number »%s«", optarg);
 
-			if (pr <= 0)
+			if (pull.data.as_default.id == 0)
 				errx(1, "gcli: error: pr number is out of range");
 		} break;
 		case 'n': {
@@ -759,11 +772,11 @@ subcommand_pulls(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&pull);
 
 	/* In case no explicit PR number was specified, list all
 	 * open PRs and exit */
-	if (pr < 0) {
+	if (pull.data.as_default.id == 0) {
 		char *search_term = NULL;
 
 		/* Trailing arguments indicate a search term */
@@ -772,7 +785,7 @@ subcommand_pulls(int argc, char *argv[])
 
 		details.search_term = search_term;
 
-		if (gcli_search_pulls(g_clictx, owner, repo, &details, n, &pulls) < 0)
+		if (gcli_search_pulls(g_clictx, &pull, &details, n, &pulls) < 0)
 			errx(1, "gcli: error: could not fetch pull requests: %s",
 			     gcli_get_error(g_clictx));
 
@@ -793,14 +806,13 @@ subcommand_pulls(int argc, char *argv[])
 	}
 
 	/* Hand off to actions handling */
-	return handle_pull_actions(argc, argv, owner, repo, pr);
+	return handle_pull_actions(argc, argv, &pull);
 }
 
 struct action_ctx {
 	int argc;
 	char **argv;
-	char const *owner, *repo;
-	int pr;
+	struct gcli_path path;
 
 	/* For ease of handling and not making redundant calls to the API
 	 * we'll fetch the summary only if a command requires it. Then
@@ -816,7 +828,7 @@ action_ctx_ensure_pull(struct action_ctx *ctx)
 	if (ctx->fetched_pull)
 		return;
 
-	if (gcli_get_pull(g_clictx, ctx->owner, ctx->repo, ctx->pr, &ctx->pull) < 0)
+	if (gcli_get_pull(g_clictx, &ctx->path, &ctx->pull) < 0)
 		errx(1, "gcli: error: failed to fetch pull request data: %s",
 		     gcli_get_error(g_clictx));
 
@@ -838,13 +850,13 @@ action_all(struct action_ctx *ctx)
 
 	/* Commits */
 	puts("\nCOMMITS");
-	if (gcli_pull_commits(ctx->owner, ctx->repo, ctx->pr) < 0)
+	if (gcli_pull_commits(&ctx->path) < 0)
 		errx(1, "gcli: error: failed to fetch pull request checks: %s",
 		     gcli_get_error(g_clictx));
 
 	/* Checks */
 	puts("\nCHECKS");
-	if (gcli_pull_checks(ctx->owner, ctx->repo, ctx->pr) < 0)
+	if (gcli_pull_checks(&ctx->path) < 0)
 		errx(1, "gcli: error: failed to fetch pull request checks: %s",
 		     gcli_get_error(g_clictx));
 }
@@ -873,13 +885,13 @@ static void
 action_commits(struct action_ctx *const ctx)
 {
 	/* Does not require the summary */
-	gcli_pull_commits(ctx->owner, ctx->repo, ctx->pr);
+	gcli_pull_commits(&ctx->path);
 }
 
 static void
 action_diff(struct action_ctx *const ctx)
 {
-	if (gcli_pull_print_diff(stdout, ctx->owner, ctx->repo, ctx->pr) < 0) {
+	if (gcli_pull_print_diff(stdout, &ctx->path) < 0) {
 		errx(1, "gcli: error: failed to fetch diff: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -888,7 +900,7 @@ action_diff(struct action_ctx *const ctx)
 static void
 action_patch(struct action_ctx *const ctx)
 {
-	if (gcli_pull_print_patch(stdout, ctx->owner, ctx->repo, ctx->pr) < 0) {
+	if (gcli_pull_print_patch(stdout, &ctx->path) < 0) {
 		errx(1, "gcli: error: failed to fetch patch: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -898,7 +910,7 @@ action_patch(struct action_ctx *const ctx)
 static void
 action_comments(struct action_ctx *const ctx)
 {
-	if (gcli_pull_comments(ctx->owner, ctx->repo, ctx->pr) < 0) {
+	if (gcli_pull_comments(&ctx->path) < 0) {
 		errx(1, "gcli: error: failed to fetch pull comments: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -907,7 +919,7 @@ action_comments(struct action_ctx *const ctx)
 static void
 action_ci(struct action_ctx *const ctx)
 {
-	if (gcli_pull_checks(ctx->owner, ctx->repo, ctx->pr) < 0) {
+	if (gcli_pull_checks(&ctx->path) < 0) {
 		errx(1, "gcli: error: failed to fetch pull request checks: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -940,7 +952,7 @@ action_merge(struct action_ctx *const ctx)
 		}
 	}
 
-	if (gcli_pull_merge(g_clictx, ctx->owner, ctx->repo, ctx->pr, flags) < 0) {
+	if (gcli_pull_merge(g_clictx, &ctx->path, flags) < 0) {
 		errx(1, "gcli: error: failed to merge pull request: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -949,7 +961,7 @@ action_merge(struct action_ctx *const ctx)
 static void
 action_close(struct action_ctx *const ctx)
 {
-	if (gcli_pull_close(g_clictx, ctx->owner, ctx->repo, ctx->pr) < 0) {
+	if (gcli_pull_close(g_clictx, &ctx->path) < 0) {
 		errx(1, "gcli: error: failed to close pull request: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -958,7 +970,7 @@ action_close(struct action_ctx *const ctx)
 static void
 action_reopen(struct action_ctx *const ctx)
 {
-	if (gcli_pull_reopen(g_clictx, ctx->owner, ctx->repo, ctx->pr) < 0) {
+	if (gcli_pull_reopen(g_clictx, &ctx->path) < 0) {
 		errx(1, "gcli: error: failed to reopen pull request: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -994,8 +1006,8 @@ action_labels(struct action_ctx *const ctx)
 
 	/* actually go about deleting and adding the labels */
 	if (add_labels_size) {
-		rc = gcli_pull_add_labels(g_clictx, ctx->owner, ctx->repo, ctx->pr,
-		                          add_labels, add_labels_size);
+		rc = gcli_pull_add_labels(g_clictx, &ctx->path, add_labels,
+		                          add_labels_size);
 		if (rc < 0) {
 			errx(1, "gcli: error: failed to add labels: %s",
 			     gcli_get_error(g_clictx));
@@ -1003,7 +1015,7 @@ action_labels(struct action_ctx *const ctx)
 	}
 
 	if (remove_labels_size) {
-		rc = gcli_pull_remove_labels(g_clictx, ctx->owner, ctx->repo, ctx->pr,
+		rc = gcli_pull_remove_labels(g_clictx, &ctx->path,
 		                             remove_labels, remove_labels_size);
 
 		if (rc < 0) {
@@ -1032,7 +1044,7 @@ action_milestone(struct action_ctx *const ctx)
 	ctx->argv += 1;
 
 	if (strcmp(arg, "-d") == 0) {
-		if (gcli_pull_clear_milestone(g_clictx, ctx->owner, ctx->repo, ctx->pr) < 0) {
+		if (gcli_pull_clear_milestone(g_clictx, &ctx->path) < 0) {
 			errx(1, "gcli: error: failed to clear milestone: %s",
 			     gcli_get_error(g_clictx));
 		}
@@ -1048,8 +1060,7 @@ action_milestone(struct action_ctx *const ctx)
 			exit(EXIT_FAILURE);
 		}
 
-		rc = gcli_pull_set_milestone(g_clictx, ctx->owner, ctx->repo, ctx->pr,
-		                             milestone_id);
+		rc = gcli_pull_set_milestone(g_clictx, &ctx->path, milestone_id);
 		if (rc < 0) {
 			errx(1, "gcli: error: failed to set milestone: %s",
 			     gcli_get_error(g_clictx));
@@ -1068,8 +1079,7 @@ action_request_review(struct action_ctx *const ctx)
 		exit(EXIT_FAILURE);
 	}
 
-	rc = gcli_pull_add_reviewer(g_clictx, ctx->owner, ctx->repo, ctx->pr,
-	                            ctx->argv[1]);
+	rc = gcli_pull_add_reviewer(g_clictx, &ctx->path, ctx->argv[1]);
 	if (rc < 0) {
 		errx(1, "gcli: error: failed to request review: %s",
 		     gcli_get_error(g_clictx));
@@ -1090,8 +1100,7 @@ action_title(struct action_ctx *const ctx)
 		exit(EXIT_FAILURE);
 	}
 
-	rc = gcli_pull_set_title(g_clictx, ctx->owner, ctx->repo, ctx->pr,
-	                         ctx->argv[1]);
+	rc = gcli_pull_set_title(g_clictx, &ctx->path, ctx->argv[1]);
 	if (rc < 0) {
 		errx(1, "gcli: error: failed to update review title: %s",
 		     gcli_get_error(g_clictx));
@@ -1114,7 +1123,7 @@ action_review(struct action_ctx *ctx)
 	ctx->argc -= 1;
 	ctx->argv += 1;
 
-	do_review_session(ctx->owner, ctx->repo, ctx->pr);
+	do_review_session(&ctx->path);
 }
 
 static void
@@ -1127,7 +1136,7 @@ action_checkout(struct action_ctx *ctx)
 	if (rc < 0)
 		errx(1, "gcli: error: %s", gcli_get_error(g_clictx));
 
-	if (gcli_pull_checkout(g_clictx, remote, ctx->pr) < 0) {
+	if (gcli_pull_checkout(g_clictx, remote, &ctx->path) < 0) {
 		errx(1, "gcli: error: failed to checkout pull: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -1176,15 +1185,12 @@ find_action(char const *const name)
  * command line. Make sure that the usage at the top is consistent
  * with the actions implemented here. */
 static int
-handle_pull_actions(int argc, char *argv[], char const *owner, char const *repo,
-                    int pr)
+handle_pull_actions(int argc, char *argv[], struct gcli_path const *const path)
 {
 	struct action_ctx ctx = {
 		.argc = argc,
 		.argv = argv,
-		.owner = owner,
-		.repo = repo,
-		.pr = pr,
+		.path = *path,
 	};
 
 	/* Check if the user missed out on supplying actions */

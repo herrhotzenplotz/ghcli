@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,23 +27,43 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCLI_CMD_PIPELINES_H
-#define GCLI_CMD_PIPELINES_H
+#ifndef GCLI_PATH_H
+#define GCLI_PATH_H
 
 #include <gcli/gcli.h>
 
-#include <gcli/gitlab/pipelines.h>
+struct gcli_path {
+	gcli_forge_type forge_type;
+	enum {
+		GCLI_PATH_DEFAULT = 0,
+		GCLI_PATH_URL,
+		GCLI_PATH_BUGZILLA,
+		GCLI_PATH_ID,
+		GCLI_PATH_PID_ID,
+	} kind;
 
-void gitlab_print_pipelines(struct gitlab_pipeline_list const *const list);
+	union {
+		struct {
+			char *owner;
+			char *repo;
+			gcli_id id;
+		} as_default;
 
-int gitlab_mr_pipelines(struct gcli_path const *const path);
+		struct {
+			gcli_id project_id;
+			gcli_id id;
+		} as_pid_id;
 
-int gitlab_pipeline_jobs(char const *owner, char const *repo, long pipeline,
-                         int count);
-void gitlab_print_jobs(struct gitlab_job_list const *const list);
+		struct {
+			char *product;
+			char *component;
+		} as_bugzilla;
 
-void gitlab_print_job_status(struct gitlab_job const *const job);
+		gcli_id as_id;
+		char *as_url;
+	} data;
+};
 
-int subcommand_pipelines(int argc, char *argv[]);
+void gcli_path_free(struct gcli_path *);
 
-#endif /* GCLI_CMD_PIPELINES_H */
+#endif /* GCLI_PATH_H */

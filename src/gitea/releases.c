@@ -37,10 +37,11 @@
 #include <templates/github/releases.h>
 
 int
-gitea_get_releases(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   int const max, struct gcli_release_list *const list)
+gitea_get_releases(struct gcli_ctx *ctx,
+                   struct gcli_path const *const repo_path, int const max,
+                   struct gcli_release_list *const list)
 {
-	return github_get_releases(ctx, owner, repo, max, list);
+	return github_get_releases(ctx, repo_path, max, list);
 }
 
 static void
@@ -154,8 +155,8 @@ out:
 }
 
 int
-gitea_delete_release(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gitea_delete_release(struct gcli_ctx *ctx, struct gcli_path const *const path,
                      char const *id)
 {
-	return github_delete_release(ctx, owner, repo, id);
+	return github_delete_release(ctx, path, id);
 }

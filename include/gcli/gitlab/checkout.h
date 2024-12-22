@@ -30,6 +30,9 @@
 #ifndef GITLAB_CHECKOUT_H
 #define GITLAB_CHECKOUT_H
 
-int gitlab_mr_checkout(struct gcli_ctx *ctx, char const *remote, gcli_id pull);
+#include <gcli/path.h>
+
+int gitlab_mr_checkout(struct gcli_ctx *ctx, char const *remote,
+                       struct gcli_path const *path);
 
 #endif /* GITLAB_CHECKOUT_H */

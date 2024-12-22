@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,12 +31,63 @@
 #include <gcli/gitlab/api.h>
 #include <gcli/gitlab/config.h>
 #include <gcli/gitlab/issues.h>
+#include <gcli/gitlab/repos.h>
 #include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 
 #include <templates/gitlab/issues.h>
 
 #include <pdjson/pdjson.h>
+
+#include <assert.h>
+#include <stdarg.h>
+
+int
+gitlab_issue_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                      char **url, char const *const suffix_fmt, ...)
+{
+	char *suffix = NULL;
+	int rc = 0;
+	va_list vp;
+
+	va_start(vp, suffix_fmt);
+	suffix = sn_vasprintf(suffix_fmt, vp);
+	va_end(vp);
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner, *e_repo;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo = gcli_urlencode(path->data.as_default.repo);
+
+		*url = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid"%s",
+		                   gcli_get_apibase(ctx),
+		                   e_owner, e_repo, path->data.as_default.id,
+		                   suffix);
+
+		free(e_owner);
+		free(e_repo);
+	} break;
+	case GCLI_PATH_PID_ID: {
+		*url = sn_asprintf("%s/projects/%"PRIid"/issues/%"PRIid"%s",
+		                   gcli_get_apibase(ctx),
+		                   path->data.as_pid_id.project_id,
+		                   path->data.as_pid_id.id,
+		                   suffix);
+	} break;
+	case GCLI_PATH_URL: {
+		*url = sn_asprintf("%s%s", path->data.as_url, suffix);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "unsupported path type for gitlab issue");
+	} break;
+	}
+
+	free(suffix);
+
+	return rc;
+}
 
 /** Given the url fetch issues */
 int
@@ -53,21 +104,25 @@ gitlab_fetch_issues(struct gcli_ctx *ctx, char *url, int const max,
 	return gcli_fetch_list(ctx, url, &fl);
 }
 
+static int
+gitlab_issues_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                       char const *const suffix, char **url)
+{
+	int rc = 0;
+
+	rc = gitlab_repo_make_url(ctx, path, url, "/issues%s", suffix);
+
+	return rc;
+}
+
 int
-gitlab_issues_search(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gitlab_issues_search(struct gcli_ctx *ctx, struct gcli_path const *const path,
                      struct gcli_issue_fetch_details const *details,
                      int const max, struct gcli_issue_list *const out)
 {
-	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
-	char *e_author = NULL;
-	char *e_labels = NULL;
-	char *e_milestone = NULL;
-	char *e_search = NULL;
-
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
+	char *url = NULL, *e_author = NULL, *e_labels = NULL,
+	     *e_milestone = NULL, *e_search = NULL, *suffix = NULL;
+	int rc = 0;
 
 	if (details->author) {
 		char *tmp = gcli_urlencode(details->author);
@@ -103,18 +158,21 @@ gitlab_issues_search(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		free(tmp);
 	}
 
-	url = sn_asprintf("%s/projects/%s%%2F%s/issues%s%s%s%s%s",
-	                  gcli_get_apibase(ctx),
-	                  e_owner, e_repo, details->all ? "" : "?state=opened",
-	                  e_author ? e_author : "", e_labels ? e_labels : "",
-	                  e_milestone ? e_milestone : "",
-	                  e_search ? e_search : "");
+	suffix = sn_asprintf("%s%s%s%s%s", details->all ? "" : "?state=opened",
+	                     e_author ? e_author : "", e_labels ? e_labels : "",
+	                     e_milestone ? e_milestone : "",
+	                     e_search ? e_search : "");
+
+	rc = gitlab_issues_make_url(ctx, path, suffix, &url);
 
  	free(e_milestone);
  	free(e_author);
 	free(e_labels);
-	free(e_owner);
-	free(e_repo);
+	free(e_search);
+	free(suffix);
+
+	if (rc < 0)
+		return rc;
 
 	return gitlab_fetch_issues(ctx, url, max, out);
 }
@@ -140,23 +198,16 @@ gitlab_fetch_issue(struct gcli_ctx *ctx, char *url, struct gcli_issue *out)
 }
 
 int
-gitlab_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, gcli_id const issue_number,
+gitlab_get_issue_summary(struct gcli_ctx *ctx,
+                         struct gcli_path const *const path,
                          struct gcli_issue *const out)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid, gcli_get_apibase(ctx),
-	                  e_owner, e_repo, issue_number);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_issue_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	rc = gitlab_fetch_issue(ctx, url, out);
 
@@ -166,13 +217,18 @@ gitlab_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
 }
 
 static int
-gitlab_issue_patch_state(struct gcli_ctx *const ctx, char const *const owner,
-                         char const *const repo, gcli_id const issue,
+gitlab_issue_patch_state(struct gcli_ctx *const ctx,
+                         struct gcli_path const *const path,
                          char const *const new_state)
 {
-	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *url = NULL, *payload = NULL;
 	struct gcli_jsongen gen = {0};
 	int rc = 0;
+
+	/* Generate URL */
+	rc = gitlab_issue_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	/* Generate payload */
 	gcli_jsongen_init(&gen);
@@ -186,36 +242,24 @@ gitlab_issue_patch_state(struct gcli_ctx *const ctx, char const *const owner,
 	payload = gcli_jsongen_to_string(&gen);
 	gcli_jsongen_free(&gen);
 
-	/* Generate URL */
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url  = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid,
-	                   gcli_get_apibase(ctx), e_owner, e_repo, issue);
-
-	free(e_owner);
-	free(e_repo);
-
 	rc = gcli_fetch_with_method(ctx, "PUT", url, payload, NULL, NULL);
 
-	free(payload);
 	free(url);
+	free(payload);
 
 	return rc;
 }
 
 int
-gitlab_issue_close(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   gcli_id const issue)
+gitlab_issue_close(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	return gitlab_issue_patch_state(ctx, owner, repo, issue, "close");
+	return gitlab_issue_patch_state(ctx, path, "close");
 }
 
 int
-gitlab_issue_reopen(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id const issue)
+gitlab_issue_reopen(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	return gitlab_issue_patch_state(ctx, owner, repo, issue, "reopen");
+	return gitlab_issue_patch_state(ctx, path, "reopen");
 }
 
 int
@@ -275,10 +319,11 @@ gitlab_perform_submit_issue(struct gcli_ctx *const ctx,
 }
 
 int
-gitlab_issue_assign(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id const issue_number, char const *assignee)
+gitlab_issue_assign(struct gcli_ctx *ctx,
+                    struct gcli_path const *const issue_path,
+                    char const *assignee)
 {
-	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *url = NULL, *payload = NULL;
 	struct gcli_jsongen gen = {0};
 	int assignee_uid = -1;
 	int rc = 0;
@@ -286,6 +331,11 @@ gitlab_issue_assign(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	assignee_uid = gitlab_user_id(ctx, assignee);
 	if (assignee_uid < 0)
 		return assignee_uid;
+
+	/* Generate URL */
+	rc = gitlab_issue_make_url(ctx, issue_path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	/* Generate payload */
 	gcli_jsongen_init(&gen);
@@ -301,15 +351,6 @@ gitlab_issue_assign(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	payload = gcli_jsongen_to_string(&gen);
 	gcli_jsongen_free(&gen);
 
-	/* Generate URL */
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid, gcli_get_apibase(ctx),
-	                  e_owner, e_repo, issue_number);
-	free(e_owner);
-	free(e_repo);
-
 	rc = gcli_fetch_with_method(ctx, "PUT", url, payload, NULL, NULL);
 
 	free(url);
@@ -319,15 +360,19 @@ gitlab_issue_assign(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 static int
-gitlab_issues_update_labels(struct gcli_ctx *const ctx, char const *const owner,
-                            char const *const repo, gcli_id const issue,
+gitlab_issues_update_labels(struct gcli_ctx *const ctx,
+                            struct gcli_path const *const path,
                             char const *const labels[], size_t const labels_size,
                             char const *const what)
 {
-	char *url = NULL, *payload = NULL, *label_list = NULL, *e_owner = NULL,
-	     *e_repo = NULL;
+	char *url = NULL, *payload = NULL, *label_list = NULL;
 	struct gcli_jsongen gen = {0};
 	int rc = 0;
+
+	/* Generate URL */
+	rc = gitlab_issue_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	/* Generate payload. For some reason Gitlab expects us to put a
 	 * comma-separated list of issues into a JSON string. Figures...*/
@@ -346,16 +391,6 @@ gitlab_issues_update_labels(struct gcli_ctx *const ctx, char const *const owner,
 	payload = gcli_jsongen_to_string(&gen);
 	gcli_jsongen_free(&gen);
 
-	/* Generate URL */
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid, gcli_get_apibase(ctx),
-	                  e_owner, e_repo, issue);
-
-	free(e_owner);
-	free(e_repo);
-
 	rc = gcli_fetch_with_method(ctx, "PUT", url, payload, NULL, NULL);
 
 	free(url);
@@ -365,50 +400,45 @@ gitlab_issues_update_labels(struct gcli_ctx *const ctx, char const *const owner,
 }
 
 int
-gitlab_issue_add_labels(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, gcli_id const issue,
+gitlab_issue_add_labels(struct gcli_ctx *ctx, struct gcli_path const *const path,
                         char const *const labels[], size_t const labels_size)
 {
-	return gitlab_issues_update_labels(ctx, owner, repo, issue, labels,
-	                                   labels_size, "add_labels");
+	return gitlab_issues_update_labels(ctx, path, labels, labels_size, "add_labels");
 }
 
 int
-gitlab_issue_remove_labels(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id const issue,
+gitlab_issue_remove_labels(struct gcli_ctx *ctx,
+                           struct gcli_path const *const path,
                            char const *const labels[], size_t const labels_size)
 {
-	return gitlab_issues_update_labels(ctx, owner, repo, issue, labels,
-	                                   labels_size, "remove_labels");
+	return gitlab_issues_update_labels(ctx, path, labels, labels_size, "remove_labels");
 }
 
 int
-gitlab_issue_set_milestone(struct gcli_ctx *ctx, char const *const owner,
-                           char const *const repo, gcli_id const issue,
+gitlab_issue_set_milestone(struct gcli_ctx *ctx,
+                           struct gcli_path const *const issue_path,
                            gcli_id const milestone)
 {
-	char *url, *e_owner, *e_repo;
+	char *url;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-	url = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid"?milestone_id=%"PRIid,
-	                  gcli_get_apibase(ctx), e_owner, e_repo, issue, milestone);
+	rc = gitlab_issue_make_url(ctx, issue_path, &url,
+	                           "?milestone_url=%"PRIid, milestone);
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_with_method(ctx, "PUT", url, NULL, NULL, NULL);
 
 	free(url);
-	free(e_repo);
-	free(e_owner);
 
 	return rc;
 }
 
 int
-gitlab_issue_clear_milestone(struct gcli_ctx *ctx, char const *const owner,
-                             char const *const repo, gcli_id const issue)
+gitlab_issue_clear_milestone(struct gcli_ctx *ctx,
+                             struct gcli_path const *const issue_path)
 {
-	char *url, *e_owner, *e_repo;
+	char *url;
 	char const *payload;
 	int rc;
 
@@ -424,38 +454,32 @@ gitlab_issue_clear_milestone(struct gcli_ctx *ctx, char const *const owner,
 	 * inquisition. Fear and surprise. That's the Gitlab API in a
 	 * nutshell.*/
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-	url = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid, gcli_get_apibase(ctx),
-	                  e_owner, e_repo, issue);
+	rc = gitlab_issue_make_url(ctx, issue_path, &url, "");
+	if (rc < 0)
+		return rc;
+
 	payload = "{ \"milestone_id\": null }";
 
 	rc = gcli_fetch_with_method(ctx, "PUT", url, payload, NULL, NULL);
 
 	free(url);
-	free(e_repo);
-	free(e_owner);
 
 	return rc;
 }
 
 int
-gitlab_issue_set_title(struct gcli_ctx *ctx, char const *owner,
-                       char const *repo, gcli_id issue,
+gitlab_issue_set_title(struct gcli_ctx *ctx,
+                       struct gcli_path const *const issue_path,
                        char const *const new_title)
 {
-	char *url, *e_owner, *e_repo, *payload;
+	char *url, *payload;
 	struct gcli_jsongen gen = {0};
 	int rc;
 
 	/* Generate url */
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/issues/%"PRIid,
-	                  gcli_get_apibase(ctx), e_owner, e_repo, issue);
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_issue_make_url(ctx, issue_path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	/* Generate payload */
 	gcli_jsongen_init(&gen);

@@ -35,14 +35,15 @@
 #endif
 
 #include <gcli/labels.h>
+#include <gcli/path.h>
 
-int gitlab_get_labels(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gitlab_get_labels(struct gcli_ctx *ctx, struct gcli_path const *path,
                       int max, struct gcli_label_list *out);
 
-int gitlab_create_label(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, struct gcli_label *label);
+int gitlab_create_label(struct gcli_ctx *ctx, struct gcli_path const *path,
+                        struct gcli_label *label);
 
-int gitlab_delete_label(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, char const *label);
+int gitlab_delete_label(struct gcli_ctx *ctx, struct gcli_path const *path,
+                        char const *label);
 
 #endif /* GITLAB_LABELS_H */

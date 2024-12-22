@@ -65,9 +65,9 @@ gcli_repos_free(struct gcli_repo_list *const list)
 }
 
 int
-gcli_repo_delete(struct gcli_ctx *ctx, char const *owner, char const *repo)
+gcli_repo_delete(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	gcli_null_check_call(repo_delete, ctx, owner, repo);
+	gcli_null_check_call(repo_delete, ctx, path);
 }
 
 int
@@ -78,8 +78,8 @@ gcli_repo_create(struct gcli_ctx *ctx, struct gcli_repo_create_options const *op
 }
 
 int
-gcli_repo_set_visibility(struct gcli_ctx *ctx, char const *const owner,
-                         char const *const repo, gcli_repo_visibility vis)
+gcli_repo_set_visibility(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                         gcli_repo_visibility vis)
 {
-	gcli_null_check_call(repo_set_visibility, ctx, owner, repo, vis);
+	gcli_null_check_call(repo_set_visibility, ctx, path, vis);
 }

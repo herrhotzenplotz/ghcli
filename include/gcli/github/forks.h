@@ -35,11 +35,13 @@
 #endif
 
 #include <gcli/forks.h>
+#include <gcli/path.h>
 
-int github_get_forks(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int github_get_forks(struct gcli_ctx *ctx, struct gcli_path const *repo_path,
                      int max, struct gcli_fork_list *out);
 
-int github_fork_create(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int github_fork_create(struct gcli_ctx *ctx,
+                       struct gcli_path const *repo_path,
                        char const *_in);
 
 #endif /* GITHUB_FORKS_H */

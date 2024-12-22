@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,12 +39,5 @@
 int gitlab_get_notifications(struct gcli_ctx *ctx, int max,
                              struct gcli_notification_list *out);
 int gitlab_notification_mark_as_read(struct gcli_ctx *ctx, char const *id);
-int gitlab_notification_get_issue(struct gcli_ctx *ctx,
-                                  struct gcli_notification const *const notification,
-                                  struct gcli_issue *out);
-
-int gitlab_notification_get_comments(struct gcli_ctx *ctx,
-                                     struct gcli_notification const *const notifcation,
-                                     struct gcli_comment_list *const out);
 
 #endif /* GITLAB_STATUS_H */

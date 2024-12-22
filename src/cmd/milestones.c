@@ -133,9 +133,7 @@ gcli_print_milestone(struct gcli_milestone const *const milestone)
 }
 
 static int handle_milestone_actions(int argc, char *argv[],
-                                    char const *const owner,
-                                    char const *const repo,
-                                    int const milestone_id);
+                                    struct gcli_path const *path);
 
 
 static int
@@ -208,8 +206,8 @@ subcommand_milestone_create(int argc, char *argv[])
 int
 subcommand_milestones(int argc, char *argv[])
 {
-	int ch, rc, max = 30, milestone_id = -1;
-	char const *repo, *owner;
+	int ch, rc, max = 30;
+	struct gcli_path path = {0};
 	struct option const options[] = {
 		{ .name = "owner",
 		  .has_arg = required_argument,
@@ -236,16 +234,13 @@ subcommand_milestones(int argc, char *argv[])
 	}
 
 	/* Proceed with fetching information */
-	repo = NULL;
-	owner = NULL;
-
 	while ((ch = getopt_long(argc, argv, "+o:r:n:i:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o': {
-			owner = optarg;
+			path.data.as_default.owner = optarg;
 		} break;
 		case 'r': {
-			repo = optarg;
+			path.data.as_default.repo = optarg;
 		} break;
 		case 'n': {
 			char *endptr;
@@ -255,12 +250,9 @@ subcommand_milestones(int argc, char *argv[])
 		} break;
 		case 'i': {
 			char *endptr;
-			milestone_id = strtol(optarg, &endptr, 10);
+			path.data.as_default.id = strtoul(optarg, &endptr, 10);
 			if (endptr != optarg + strlen(optarg))
 				errx(1, "gcli: error: cannot parse milestone id");
-
-			if (milestone_id < 0)
-				errx(1, "gcli: error: milestone id must not be negative");
 		} break;
 		default: {
 			usage();
@@ -272,12 +264,12 @@ subcommand_milestones(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&path);
 
-	if (milestone_id < 0) {
+	if (path.data.as_default.id == 0) {
 		struct gcli_milestone_list list = {0};
 
-		rc = gcli_get_milestones(g_clictx, owner, repo, max, &list);
+		rc = gcli_get_milestones(g_clictx, &path, max, &list);
 		if (rc < 0) {
 			errx(1, "gcli: error: cannot get list of milestones: %s",
 			     gcli_get_error(g_clictx));
@@ -290,13 +282,11 @@ subcommand_milestones(int argc, char *argv[])
 		return 0;
 	}
 
-	return handle_milestone_actions(argc, argv, owner, repo, milestone_id);
+	return handle_milestone_actions(argc, argv, &path);
 }
 
 static void
-ensure_milestone(char const *const owner,
-                 char const *const repo,
-                 int const milestone_id,
+ensure_milestone(struct gcli_path const *const path,
                  int *const fetched_milestone,
                  struct gcli_milestone *const milestone)
 {
@@ -305,9 +295,9 @@ ensure_milestone(char const *const owner,
 	if (*fetched_milestone)
 		return;
 
-	rc = gcli_get_milestone(g_clictx, owner, repo, milestone_id, milestone);
+	rc = gcli_get_milestone(g_clictx, path, milestone);
 	if (rc < 0)
-		errx(1, "gcli: error: could not get milestone %d: %s", milestone_id,
+		errx(1, "gcli: error: could not get milestone: %s",
 		     gcli_get_error(g_clictx));
 
 	*fetched_milestone = 1;
@@ -315,9 +305,7 @@ ensure_milestone(char const *const owner,
 
 static int
 handle_milestone_actions(int argc, char *argv[],
-                         char const *const owner,
-                         char const *const repo,
-                         int const milestone_id)
+                         struct gcli_path const *const path)
 {
 	struct gcli_milestone milestone = {0};
 	int fetched_milestone = 0;
@@ -341,12 +329,10 @@ handle_milestone_actions(int argc, char *argv[],
 
 			struct gcli_issue_list issues = {0};
 
-			ensure_milestone(owner, repo, milestone_id,
-			                 &fetched_milestone, &milestone);
+			ensure_milestone(path, &fetched_milestone, &milestone);
 
 			gcli_print_milestone(&milestone);
-			rc = gcli_milestone_get_issues(g_clictx, owner, repo, milestone_id,
-			                               &issues);
+			rc = gcli_milestone_get_issues(g_clictx, path, &issues);
 
 			if (rc < 0) {
 				errx(1, "gcli: error: failed to fetch issues: %s",
@@ -362,8 +348,7 @@ handle_milestone_actions(int argc, char *argv[],
 			struct gcli_issue_list issues = {0};
 
 			/* Fetch list of issues associated with milestone */
-			rc = gcli_milestone_get_issues(g_clictx, owner, repo, milestone_id,
-			                               &issues);
+			rc = gcli_milestone_get_issues(g_clictx, path, &issues);
 			if (rc < 0) {
 				errx(1, "gcli: error: failed to fetch issues: %s",
 				     gcli_get_error(g_clictx));
@@ -378,15 +363,14 @@ handle_milestone_actions(int argc, char *argv[],
 		} else if (strcmp(action, "status") == 0) {
 
 			/* Make sure we have the milestone data */
-			ensure_milestone(owner, repo, milestone_id,
-			                 &fetched_milestone, &milestone);
+			ensure_milestone(path, &fetched_milestone, &milestone);
 
 			/* Print meta */
 			gcli_print_milestone(&milestone);
 		} else if (strcmp(action, "delete") == 0) {
 
 			/* Delete the milestone */
-			if (gcli_delete_milestone(g_clictx, owner, repo, milestone_id) < 0) {
+			if (gcli_delete_milestone(g_clictx, path) < 0) {
 				errx(1, "gcli: error: could not delete milestone: %s",
 				     gcli_get_error(g_clictx));
 			}
@@ -403,8 +387,7 @@ handle_milestone_actions(int argc, char *argv[],
 			new_date = shift(&argc, &argv);
 
 			/* Do it! */
-			rc = gcli_milestone_set_duedate(g_clictx, owner, repo, milestone_id,
-			                                new_date);
+			rc = gcli_milestone_set_duedate(g_clictx, path, new_date);
 			if (rc < 0) {
 				errx(1, "gcli: error: could not update milestone due date: %s",
 				     gcli_get_error(g_clictx));;

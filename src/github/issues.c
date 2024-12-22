@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,9 +35,10 @@
 #include <gcli/json_util.h>
 #include <pdjson/pdjson.h>
 
-#include <assert.h>
-
 #include <templates/github/issues.h>
+
+#include <assert.h>
+#include <stdarg.h>
 
 /* TODO: Remove this function once we use linked lists for storing
  *       issues.
@@ -67,6 +68,46 @@ github_hack_fixup_issues_that_are_actually_pulls(struct gcli_issue **list, size_
 }
 
 int
+github_issue_make_url(struct gcli_ctx *const ctx,
+                      struct gcli_path const *const path,
+                      char **const url, char const *const fmt, ...)
+{
+	int rc = 0;
+	va_list vp;
+	char *suffix = NULL;
+
+	va_start(vp, fmt);
+	suffix = sn_vasprintf(fmt, vp);
+	va_end(vp);
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner, *e_repo;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo = gcli_urlencode(path->data.as_default.repo);
+
+		*url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid"%s",
+		                   gcli_get_apibase(ctx), e_owner, e_repo,
+		                   path->data.as_default.id, suffix);
+
+		free(e_owner);
+		free(e_repo);
+	} break;
+	case GCLI_PATH_URL: {
+		*url = sn_asprintf("%s%s", path->data.as_url, suffix);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "unsupported path kind");
+	} break;
+	}
+
+	free(suffix);
+
+	return rc;
+}
+
+int
 github_fetch_issues(struct gcli_ctx *ctx, char *url, int const max,
                     struct gcli_issue_list *const out)
 {
@@ -82,13 +123,13 @@ github_fetch_issues(struct gcli_ctx *ctx, char *url, int const max,
 }
 
 static int
-get_milestone_id(struct gcli_ctx *ctx, char const *owner, char const *repo,
+get_milestone_id(struct gcli_ctx *ctx, struct gcli_path const *const path,
                  char const *milestone_name, gcli_id *out)
 {
 	int rc = 0;
 	struct gcli_milestone_list list = {0};
 
-	rc = github_get_milestones(ctx, owner, repo, -1, &list);
+	rc = github_get_milestones(ctx, path, -1, &list);
 	if (rc < 0)
 		return rc;
 
@@ -108,8 +149,8 @@ get_milestone_id(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 static int
-parse_github_milestone(struct gcli_ctx *ctx, char const *owner,
-                       char const *repo, char const *milestone, gcli_id *out)
+parse_github_milestone(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                       char const *milestone, gcli_id *out)
 {
 	char *endptr = NULL;
 	size_t const m_len = strlen(milestone);
@@ -120,12 +161,12 @@ parse_github_milestone(struct gcli_ctx *ctx, char const *owner,
 	if (endptr == milestone + m_len)
 		return 0;
 
-	return get_milestone_id(ctx, owner, repo, milestone, out);
+	return get_milestone_id(ctx, path, milestone, out);
 }
 
 /* Search issues with a search term */
 static int
-search_issues(struct gcli_ctx *ctx, char const *owner, char const *repo,
+search_issues(struct gcli_ctx *ctx, struct gcli_path const *const path,
               struct gcli_issue_fetch_details const *details, int const max,
               struct gcli_issue_list *const out)
 {
@@ -137,6 +178,11 @@ search_issues(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	(void) max;
 
+	/* Search only works with default paths */
+	if (path->kind != GCLI_PATH_DEFAULT)
+		return gcli_error(ctx, "unsupported path kind for issue search");
+
+	/* Encode the various fields */
 	if (details->milestone)
 		milestone = sn_asprintf("milestone:%s", details->milestone);
 
@@ -146,7 +192,9 @@ search_issues(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	if (details->label)
 		label = sn_asprintf("label:%s", details->label);
 
-	query_string = sn_asprintf("repo:%s/%s is:issue%s %s %s %s %s", owner, repo,
+	query_string = sn_asprintf("repo:%s/%s is:issue%s %s %s %s %s",
+	                           path->data.as_default.owner,
+	                           path->data.as_default.repo,
 	                           details->all ? "" : " is:open",
 	                           milestone ? milestone : "", author ? author : "",
 	                           label ? label : "", details->search_term);
@@ -177,24 +225,51 @@ error_fetch:
 	return rc;
 }
 
+/** Routine for generating a URL for getting issues of a repository given its
+ * path. */
+static int
+github_issues_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                       char const *const suffix, char **out)
+{
+	int rc = 0;
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner, *e_repo;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo = gcli_urlencode(path->data.as_default.repo);
+		*out = sn_asprintf("%s/repos/%s/%s/issues%s",
+		                   gcli_get_apibase(ctx),
+		                   e_owner, e_repo, suffix);
+		free(e_owner);
+		free(e_repo);
+	} break;
+	case GCLI_PATH_URL: {
+		*out = sn_asprintf("%s%s", path->data.as_url, suffix);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "unsupported path kind for issue list");
+	} break;
+	}
+
+	return rc;
+}
+
 /* Optimised routine for issues without a search term */
 static int
-get_issues(struct gcli_ctx *ctx, char const *owner, char const *repo,
+get_issues(struct gcli_ctx *ctx, struct gcli_path const *const path,
            struct gcli_issue_fetch_details const *details, int const max,
            struct gcli_issue_list *const out)
 {
-	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
-	char *e_author = NULL;
-	char *e_label = NULL;
-	char *e_milestone = NULL;
+	char *url = NULL, *e_author = NULL, *e_label = NULL,
+	     *e_milestone = NULL, *suffix = NULL;
+	int rc = 0;
 
 	if (details->milestone) {
 		gcli_id milestone_id;
-		int rc;
 
-		rc = parse_github_milestone(ctx, owner, repo, details->milestone, &milestone_id);
+		rc = parse_github_milestone(ctx, path, details->milestone, &milestone_id);
 		if (rc < 0)
 			return rc;
 
@@ -213,37 +288,36 @@ get_issues(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		free(tmp);
 	}
 
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf(
-		"%s/repos/%s/%s/issues?state=%s%s%s%s",
-		gcli_get_apibase(ctx),
-		e_owner, e_repo,
+	suffix = sn_asprintf(
+		"?state=%s%s%s%s",
 		details->all ? "all" : "open",
 		e_author ? e_author : "",
 		e_label ? e_label : "",
 		e_milestone ? e_milestone : "");
 
+	rc = github_issues_make_url(ctx, path, suffix, &url);
+
 	free(e_milestone);
 	free(e_author);
 	free(e_label);
-	free(e_owner);
-	free(e_repo);
+	free(suffix);
+
+	if (rc < 0)
+		return rc;
 
 	return github_fetch_issues(ctx, url, max, out);
 }
 
 int
-github_issues_search(struct gcli_ctx *ctx, char const *owner, char const *repo,
+github_issues_search(struct gcli_ctx *ctx, struct gcli_path const *const path,
                      struct gcli_issue_fetch_details const *details,
                      int const max, struct gcli_issue_list *const out)
 {
 
 	if (details->search_term)
-		return search_issues(ctx, owner, repo, details, max, out);
+		return search_issues(ctx, path, details, max, out);
 	else
-		return get_issues(ctx, owner, repo, details, max, out);
+		return get_issues(ctx, path, details, max, out);
 }
 
 int
@@ -269,24 +343,15 @@ github_fetch_issue(struct gcli_ctx *const ctx, char *const url,
 }
 
 int
-github_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, gcli_id const issue_number,
+github_get_issue_summary(struct gcli_ctx *ctx, struct gcli_path const *const path,
                          struct gcli_issue *const out)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid,
-	                  gcli_get_apibase(ctx), e_owner, e_repo,
-	                  issue_number);
-
-	free(e_owner);
-	free(e_repo);
+	rc = github_issue_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	rc = github_fetch_issue(ctx, url, out);
 	free(url);
@@ -295,42 +360,37 @@ github_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
 }
 
 static int
-github_issue_patch_state(struct gcli_ctx *ctx, char const *const owner,
-                         char const *const repo, gcli_id const issue,
+github_issue_patch_state(struct gcli_ctx *ctx,
+                         struct gcli_path const *const path,
                          char const *const state)
 {
-	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *url = NULL, *payload = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
+	rc = github_issue_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid, gcli_get_apibase(ctx),
-	                  e_owner, e_repo, issue);
 	payload = sn_asprintf("{ \"state\": \"%s\"}", state);
 
 	rc = gcli_fetch_with_method(ctx, "PATCH", url, payload, NULL, NULL);
 
 	free(payload);
 	free(url);
-	free(e_owner);
-	free(e_repo);
 
 	return rc;
 }
 
 int
-github_issue_close(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   gcli_id const issue)
+github_issue_close(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	return github_issue_patch_state(ctx, owner, repo, issue, "closed");
+	return github_issue_patch_state(ctx, path, "closed");
 }
 
 int
-github_issue_reopen(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id const issue)
+github_issue_reopen(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	return github_issue_patch_state(ctx, owner, repo, issue, "open");
+	return github_issue_patch_state(ctx, path, "open");
 }
 
 int
@@ -392,12 +452,17 @@ github_perform_submit_issue(struct gcli_ctx *const ctx,
 }
 
 int
-github_issue_assign(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id const issue_number, char const *assignee)
+github_issue_assign(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                    char const *assignee)
 {
 	struct gcli_jsongen gen = {0};
-	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *url = NULL, *payload = NULL;
 	int rc = 0;
+
+	/* Generate URL */
+	rc = github_issue_make_url(ctx, path, &url, "/assignees");
+	if (rc < 0)
+		return rc;
 
 	/* Generate Payload */
 	gcli_jsongen_init(&gen);
@@ -413,16 +478,6 @@ github_issue_assign(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	payload = gcli_jsongen_to_string(&gen);
 	gcli_jsongen_free(&gen);
 
-	/* Generate URL */
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid"/assignees",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, issue_number);
-
-	free(e_owner);
-	free(e_repo);
-
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 
 	free(url);
@@ -432,19 +487,19 @@ github_issue_assign(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 int
-github_issue_add_labels(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, gcli_id const issue,
+github_issue_add_labels(struct gcli_ctx *ctx,
+                        struct gcli_path const *const issue_path,
                         char const *const labels[], size_t const labels_size)
 {
-	char *data = NULL;
-	char *url = NULL;
+	char *data = NULL, *url = NULL;
 	int rc = 0;
 	struct gcli_jsongen gen = {0};
 
 	assert(labels_size > 0);
 
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid"/labels",
-	                  gcli_get_apibase(ctx), owner, repo, issue);
+	rc = github_issue_make_url(ctx, issue_path, &url, "/labels");
+	if (rc < 0)
+		return rc;
 
 	gcli_jsongen_init(&gen);
 	gcli_jsongen_begin_object(&gen);
@@ -470,12 +525,11 @@ github_issue_add_labels(struct gcli_ctx *ctx, char const *owner,
 }
 
 int
-github_issue_remove_labels(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id const issue,
+github_issue_remove_labels(struct gcli_ctx *ctx,
+                           struct gcli_path const *const path,
                            char const *const labels[], size_t const labels_size)
 {
-	char *url = NULL;
-	char *e_label = NULL;
+	char *url = NULL, *e_label = NULL;
 	int rc = 0;
 
 	if (labels_size != 1) {
@@ -485,10 +539,9 @@ github_issue_remove_labels(struct gcli_ctx *ctx, char const *owner,
 
 	e_label = gcli_urlencode(labels[0]);
 
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid"/labels/%s",
-	                  gcli_get_apibase(ctx), owner, repo, issue, e_label);
-
-	rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
+	rc = github_issue_make_url(ctx, path, &url, "/labels/%s", e_label);
+	if (rc == 0)
+		rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
 
 	free(url);
 	free(e_label);
@@ -497,19 +550,16 @@ github_issue_remove_labels(struct gcli_ctx *ctx, char const *owner,
 }
 
 int
-github_issue_set_milestone(struct gcli_ctx *ctx, char const *const owner,
-                           char const *const repo, gcli_id const issue,
+github_issue_set_milestone(struct gcli_ctx *ctx,
+                           struct gcli_path const *const issue_path,
                            gcli_id const milestone)
 {
-	char *url, *e_owner, *e_repo, *body;
+	char *url, *body;
 	int rc;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid,
-	                  gcli_get_apibase(ctx),
-	                  e_owner, e_repo, issue);
+	rc = github_issue_make_url(ctx, issue_path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	body = sn_asprintf("{ \"milestone\": %"PRIid" }", milestone);
 
@@ -517,56 +567,44 @@ github_issue_set_milestone(struct gcli_ctx *ctx, char const *const owner,
 
 	free(body);
 	free(url);
-	free(e_repo);
-	free(e_owner);
 
 	return rc;
 }
 
 int
-github_issue_clear_milestone(struct gcli_ctx *ctx, char const *const owner,
-                             char const *const repo, gcli_id const issue)
+github_issue_clear_milestone(struct gcli_ctx *ctx,
+                             struct gcli_path const *const path)
 {
-	char *url, *e_owner, *e_repo;
-	char const *payload;
+	char *url = NULL;
+	char const *payload = NULL;
 	int rc;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid,
-	                  gcli_get_apibase(ctx),
-	                  e_owner, e_repo, issue);
+	rc = github_issue_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	payload = "{ \"milestone\": null }";
 
 	rc = gcli_fetch_with_method(ctx, "PATCH", url, payload, NULL, NULL);
 
 	free(url);
-	free(e_repo);
-	free(e_owner);
 
 	return rc;
 }
 
 int
-github_issue_set_title(struct gcli_ctx *ctx, char const *const owner,
-                       char const *const repo, gcli_id const issue,
+github_issue_set_title(struct gcli_ctx *ctx,
+                       struct gcli_path const *const issue_path,
                        char const *const new_title)
 {
-	char *url, *e_owner, *e_repo, *payload;
+	char *url, *payload;
 	struct gcli_jsongen gen = {0};
 	int rc;
 
 	/* Generate url */
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid, gcli_get_apibase(ctx),
-	                  e_owner, e_repo, issue);
-
-	free(e_owner);
-	free(e_repo);
+	rc = github_issue_make_url(ctx, issue_path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	/* Generate payload */
 	gcli_jsongen_init(&gen);

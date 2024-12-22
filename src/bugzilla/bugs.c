@@ -42,7 +42,7 @@
 #include <assert.h>
 
 int
-bugzilla_get_bugs(struct gcli_ctx *ctx, char const *product, char const *component,
+bugzilla_get_bugs(struct gcli_ctx *ctx, struct gcli_path const *const path,
                   struct gcli_issue_fetch_details const *details, int const max,
                   struct gcli_issue_list *out)
 {
@@ -51,14 +51,17 @@ bugzilla_get_bugs(struct gcli_ctx *ctx, char const *product, char const *compone
 	struct gcli_fetch_buffer buffer = {0};
 	int rc = 0;
 
-	if (product) {
-		char *tmp = gcli_urlencode(product);
+	if (path->kind != GCLI_PATH_BUGZILLA)
+		return gcli_error(ctx, "unsupported path kind for bugzilla");
+
+	if (path->data.as_bugzilla.product) {
+		char *tmp = gcli_urlencode(path->data.as_bugzilla.product);
 		e_product = sn_asprintf("&product=%s", tmp);
 		free(tmp);
 	}
 
-	if (component) {
-		char *tmp = gcli_urlencode(component);
+	if (path->data.as_bugzilla.component) {
+		char *tmp = gcli_urlencode(path->data.as_bugzilla.component);
 		e_component = sn_asprintf("&component=%s", tmp);
 		free(tmp);
 	}
@@ -109,8 +112,8 @@ bugzilla_get_bugs(struct gcli_ctx *ctx, char const *product, char const *compone
 }
 
 int
-bugzilla_bug_get_comments(struct gcli_ctx *const ctx, char const *const product,
-                          char const *const component, gcli_id const bug_id,
+bugzilla_bug_get_comments(struct gcli_ctx *const ctx,
+                          struct gcli_path const *const path,
                           struct gcli_comment_list *out)
 {
 	int rc = 0;
@@ -118,11 +121,11 @@ bugzilla_bug_get_comments(struct gcli_ctx *const ctx, char const *const product,
 	struct json_stream stream = {0};
 	char *url = NULL;
 
-	(void) product;
-	(void) component;
+	if (path->kind != GCLI_PATH_ID)
+		return gcli_error(ctx, "bad path kind for Bugzilla comments");
 
 	url = sn_asprintf("%s/rest/bug/%"PRIid"/comment?include_fields=_all",
-	                  gcli_get_apibase(ctx), bug_id);
+	                  gcli_get_apibase(ctx), path->data.as_id);
 
 	rc = gcli_fetch(ctx, url, NULL, &buffer);
 	if (rc < 0)
@@ -141,10 +144,10 @@ error_fetch:
 }
 
 int
-bugzilla_bug_get_comment(struct gcli_ctx *const ctx, char const *const product,
-                         char const *const component,
+bugzilla_bug_get_comment(struct gcli_ctx *const ctx,
+                         struct gcli_path const *const target,
                          enum comment_target_type const target_type,
-                         gcli_id const bug_id, gcli_id const comment_id,
+                         gcli_id const comment_id,
                          struct gcli_comment *const out)
 {
 	char *url = NULL;
@@ -152,10 +155,8 @@ bugzilla_bug_get_comment(struct gcli_ctx *const ctx, char const *const product,
 	struct gcli_fetch_buffer buffer = {0};
 	struct json_stream stream = {0};
 
-	(void) product;
-	(void) component;
+	(void) target;
 	(void) target_type;
-	(void) bug_id;
 
 	url = sn_asprintf("%s/rest/bug/comment/%"PRIid"?include_fields=_all",
 	                  gcli_get_apibase(ctx), comment_id);
@@ -205,18 +206,20 @@ error_fetch:
 }
 
 int
-bugzilla_get_bug(struct gcli_ctx *ctx, char const *product,
-                 char const *component, gcli_id bug_id, struct gcli_issue *out)
+bugzilla_get_bug(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                 struct gcli_issue *out)
 {
 	int rc = 0;
 	char *url;
 	struct gcli_fetch_buffer buffer = {0};
 	struct gcli_issue_list list = {0};
 	struct json_stream stream = {0};
+	gcli_id bug_id;
 
-	/* XXX should we warn if product or component is set? */
-	(void) product;
-	(void) component;
+	if (path->kind != GCLI_PATH_ID)
+		return gcli_error(ctx, "Getting a single bug on Bugzilla requires an ID path");
+
+	bug_id = path->data.as_id;
 
 	url = sn_asprintf("%s/rest/bug?limit=1&id=%"PRIid, gcli_get_apibase(ctx), bug_id);
 	rc = gcli_fetch(ctx, url, NULL, &buffer);
@@ -259,8 +262,8 @@ error_fetch:
 }
 
 int
-bugzilla_bug_get_attachments(struct gcli_ctx *ctx, char const *const product,
-                             char const *const component, gcli_id const bug_id,
+bugzilla_bug_get_attachments(struct gcli_ctx *ctx,
+                             struct gcli_path const *const bug_path,
                              struct gcli_attachment_list *const out)
 {
 	int rc = 0;
@@ -268,11 +271,11 @@ bugzilla_bug_get_attachments(struct gcli_ctx *ctx, char const *const product,
 	struct gcli_fetch_buffer buffer = {0};
 	struct json_stream stream = {0};
 
-	(void) product;
-	(void) component;
+	if (bug_path->kind != GCLI_PATH_ID)
+		return gcli_error(ctx, "Getting bug attachments requires a ID path");
 
 	url = sn_asprintf("%s/rest/bug/%"PRIid"/attachment",
-	                  gcli_get_apibase(ctx), bug_id);
+	                  gcli_get_apibase(ctx), bug_path->data.as_id);
 
 	rc = gcli_fetch(ctx, url, NULL, &buffer);
 	if (rc < 0)
@@ -393,14 +396,16 @@ bugzilla_bug_submit(struct gcli_ctx *const ctx,
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, _buffer);
 	if (out && rc == 0) {
 		struct json_stream stream = {0};
-		gcli_id id = 0;
+		struct gcli_path bug_id_path = {0};
 
 		json_open_buffer(&stream, buffer.data, buffer.length);
-		rc = parse_bugzilla_bug_creation_result(ctx, &stream, &id);
+		rc = parse_bugzilla_bug_creation_result(
+			ctx, &stream, &bug_id_path.data.as_id);
 		json_close(&stream);
 
+		bug_id_path.kind = GCLI_PATH_ID;
 		if (rc == 0)
-			rc = bugzilla_get_bug(ctx, NULL, NULL, id, out);
+			rc = bugzilla_get_bug(ctx, &bug_id_path, out);
 	}
 
 	gcli_fetch_buffer_free(&buffer);

@@ -161,8 +161,6 @@ github_forge_descriptor =
 	/* Notifications */
 	.get_notifications         = github_get_notifications,
 	.notification_mark_as_read = github_notification_mark_as_read,
-	.notification_get_issue    = github_notification_get_issue,
-	.notification_get_comments = github_notification_get_comments,
 
 	/* Internal stuff */
 	.get_api_error_string      = github_api_error_string,
@@ -256,9 +254,7 @@ gitlab_forge_descriptor =
 
 	/* Notifications */
 	.get_notifications         = gitlab_get_notifications,
-	.notification_get_issue    = gitlab_notification_get_issue,
 	.notification_mark_as_read = gitlab_notification_mark_as_read,
-	.notification_get_comments = gitlab_notification_get_comments,
 
 	/* Internal stuff */
 	.get_api_error_string      = gitlab_api_error_string,

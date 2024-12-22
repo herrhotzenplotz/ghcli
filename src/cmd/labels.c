@@ -100,7 +100,7 @@ static int
 subcommand_labels_delete(int argc, char *argv[])
 {
 	int ch, rc;
-	char const *owner = NULL, *repo = NULL;
+	struct gcli_path repo_path = {0};
 	const struct option options[] = {
 		{.name = "repo",  .has_arg = required_argument, .val = 'r'},
 		{.name = "owner", .has_arg = required_argument, .val = 'o'},
@@ -110,10 +110,10 @@ subcommand_labels_delete(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "o:r:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			repo_path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			repo_path.data.as_default.repo = optarg;
 			break;
 		case '?':
 		default:
@@ -125,7 +125,7 @@ subcommand_labels_delete(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&repo_path);
 
 	if (argc != 1) {
 		fprintf(stderr, "gcli: error: missing label to delete\n");
@@ -133,7 +133,7 @@ subcommand_labels_delete(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	rc = gcli_delete_label(g_clictx, owner, repo, argv[0]);
+	rc = gcli_delete_label(g_clictx, &repo_path, argv[0]);
 	if (rc < 0) {
 		fprintf(stderr, "gcli: error: couldn't delete label\n");
 		return EXIT_FAILURE;
@@ -145,10 +145,10 @@ subcommand_labels_delete(int argc, char *argv[])
 static int
 subcommand_labels_create(int argc, char *argv[])
 {
+	int ch;
 	struct gcli_label label = {0};
 	struct gcli_label_list labels = { .labels = &label, .labels_size = 1 };
-	char const *owner = NULL, *repo = NULL;
-	int         ch;
+	struct gcli_path repo_path = {0};
 
 	const struct option options[] = {
 		{.name = "repo",        .has_arg = required_argument, .val = 'r'},
@@ -162,10 +162,10 @@ subcommand_labels_create(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "n:o:r:d:c:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			repo_path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			repo_path.data.as_default.repo = optarg;
 			break;
 		case 'c': {
 			char *endptr = NULL;
@@ -192,7 +192,7 @@ subcommand_labels_create(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&repo_path);
 
 	if (!label.name) {
 		fprintf(stderr, "gcli: error: missing name for label\n");
@@ -206,7 +206,7 @@ subcommand_labels_create(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (gcli_create_label(g_clictx, owner, repo, &label) < 0) {
+	if (gcli_create_label(g_clictx, &repo_path, &label) < 0) {
 		errx(1, "gcli: error: failed to create label: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -233,7 +233,7 @@ subcommand_labels(int argc, char *argv[])
 {
 	int count = 30;
 	int ch;
-	char const *owner = NULL, *repo = NULL;
+	struct gcli_path repo_path = {0};
 	struct gcli_label_list labels = {0};
 
 	const struct option options[] = {
@@ -253,10 +253,10 @@ subcommand_labels(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "n:o:r:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			repo_path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			repo_path.data.as_default.repo = optarg;
 			break;
 		case 'n': {
 			char *endptr = NULL;
@@ -286,9 +286,9 @@ subcommand_labels(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&repo_path);
 
-	if (gcli_get_labels(g_clictx, owner, repo, count, &labels) < 0)
+	if (gcli_get_labels(g_clictx, &repo_path, count, &labels) < 0)
 		errx(1, "gcli: error: could not fetch list of labels: %s",
 		     gcli_get_error(g_clictx));
 

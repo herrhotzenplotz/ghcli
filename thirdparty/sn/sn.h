@@ -102,6 +102,8 @@ sn_min(int x, int y)
 /* string functions */
 char *sn_strndup (const char *it, size_t len);
 char *sn_asprintf(const char *fmt, ...) PRINTF_FORMAT(1, 2);
+char *sn_vasprintf(char const *const fmt, va_list vp);
+
 // modifies the underlying string
 char *sn_strip_suffix(char *it, const char *suffix);
 

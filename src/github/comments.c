@@ -29,6 +29,8 @@
 
 #include <gcli/github/comments.h>
 #include <gcli/github/config.h>
+#include <gcli/github/issues.h>
+#include <gcli/github/repos.h>
 #include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 
@@ -42,9 +44,11 @@ github_perform_submit_comment(struct gcli_ctx *ctx,
 {
 	int rc = 0;
 	struct gcli_jsongen gen = {0};
-	char *e_owner = gcli_urlencode(opts->owner);
-	char *e_repo = gcli_urlencode(opts->repo);
 	char *payload = NULL, *url = NULL;
+
+	rc = github_issue_make_url(ctx, &opts->target, &url, "/comments");
+	if (rc < 0)
+		return rc;
 
 	gcli_jsongen_init(&gen);
 	gcli_jsongen_begin_object(&gen);
@@ -57,15 +61,10 @@ github_perform_submit_comment(struct gcli_ctx *ctx,
 	payload = gcli_jsongen_to_string(&gen);
 	gcli_jsongen_free(&gen);
 
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid"/comments",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, opts->target_id);
-
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 
 	free(payload);
 	free(url);
-	free(e_owner);
-	free(e_repo);
 
 	return rc;
 }
@@ -85,21 +84,15 @@ github_fetch_comments(struct gcli_ctx *ctx, char *url,
 }
 
 int
-github_get_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id const issue, struct gcli_comment_list *const out)
+github_get_comments(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                    struct gcli_comment_list *const out)
 {
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	char *url = NULL;
+	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/issues/%"PRIid"/comments",
-	                  gcli_get_apibase(ctx),
-	                  e_owner, e_repo, issue);
-	free(e_owner);
-	free(e_repo);
+	rc = github_issue_make_url(ctx, path, &url, "/comments");
+	if (rc < 0)
+		return rc;
 
 	return github_fetch_comments(ctx, url, out);
 }
@@ -126,25 +119,19 @@ github_fetch_comment(struct gcli_ctx *ctx, char const *const url,
 }
 
 int
-github_get_comment(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   enum comment_target_type target_type, gcli_id target_id,
-                   gcli_id comment_id, struct gcli_comment *out)
+github_get_comment(struct gcli_ctx *ctx, struct gcli_path const *const target,
+                   enum comment_target_type target_type, gcli_id comment_id,
+                   struct gcli_comment *out)
 {
-	char *e_owner = NULL, *e_repo = NULL, *url = NULL;
+	char *url = NULL;
 	int rc = 0;
 
 	(void) target_type; /* target type and id ignored as pull requests are issues on GitHub */
-	(void) target_id;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/issues/comments/%"PRIid,
-	                  gcli_get_apibase(ctx), e_owner, e_repo,
-	                  comment_id);
-
-	free(e_owner);
-	free(e_repo);
+	rc = github_repo_make_url(ctx, target, &url, "/issues/comments/%"PRIid,
+	                          comment_id);
+	if (rc < 0)
+		return rc;
 
 	rc = github_fetch_comment(ctx, url, out);
 

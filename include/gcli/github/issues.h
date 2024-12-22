@@ -37,50 +37,49 @@
 #include <gcli/curl.h>
 #include <gcli/issues.h>
 
+int github_issue_make_url(struct gcli_ctx *ctx, struct gcli_path const *,
+                          char **url, char const *suffix_fmt, ...);
+
 int github_fetch_issues(struct gcli_ctx *ctx, char *url, int max,
                         struct gcli_issue_list *out);
 
-int github_issues_search(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int github_issues_search(struct gcli_ctx *ctx, struct gcli_path const *const path,
                          struct gcli_issue_fetch_details const *details, int max,
                          struct gcli_issue_list *out);
 
 int github_fetch_issue(struct gcli_ctx *ctx, char *url, struct gcli_issue *out);
 
-int github_get_issue_summary(struct gcli_ctx *ctx, char const *owner,
-                             char const *repo, gcli_id issue_number,
+int github_get_issue_summary(struct gcli_ctx *ctx, struct gcli_path const *path,
                              struct gcli_issue *out);
 
-int github_issue_close(struct gcli_ctx *ctx, char const *owner,
-                       char const *repo, gcli_id issue_number);
+int github_issue_close(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int github_issue_reopen(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, gcli_id issue_number);
+int github_issue_reopen(struct gcli_ctx *ctx, struct gcli_path const *path);
 
 int github_perform_submit_issue(struct gcli_ctx *ctx,
                                 struct gcli_submit_issue_options *opts,
                                 struct gcli_issue *out);
 
-int github_issue_assign(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, gcli_id issue_number,
+int github_issue_assign(struct gcli_ctx *ctx, struct gcli_path const *issue_path,
                         char const *assignee);
 
-int github_issue_add_labels(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id issue,
+int github_issue_add_labels(struct gcli_ctx *ctx,
+                            struct gcli_path const *issue_path,
                             char const *const labels[], size_t labels_size);
 
-int github_issue_remove_labels(struct gcli_ctx *ctx, char const *owner,
-                               char const *repo, gcli_id issue,
+int github_issue_remove_labels(struct gcli_ctx *ctx,
+                               struct gcli_path const *path,
                                char const *const labels[], size_t labels_size);
 
-int github_issue_set_milestone(struct gcli_ctx *ctx, char const *owner,
-                               char const *repo, gcli_id issue,
+int github_issue_set_milestone(struct gcli_ctx *ctx,
+                               struct gcli_path const *issue_path,
                                gcli_id milestone);
 
-int github_issue_clear_milestone(struct gcli_ctx *ctx, char const *owner,
-                                 char const *repo, gcli_id issue);
+int github_issue_clear_milestone(struct gcli_ctx *ctx,
+                                 struct gcli_path const *issue_path);
 
-int github_issue_set_title(struct gcli_ctx *ctx, char const *const owner,
-                           char const *const repo, gcli_id const issue,
+int github_issue_set_title(struct gcli_ctx *ctx,
+                           struct gcli_path const *const issue_path,
                            char const *const new_title);
 
 #endif /* GCLI_ISSUES_H */

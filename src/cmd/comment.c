@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -118,9 +118,15 @@ comment_init(struct gcli_ctx *ctx, FILE *f, void *_data)
 		f,
 		"! Enter your comment above, save and exit.\n"
 		"! All lines with a leading '!' are discarded and will not\n"
-		"! appear in your comment.\n"
-		"! COMMENT IN : %s/%s %s #%"PRIid"\n",
-		sctx->opts.owner, sctx->opts.repo, target_type, sctx->opts.target_id);
+		"! appear in your comment.\n");
+
+	/* XXX */
+	if (sctx->opts.target.kind == GCLI_PATH_DEFAULT) {
+		fprintf(f, "! COMMENT IN : %s/%s %s #%"PRIid"\n",
+		        sctx->opts.target.data.as_default.owner,
+		        sctx->opts.target.data.as_default.repo, target_type,
+		        sctx->opts.target.data.as_default.id);
+	}
 }
 
 static char *
@@ -141,11 +147,7 @@ comment_submit(struct submit_ctx *sctx, int always_yes)
 	if (message == NULL)
 		errx(1, "gcli: empty message. aborting.");
 
-	fprintf(
-		stdout,
-		"You will be commenting the following in %s/%s #%"PRIid":\n",
-		sctx->opts.owner, sctx->opts.repo, sctx->opts.target_id);
-
+	fprintf(stdout, "You will be commenting the following:\n");
 	gcli_pretty_print(sctx->opts.message, 4, 80, stdout);
 
 	if (!always_yes) {
@@ -162,12 +164,12 @@ comment_submit(struct submit_ctx *sctx, int always_yes)
 }
 
 int
-gcli_issue_comments(char const *owner, char const *repo, int const issue)
+gcli_issue_comments(struct gcli_path const *const path)
 {
 	struct gcli_comment_list list = {0};
 	int rc = 0;
 
-	rc = gcli_get_issue_comments(g_clictx, owner, repo, issue, &list);
+	rc = gcli_get_issue_comments(g_clictx, path, &list);
 	if (rc < 0)
 		return rc;
 
@@ -178,12 +180,12 @@ gcli_issue_comments(char const *owner, char const *repo, int const issue)
 }
 
 int
-gcli_pull_comments(char const *owner, char const *repo, int const pull)
+gcli_pull_comments(struct gcli_path const *const pull_path)
 {
 	struct gcli_comment_list list = {0};
 	int rc = 0;
 
-	rc = gcli_get_pull_comments(g_clictx, owner, repo, pull, &list);
+	rc = gcli_get_pull_comments(g_clictx, pull_path, &list);
 	if (rc < 0)
 		return rc;
 
@@ -257,10 +259,10 @@ subcommand_comment(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "yr:o:i:p:R:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'r':
-			 sctx.opts.repo = optarg;
+			sctx.opts.target.data.as_default.repo = optarg;
 			break;
 		case 'o':
-			sctx.opts.owner = optarg;
+			sctx.opts.target.data.as_default.owner = optarg;
 			break;
 		case 'p':
 			sctx.opts.target_type = PR_COMMENT;
@@ -269,7 +271,7 @@ subcommand_comment(int argc, char *argv[])
 			sctx.opts.target_type = ISSUE_COMMENT;
 		parse_target_id: {
 				char *endptr;
-				sctx.opts.target_id = strtoul(optarg, &endptr, 10);
+				sctx.opts.target.data.as_default.id = strtoul(optarg, &endptr, 10);
 				if (endptr != optarg + strlen(optarg))
 					err(1, "gcli: error: Cannot parse issue/PR number");
 			} break;
@@ -291,18 +293,18 @@ subcommand_comment(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&sctx.opts.owner, &sctx.opts.repo);
+	check_path(&sctx.opts.target);
 
-	if (!sctx.opts.target_id) {
+	if (!sctx.opts.target.data.as_default.id) {
 		fprintf(stderr, "gcli: error: missing issue/PR number (use -i/-p)\n");
 		usage();
 		return EXIT_FAILURE;
 	}
 
 	if (reply_to_id) {
-		rc = gcli_get_comment(g_clictx, sctx.opts.owner, sctx.opts.repo,
-                              sctx.opts.target_type, sctx.opts.target_id,
-		                      reply_to_id, &sctx.reply_comment);
+		rc = gcli_get_comment(g_clictx, &sctx.opts.target,
+		                      sctx.opts.target_type, reply_to_id,
+		                      &sctx.reply_comment);
 
 		if (rc < 0) {
 			errx(1, "gcli: error: failed to fetch comment for reply: %s",

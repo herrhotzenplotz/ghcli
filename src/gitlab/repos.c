@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,24 +38,21 @@
 #include <templates/gitlab/repos.h>
 
 #include <assert.h>
+#include <stdarg.h>
 
 int
-gitlab_get_repo(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gitlab_get_repo(struct gcli_ctx *ctx, struct gcli_path const *const path,
                 struct gcli_repo *const out)
 {
 	/* GET /projects/:id */
 	char *url = NULL;
 	struct gcli_fetch_buffer buffer = {0};
 	struct json_stream stream = {0};
-	char *e_owner = {0};
-	char *e_repo = {0};
 	int rc;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s", gcli_get_apibase(ctx),
-	                  e_owner, e_repo);
+	rc = gitlab_repo_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch(ctx, url, NULL, &buffer);
 
@@ -66,8 +63,6 @@ gitlab_get_repo(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	}
 
 	gcli_fetch_buffer_free(&buffer);
-	free(e_owner);
-	free(e_repo);
 	free(url);
 
 	return rc;
@@ -114,24 +109,18 @@ gitlab_get_repos(struct gcli_ctx *ctx, char const *owner, int const max,
 }
 
 int
-gitlab_repo_delete(struct gcli_ctx *ctx, char const *owner, char const *repo)
+gitlab_repo_delete(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s", gcli_get_apibase(ctx),
-	                  e_owner, e_repo);
+	rc = gitlab_repo_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
 
 	free(url);
-	free(e_owner);
-	free(e_repo);
 
 	return rc;
 }
@@ -183,11 +172,11 @@ gitlab_repo_create(struct gcli_ctx *ctx, struct gcli_repo_create_options const *
 }
 
 int
-gitlab_repo_set_visibility(struct gcli_ctx *ctx, char const *const owner,
-                           char const *const repo, gcli_repo_visibility vis)
+gitlab_repo_set_visibility(struct gcli_ctx *ctx,
+                           struct gcli_path const *const path,
+                           gcli_repo_visibility vis)
 {
 	char *url;
-	char *e_owner, *e_repo;
 	char const *vis_str;
 	char *payload;
 	int rc;
@@ -204,20 +193,55 @@ gitlab_repo_set_visibility(struct gcli_ctx *ctx, char const *const owner,
 		return gcli_error(ctx, "bad visibility level");
 	}
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s", gcli_get_apibase(ctx), e_owner,
-	                  e_repo);
+	rc = gitlab_repo_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	payload = sn_asprintf("{ \"visibility\": \"%s\" }", vis_str);
 
 	rc = gcli_fetch_with_method(ctx, "PUT", url, payload, NULL, NULL);
 
 	free(payload);
-	free(e_owner);
-	free(e_repo);
 	free(url);
+
+	return rc;
+}
+
+int
+gitlab_repo_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                     char **url, char const *const suffix_fmt, ...)
+{
+	char *suffix = NULL;
+	int rc = 0;
+	va_list vp;
+
+	va_start(vp, suffix_fmt);
+	suffix = sn_vasprintf(suffix_fmt, vp);
+	va_end(vp);
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner, *e_repo = NULL;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo = gcli_urlencode(path->data.as_default.repo);
+
+		*url = sn_asprintf("%s/projects/%s%%2F%s%s",
+		                   gcli_get_apibase(ctx), e_owner, e_repo,
+		                   suffix);
+
+		free(e_owner);
+		free(e_repo);
+	} break;
+	case GCLI_PATH_URL: {
+		*url = sn_asprintf("%s%s", path->data.as_url, suffix);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "unsupported path type for gitlab repos");
+	} break;
+	}
+
+	free(suffix);
 
 	return rc;
 }

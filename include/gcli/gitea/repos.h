@@ -46,10 +46,13 @@ int gitea_repo_create(struct gcli_ctx *ctx,
                       struct gcli_repo_create_options const *options,
                       struct gcli_repo *out);
 
-int gitea_repo_delete(struct gcli_ctx *ctx, char const *owner, char const *repo);
+int gitea_repo_delete(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int gitea_repo_set_visibility(struct gcli_ctx *ctx, char const *const owner,
-                              char const *const repo,
+int gitea_repo_set_visibility(struct gcli_ctx *ctx,
+                              struct gcli_path const *path,
                               gcli_repo_visibility vis);
+
+int gitea_repo_make_url(struct gcli_ctx *ctx, struct gcli_path const *path,
+                        char **url, char const *suffix_fmt, ...);
 
 #endif /* GITEA_REPOS_H */

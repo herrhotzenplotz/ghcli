@@ -37,52 +37,47 @@
 #include <gcli/curl.h>
 #include <gcli/pulls.h>
 
-int gitea_search_pulls(struct gcli_ctx *ctx, char const *owner,
-                       char const *repo,
+int gitea_search_pulls(struct gcli_ctx *ctx, struct gcli_path const *path,
                        struct gcli_pull_fetch_details const *details,
                        int const max, struct gcli_pull_list *const out);
 
-int gitea_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   gcli_id pr_number, struct gcli_pull *out);
+int gitea_get_pull(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                   struct gcli_pull *out);
 
-int gitea_get_pull_commits(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id pr_number,
+int gitea_get_pull_commits(struct gcli_ctx *ctx,
+                           struct gcli_path const *path,
                            struct gcli_commit_list *out);
 
 int gitea_pull_submit(struct gcli_ctx *ctx, struct gcli_submit_pull_options *opts);
 
-int gitea_pull_merge(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                     gcli_id pr_number, enum gcli_merge_flags flags);
+int gitea_pull_merge(struct gcli_ctx *ctx,
+                     struct gcli_path const *path,
+                     enum gcli_merge_flags flags);
 
-int gitea_pull_close(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                     gcli_id pr_number);
+int gitea_pull_close(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int gitea_pull_reopen(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                      gcli_id pr_number);
+int gitea_pull_reopen(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int gitea_pull_get_diff(struct gcli_ctx *ctx, FILE *stream, char const *owner,
-                        char const *repo, gcli_id pr_number);
+int gitea_pull_get_diff(struct gcli_ctx *ctx, FILE *stream,
+                        struct gcli_path const *const path);
 
-int gitea_pull_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
-                         char const *repo, gcli_id pr_number);
+int gitea_pull_get_patch(struct gcli_ctx *ctx, FILE *stream,
+                         struct gcli_path const *pull_path);
 
-int gitea_pull_get_checks(struct gcli_ctx *ctx, char const *owner,
-                          char const *repo, gcli_id pr_number,
+int gitea_pull_get_checks(struct gcli_ctx *ctx, struct gcli_path const *path,
                           struct gcli_pull_checks_list *out);
 
-int gitea_pull_set_milestone(struct gcli_ctx *ctx, char const *owner,
-                             char const *repo, gcli_id pr_number,
+int gitea_pull_set_milestone(struct gcli_ctx *ctx,
+                             struct gcli_path const *const pull_path,
                              gcli_id milestone_id);
 
-int gitea_pull_clear_milestone(struct gcli_ctx *ctx, char const *owner,
-                               char const *repo, gcli_id pr_number);
+int gitea_pull_clear_milestone(struct gcli_ctx *ctx,
+                               struct gcli_path const *const pull_path);
 
-int gitea_pull_add_reviewer(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id pr_number,
+int gitea_pull_add_reviewer(struct gcli_ctx *ctx, struct gcli_path const *path,
                             char const *username);
 
-int gitea_pull_set_title(struct gcli_ctx *ctx, char const *const owner,
-                         char const *const repo, gcli_id pull,
+int gitea_pull_set_title(struct gcli_ctx *ctx, struct gcli_path const *path,
                          char const *const title);
 
 #endif /* GITEA_PULLS_H */

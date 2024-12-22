@@ -79,11 +79,6 @@ gcli_print_notifications(struct gcli_notification_list const *const list)
 		       list->notifications[i].repository,
 		       gcli_notification_target_type_str(list->notifications[i].type));
 
-		/* XXX what about target_id being zero? does any forge generate
-		 *     zero for valid IDs? */
-		if (list->notifications[i].target.id)
-			printf(" %"PRIid, list->notifications[i].target.id);
-
 		printf(" - %s", list->notifications[i].date);
 
 		if (list->notifications[i].reason)

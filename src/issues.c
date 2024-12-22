@@ -72,33 +72,30 @@ gcli_issues_free(struct gcli_issue_list *const list)
 }
 
 int
-gcli_issues_search(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gcli_issues_search(struct gcli_ctx *ctx, struct gcli_path const *const path,
                    struct gcli_issue_fetch_details const *details, int const max,
                    struct gcli_issue_list *const out)
 {
-	gcli_null_check_call(search_issues, ctx, owner, repo, details, max, out);
+	gcli_null_check_call(search_issues, ctx, path, details, max, out);
 }
 
 int
-gcli_get_issue(struct gcli_ctx *ctx, char const *owner, char const *repo,
-               gcli_id const issue_number, struct gcli_issue *const out)
+gcli_get_issue(struct gcli_ctx *ctx, struct gcli_path const *const path,
+               struct gcli_issue *const out)
 {
-	gcli_null_check_call(get_issue_summary, ctx, owner, repo, issue_number,
-	                     out);
+	gcli_null_check_call(get_issue_summary, ctx, path, out);
 }
 
 int
-gcli_issue_close(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                 gcli_id const issue_number)
+gcli_issue_close(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	gcli_null_check_call(issue_close, ctx, owner, repo, issue_number);
+	gcli_null_check_call(issue_close, ctx, path);
 }
 
 int
-gcli_issue_reopen(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                  gcli_id const issue_number)
+gcli_issue_reopen(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	gcli_null_check_call(issue_reopen, ctx, owner, repo, issue_number);
+	gcli_null_check_call(issue_reopen, ctx, path);
 }
 
 int
@@ -108,60 +105,57 @@ gcli_issue_submit(struct gcli_ctx *ctx, struct gcli_submit_issue_options *opts)
 }
 
 int
-gcli_issue_assign(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                  gcli_id const issue_number, char const *assignee)
+gcli_issue_assign(struct gcli_ctx *ctx, struct gcli_path const *issue_path,
+                  char const *assignee)
 {
-	gcli_null_check_call(issue_assign, ctx, owner, repo, issue_number,
-	                     assignee);
+	gcli_null_check_call(issue_assign, ctx, issue_path, assignee);
 }
 
 int
-gcli_issue_add_labels(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                      gcli_id const issue, char const *const labels[],
-                      size_t const labels_size)
+gcli_issue_add_labels(struct gcli_ctx *ctx,
+                      struct gcli_path const *const issue_path,
+                      char const *const labels[], size_t const labels_size)
 {
-	gcli_null_check_call(issue_add_labels, ctx, owner, repo, issue, labels,
+	gcli_null_check_call(issue_add_labels, ctx, issue_path, labels,
 	                     labels_size);
 }
 
 int
-gcli_issue_remove_labels(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, gcli_id const issue,
+gcli_issue_remove_labels(struct gcli_ctx *ctx,
+                         struct gcli_path const *const issue_path,
                          char const *const labels[], size_t const labels_size)
 {
-	gcli_null_check_call(issue_remove_labels, ctx, owner, repo, issue,
-	                     labels, labels_size);
+	gcli_null_check_call(issue_remove_labels, ctx, issue_path, labels,
+	                     labels_size);
 }
 
 int
-gcli_issue_set_milestone(struct gcli_ctx *ctx, char const *const owner,
-                         char const *const repo, gcli_id const issue,
+gcli_issue_set_milestone(struct gcli_ctx *ctx,
+                         struct gcli_path const *const issue_path,
                          int const milestone)
 {
-	gcli_null_check_call(issue_set_milestone, ctx, owner, repo, issue,
-	                     milestone);
+	gcli_null_check_call(issue_set_milestone, ctx, issue_path, milestone);
 }
 
 int
-gcli_issue_clear_milestone(struct gcli_ctx *ctx, char const *const owner,
-                           char const *const repo, gcli_id const issue)
+gcli_issue_clear_milestone(struct gcli_ctx *ctx,
+                           struct gcli_path const *const issue_path)
 {
-	gcli_null_check_call(issue_clear_milestone, ctx, owner, repo, issue);
+	gcli_null_check_call(issue_clear_milestone, ctx, issue_path);
 }
 
 int
-gcli_issue_set_title(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                     gcli_id issue, char const *new_title)
+gcli_issue_set_title(struct gcli_ctx *ctx,
+                     struct gcli_path const *const issue_path,
+                     char const *new_title)
 {
-	gcli_null_check_call(issue_set_title, ctx, owner, repo, issue,
-	                     new_title);
+	gcli_null_check_call(issue_set_title, ctx, issue_path, new_title);
 }
 
 int
-gcli_issue_get_attachments(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id issue,
+gcli_issue_get_attachments(struct gcli_ctx *ctx,
+                           struct gcli_path const *const issue_path,
                            struct gcli_attachment_list *out)
 {
-	gcli_null_check_call(get_issue_attachments, ctx, owner, repo, issue,
-	                     out);
+	gcli_null_check_call(get_issue_attachments, ctx, issue_path, out);
 }
