@@ -416,7 +416,7 @@ github_perform_submit_issue(struct gcli_ctx *const ctx,
 			gcli_jsongen_string(&gen, opts->body);
 		}
 	}
-	gcli_jsongen_begin_object(&gen);
+	gcli_jsongen_end_object(&gen);
 
 	payload = gcli_jsongen_to_string(&gen);
 	gcli_jsongen_free(&gen);
@@ -471,7 +471,7 @@ github_issue_assign(struct gcli_ctx *ctx, struct gcli_path const *const path,
 		gcli_jsongen_objmember(&gen, "assignees");
 		gcli_jsongen_begin_array(&gen);
 		gcli_jsongen_string(&gen, assignee);
-		gcli_jsongen_end_object(&gen);
+		gcli_jsongen_end_array(&gen);
 	}
 	gcli_jsongen_end_object(&gen);
 

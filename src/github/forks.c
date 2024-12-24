@@ -76,6 +76,7 @@ github_fork_create(struct gcli_ctx *ctx,
 	if (in) {
 		struct gcli_jsongen gen = {0};
 
+		gcli_jsongen_init(&gen);
 		gcli_jsongen_begin_object(&gen);
 		{
 			gcli_jsongen_objmember(&gen, "organization");
