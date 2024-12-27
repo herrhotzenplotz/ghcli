@@ -24,13 +24,13 @@ SHELL               = @SHELL@
 
 ############## Optimiser / Warning flags #####
 COPTFLAGS_gcc_debug=		-O0 -g3 -Wall -Wextra -Werror
-COPTFLAGS_gcc_release=		-O2
+COPTFLAGS_gcc_release=		-O2 -DNDEBUG
 COPTFLAGS_clang_debug=		-O0 -g3 -Wall -Wextra -Wno-gnu-zero-variadic-macro-arguments -Werror
-COPTFLAGS_clang_release=	-O2
+COPTFLAGS_clang_release=	-O2 -DNDEBUG
 COPTFLAGS_xlc_debug=		-qpic -qcheck=all -qfulldebug -qnoopt -g -qhalt=w
-COPTFLAGS_xlc_release=		-qpic -qoptimize=4
+COPTFLAGS_xlc_release=		-qpic -qoptimize=4 -DNDEBUG
 COPTFLAGS_sunstudio_debug=	-xO0 -g -xvector=%none
-COPTFLAGS_sunstudio_release=	-xO5
+COPTFLAGS_sunstudio_release=	-xO5 -DNDEBUG
 COPTFLAGS=			$(COPTFLAGS_$(CCOM)_$(OPTIMISE))
 COPTFLAGS_FOR_BUILD=		$(COPTFLAGS_$(CCOM_FOR_BUILD)_$(OPTIMISE))
 
