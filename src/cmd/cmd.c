@@ -191,6 +191,11 @@ gcli_render_markdown(char const *input, int indent, int maxlinelen, FILE *stream
 	struct lowdown_doc *doc;
 	struct lowdown_node *n;
 	struct lowdown_opts opts = {0};
+	struct lowdown_opts_term opts_term = {
+		.vmargin = 1,
+		.hmargin = indent - 4, /* somehow there's always 4 spaces being emitted by lowdown */
+		.cols = maxlinelen,
+	};
 	void *rndr;
 
 	input_size = strlen(input);
@@ -202,9 +207,7 @@ gcli_render_markdown(char const *input, int indent, int maxlinelen, FILE *stream
 	if (!gcli_config_have_colours(g_clictx))
 		opts.oflags |= (LOWDOWN_TERM_NOANSI|LOWDOWN_TERM_NOCOLOUR);
 
-	opts.vmargin = 1;
-	opts.hmargin = indent - 4; /* somehow there's always 4 spaces being emitted by lowdown */
-	opts.cols = maxlinelen;
+	opts.term = opts_term;
 
 	if ((doc = lowdown_doc_new(&opts)) == NULL)
 		err(1, NULL);
