@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,7 +74,7 @@ gcli_print_repos(enum gcli_output_flags const flags,
 	struct gcli_tblcoldef cols[] = {
 		{ .name = "FORK",     .type = GCLI_TBLCOLTYPE_BOOL,   .flags = 0 },
 		{ .name = "VISBLTY",  .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
-		{ .name = "DATE",     .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "DATE",     .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
 		{ .name = "FULLNAME", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 	};
 
