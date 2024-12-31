@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -791,9 +791,12 @@ char *
 gcli_config_get_account_name(struct gcli_ctx *ctx)
 {
 	char *account = gcli_config_get_account(ctx);
-	sn_sv actname = gcli_config_find_by_key(
-		ctx, account, "account");
+	sn_sv actname;
 
+	if (!account)
+		return NULL;
+
+	actname = gcli_config_find_by_key(ctx, account, "account");
 	free(account);
 
 	return sn_sv_to_cstr(actname);
