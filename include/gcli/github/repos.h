@@ -39,6 +39,8 @@
 int github_repo_make_url(struct gcli_ctx *ctx, struct gcli_path const *path,
                          char **url, char const *suffix_fmt, ...);
 
+int github_user_is_org(struct gcli_ctx *ctx, char const *e_owner);
+
 int github_get_repos(struct gcli_ctx *ctx, char const *owner, int max,
                      struct gcli_repo_list *out);
 

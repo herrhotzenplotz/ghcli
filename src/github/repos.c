@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -75,12 +75,28 @@ github_repo_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
 	return rc;
 }
 
+/* Github is a little stupid in that it distinguishes
+ * organizations and users. This kludge checks, whether the
+ * <e_owner> param is a user or an actual organization. */
+int
+github_user_is_org(struct gcli_ctx *ctx, char const *e_owner)
+{
+	char *url = sn_asprintf("%s/users/%s", gcli_get_apibase(ctx), e_owner);
+	int const rc = gcli_curl_test_success(ctx, url);
+	free(url);
+
+	/* 0 = failed, 1 = success, -1 = error (just like a BOOL in Win32
+	 * /sarc). But to make the name of the function make sense, reverse
+	 * non-negative return values (failure means user *is* an org);
+	 * negative return to indiciate error is preserved */
+	return rc < 0 ? rc : !rc;
+}
+
 int
 github_get_repos(struct gcli_ctx *ctx, char const *owner, int const max,
                  struct gcli_repo_list *const list)
 {
-	char *url = NULL;
-	char *e_owner = NULL;
+	char *url = NULL, *e_owner = NULL;
 	int rc = 0;
 
 	struct gcli_fetch_list_ctx lf = {
@@ -91,29 +107,18 @@ github_get_repos(struct gcli_ctx *ctx, char const *owner, int const max,
 	};
 
 	e_owner = gcli_urlencode(owner);
+	rc = github_user_is_org(ctx, e_owner);
 
-	/* Github is a little stupid in that it distinguishes
-	 * organizations and users. Thus, we have to find out, whether the
-	 * <org> param is a user or an actual organization. */
-	url = sn_asprintf("%s/users/%s", gcli_get_apibase(ctx), e_owner);
-
-	/* 0 = failed, 1 = success, -1 = error (just like a BOOL in Win32
-	 * /sarc) */
-	rc = gcli_curl_test_success(ctx, url);
-	if (rc < 0) {
-		free(url);
+	if (rc < 0)
 		return rc;
-	}
 
-	if (rc) {
+	if (!rc) {
 		/* it is a user */
-		free(url);
 		url = sn_asprintf("%s/users/%s/repos",
 		                  gcli_get_apibase(ctx),
 		                  e_owner);
 	} else {
 		/* this is an actual organization */
-		free(url);
 		url = sn_asprintf("%s/orgs/%s/repos",
 		                  gcli_get_apibase(ctx),
 		                  e_owner);

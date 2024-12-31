@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -67,13 +67,24 @@ github_fork_create(struct gcli_ctx *ctx,
 	char *url = NULL;
 	char *post_data = NULL;
 	int rc = 0;
+	bool is_org = false;
 
+	if (in) {
+		char *const e_in = gcli_urlencode(in);
+		rc = github_user_is_org(ctx, e_in);
+		free(e_in);
+
+		if (rc < 0)
+			return rc;
+
+		is_org = rc;
+	}
 
 	rc = github_repo_make_url(ctx, repo_path, &url, "/forks");
 	if (rc < 0)
 		return rc;
 
-	if (in) {
+	if (is_org) {
 		struct gcli_jsongen gen = {0};
 
 		gcli_jsongen_init(&gen);
