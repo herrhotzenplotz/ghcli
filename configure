@@ -134,6 +134,8 @@ OPTIONS:
     --disable-libedit       Do not use libedit
     --enable-libreadline    Search and use libreadline for interactive editing [DEFAULT: yes]
     --disable-libreadline   Disable use of libreadline
+    --enable-liblowdown     Search and use liblowdown for markdown rendering [DEFAULT: yes]
+    --disable-liblowdown    Disable use of liblowdown
     --debug                 Compile without optimisations, generate code with
                             debug information and enable additional compiler-specific
                             warnings and portability checks.
