@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -202,9 +202,20 @@ gcli_render_markdown(char const *input, int indent, int maxlinelen, FILE *stream
 	if (!gcli_config_have_colours(g_clictx))
 		opts.oflags |= (LOWDOWN_TERM_NOANSI|LOWDOWN_TERM_NOCOLOUR);
 
+	/* Lowdown 1.4.0 broke the api in a minor version update. Work around
+	 * this by checking versions.
+	 *
+	 * See: https://github.com/kristapsdz/lowdown/issues/148 and
+	 *      https://github.com/kristapsdz/lowdown/releases/tag/VERSION_1_4_0 */
+#if (LIBLOWDOWN_MAJOR == 1 && LIBLOWDOWN_MINOR >= 4) || LIBLOWDOWN_MAJOR >= 2
+	opts.term.vmargin = 1;
+	opts.term.hmargin = indent - 4; /* somehow there's always 4 spaces being emitted by lowdown */
+	opts.term.cols = maxlinelen;
+#else
 	opts.vmargin = 1;
-	opts.hmargin = indent - 4; /* somehow there's always 4 spaces being emitted by lowdown */
+	opts.hmargin = indent - 4;
 	opts.cols = maxlinelen;
+#endif
 
 	if ((doc = lowdown_doc_new(&opts)) == NULL)
 		err(1, NULL);
