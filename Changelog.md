@@ -47,6 +47,12 @@ This changelog does not follow semantic versioning.
 - The interactive status subcommand now doesn't crash anymore
   for release notifications on Github.
 
+- Compatibility with the newly released liblowdown 1.4.0 has been
+  restored. The new minor version broke the API causing compilation
+  failures in gcli.
+
+  Submitted by: Hoang Nguyen <https://github.com/folliehiyuki>
+
 ### Changed
 
 - gcli now uses `time_t` internally to represent timestamps. This
