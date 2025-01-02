@@ -53,6 +53,21 @@ This changelog does not follow semantic versioning.
 
   Submitted by: Hoang Nguyen <https://github.com/folliehiyuki>
 
+- Fix a segfault when no default account is declared in gcli config
+
+  Submitted by: remph <lhr@disroot.org>
+
+- Fix a segfault when listing repositories
+
+  Submitted by: remph <lhr@disroot.org>
+
+- Fix github API error 422 on `gcli forks create`
+
+  This is caused by the distinction between users and organisations
+  on Github.
+
+  Submitted by: remph <lhr@disroot.org>
+
 ### Changed
 
 - gcli now uses `time_t` internally to represent timestamps. This
