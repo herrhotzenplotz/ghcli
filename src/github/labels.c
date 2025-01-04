@@ -28,6 +28,7 @@
  */
 
 #include <gcli/github/labels.h>
+#include <gcli/github/repos.h>
 #include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 
@@ -36,10 +37,11 @@
 #include <templates/github/labels.h>
 
 int
-github_get_labels(struct gcli_ctx *ctx, char const *owner, char const *reponame,
+github_get_labels(struct gcli_ctx *ctx, struct gcli_path const *const path,
                   int const max, struct gcli_label_list *const out)
 {
 	char *url = NULL;
+	int rc = 0;
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &out->labels,
 		.sizep= &out->labels_size,
@@ -49,27 +51,29 @@ github_get_labels(struct gcli_ctx *ctx, char const *owner, char const *reponame,
 
 	*out = (struct gcli_label_list) {0};
 
-	url = sn_asprintf(
-		"%s/repos/%s/%s/labels",
-		gcli_get_apibase(ctx), owner, reponame);
+	rc = github_repo_make_url(ctx, path, &url, "/labels");
+	if (rc < 0)
+		return rc;
 
 	return gcli_fetch_list(ctx, url, &fl);
 }
 
 int
-github_create_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
+github_create_label(struct gcli_ctx *ctx, struct gcli_path const *const path,
                     struct gcli_label *const label)
 {
-	char *url = NULL, *payload = NULL, *e_owner = NULL, *e_repo = NULL,
-	     *colour = NULL;
+	char *url = NULL, *payload = NULL, *colour = NULL;
+	int rc = 0;
 	struct gcli_fetch_buffer buffer = {0};
 	struct gcli_jsongen gen = {0};
-	int rc = 0;
 	struct json_stream stream = {0};
 
-	/* Generate payload */
-	colour = sn_asprintf("%06X", label->colour & 0xFFFFFF);
+	/* Generate URL: /repos/{owner}/{repo}/labels */
+	rc = github_repo_make_url(ctx, path, &url, "/labels");
+	if (rc < 0)
+		return rc;
 
+	/* Generate payload */
 	gcli_jsongen_init(&gen);
 	gcli_jsongen_begin_object(&gen);
 	{
@@ -79,26 +83,18 @@ github_create_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		gcli_jsongen_objmember(&gen, "description");
 		gcli_jsongen_string(&gen, label->description);
 
+		colour = sn_asprintf("%06X", label->colour & 0xFFFFFF);
+
 		gcli_jsongen_objmember(&gen, "color");
 		gcli_jsongen_string(&gen, colour);
+
+		free(colour);
+		colour = NULL;
 	}
 	gcli_jsongen_end_object(&gen);
 
 	payload = gcli_jsongen_to_string(&gen);
-
 	gcli_jsongen_free(&gen);
-	free(colour);
-
-	/* Generate URL */
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	/* /repos/{owner}/{repo}/labels */
-	url = sn_asprintf("%s/repos/%s/%s/labels", gcli_get_apibase(ctx), e_owner,
-	                  e_repo);
-
-	free(e_owner);
-	free(e_repo);
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, &buffer);
 
@@ -116,7 +112,7 @@ github_create_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 int
-github_delete_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
+github_delete_label(struct gcli_ctx *ctx, struct gcli_path const *const path,
                     char const *label)
 {
 	char *url = NULL;
@@ -126,11 +122,10 @@ github_delete_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	e_label = gcli_urlencode(label);
 
 	/* DELETE /repos/{owner}/{repo}/labels/{name} */
-	url = sn_asprintf("%s/repos/%s/%s/labels/%s",
-	                  gcli_get_apibase(ctx),
-	                  owner, repo, e_label);
+	rc = github_repo_make_url(ctx, path, &url, "/lables/%s", e_label);
 
-	rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
+	if (rc == 0)
+		rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
 
 	free(url);
 	free(e_label);

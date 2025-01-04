@@ -40,7 +40,6 @@ void
 gcli_comment_free(struct gcli_comment *const it)
 {
 	free(it->author);
-	free(it->date);
 	free(it->body);
 }
 
@@ -56,30 +55,33 @@ gcli_comments_free(struct gcli_comment_list *const list)
 }
 
 int
-gcli_get_comment(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                 enum comment_target_type target_type, gcli_id target_id,
-                 gcli_id comment_id, struct gcli_comment *out)
+gcli_get_comment(struct gcli_ctx *ctx, struct gcli_path const *const target,
+                 enum comment_target_type target_type,
+                 gcli_id const comment_id, struct gcli_comment *out)
 {
-	gcli_null_check_call(get_comment, ctx, owner, repo, target_type, target_id,
-	                     comment_id, out);
+	gcli_null_check_call(get_comment, ctx, target, target_type, comment_id,
+	                     out);
 }
 
 int
-gcli_get_issue_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                        gcli_id const issue, struct gcli_comment_list *out)
+gcli_get_issue_comments(struct gcli_ctx *ctx,
+                        struct gcli_path const *const issue_path,
+                        struct gcli_comment_list *out)
 {
-	gcli_null_check_call(get_issue_comments, ctx, owner, repo, issue, out);
+	gcli_null_check_call(get_issue_comments, ctx, issue_path, out);
 }
 
 int
-gcli_get_pull_comments(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                       gcli_id const pull, struct gcli_comment_list *out)
+gcli_get_pull_comments(struct gcli_ctx *ctx,
+                       struct gcli_path const *const pull_path,
+                       struct gcli_comment_list *out)
 {
-	gcli_null_check_call(get_pull_comments, ctx, owner, repo, pull, out);
+	gcli_null_check_call(get_pull_comments, ctx, pull_path, out);
 }
 
 int
-gcli_comment_submit(struct gcli_ctx *ctx, struct gcli_submit_comment_opts const *const opts)
+gcli_comment_submit(struct gcli_ctx *ctx,
+                    struct gcli_submit_comment_opts const *const opts)
 {
 	gcli_null_check_call(perform_submit_comment, ctx, opts);
 }

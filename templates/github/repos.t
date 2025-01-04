@@ -7,7 +7,7 @@ object of struct gcli_repo with
 	 "full_name"  => full_name as string,
 	 "name"       => name as string,
 	 "owner"      => owner as user,
-	 "created_at" => date as string,
+	 "created_at" => date as iso8601_time,
 	 "visibility" => visibility as string,
 	 "private"    => visibility as gitea_visibility,
 	 "fork"       => is_fork as bool);

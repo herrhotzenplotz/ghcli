@@ -7,7 +7,8 @@ object of struct gcli_notification with
 parser gitea_notification_status is
 object of struct gcli_notification with
 	("title" => title as string,
-	 "type" => type as gitea_notification_target_type);
+	 "type" => type as gitea_notification_target_type,
+	 "url" => target as url_path);
 
 parser gitea_notification is
 object of struct gcli_notification with

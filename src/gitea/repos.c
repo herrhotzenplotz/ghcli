@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +34,8 @@
 
 #include <assert.h>
 
+#include <stdarg.h>
+
 int
 gitea_get_repos(struct gcli_ctx *ctx, char const *owner, int const max,
                 struct gcli_repo_list *const list)
@@ -56,19 +58,19 @@ gitea_repo_create(struct gcli_ctx *ctx, struct gcli_repo_create_options const *o
 }
 
 int
-gitea_repo_delete(struct gcli_ctx *ctx, char const *owner, char const *repo)
+gitea_repo_delete(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	return github_repo_delete(ctx, owner, repo);
+	return github_repo_delete(ctx, path);
 }
 
 /* Unlike Github and Gitlab, Gitea only supports private or non-private
  * (thus public) repositories. Separate implementation required. */
 int
-gitea_repo_set_visibility(struct gcli_ctx *ctx, char const *const owner,
-                          char const *const repo, gcli_repo_visibility vis)
+gitea_repo_set_visibility(struct gcli_ctx *ctx,
+                          struct gcli_path const *const path,
+                          gcli_repo_visibility vis)
 {
 	char *url;
-	char *e_owner, *e_repo;
 	bool is_private;
 	char *payload;
 	int rc;
@@ -85,18 +87,54 @@ gitea_repo_set_visibility(struct gcli_ctx *ctx, char const *const owner,
 		return gcli_error(ctx, "bad or unsupported visibility level for Gitea");
 	}
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
+	rc = gitea_repo_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
-	url = sn_asprintf("%s/repos/%s/%s", gcli_get_apibase(ctx), e_owner, e_repo);
 	payload = sn_asprintf("{ \"private\": %s }", is_private ? "true" : "false");
 
 	rc = gcli_fetch_with_method(ctx, "PATCH", url, payload, NULL, NULL);
 
 	free(payload);
-	free(e_owner);
-	free(e_repo);
 	free(url);
+
+	return rc;
+}
+
+int
+gitea_repo_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                    char **url, char const *const fmt, ...)
+{
+	char *suffix = NULL;
+	int rc = 0;
+	va_list vp;
+
+	va_start(vp, fmt);
+	suffix = sn_vasprintf(fmt, vp);
+	va_end(vp);
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner, *e_repo;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo = gcli_urlencode(path->data.as_default.repo);
+
+		*url = sn_asprintf("%s/repos/%s/%s%s", gcli_get_apibase(ctx),
+		                   e_owner, e_repo, suffix);
+
+		free(e_owner);
+		free(e_repo);
+	} break;
+	case GCLI_PATH_URL: {
+		*url = sn_asprintf("%s%s", path->data.as_url, suffix);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "unsupported path kind for Gitea repo");
+	} break;
+	}
+
+	free(suffix);
 
 	return rc;
 }

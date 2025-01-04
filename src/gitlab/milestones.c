@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,6 +33,7 @@
 #include <gcli/gitlab/issues.h>
 #include <gcli/gitlab/merge_requests.h>
 #include <gcli/gitlab/milestones.h>
+#include <gcli/gitlab/repos.h>
 #include <gcli/json_util.h>
 
 #include <templates/gitlab/milestones.h>
@@ -40,14 +41,15 @@
 #include <pdjson/pdjson.h>
 
 #include <assert.h>
+#include <stdarg.h>
 #include <time.h>
 
 int
-gitlab_get_milestones(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gitlab_get_milestones(struct gcli_ctx *ctx, struct gcli_path const *const path,
                       int max, struct gcli_milestone_list *const out)
 {
-	char *url;
-	char *e_owner, *e_repo;
+	char *url = NULL;
+	int rc = 0;
 
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &out->milestones,
@@ -56,32 +58,67 @@ gitlab_get_milestones(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		.parse = (parsefn)(parse_gitlab_milestones),
 	};
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/milestones", gcli_get_apibase(ctx),
-	                  e_owner, e_repo);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_repo_make_url(ctx, path, &url, "/milestones");
+	if (rc < 0)
+		return rc;
 
 	return gcli_fetch_list(ctx, url, &fl);
 }
 
 int
-gitlab_get_milestone(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                     gcli_id const milestone, struct gcli_milestone *const out)
+gitlab_milestone_make_url(struct gcli_ctx *ctx,
+                          struct gcli_path const *const path,
+                          char **url,
+                          char const *const suffix_fmt, ...)
 {
-	char *url, *e_owner, *e_repo;
+	char *suffix = NULL;
+	int rc = 0;
+	va_list vp;
+
+	va_start(vp, suffix_fmt);
+	suffix = sn_vasprintf(suffix_fmt, vp);
+	va_end(vp);
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner = NULL, *e_repo = NULL;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo = gcli_urlencode(path->data.as_default.repo);
+
+		*url = sn_asprintf("%s/projects/%s%%2F%s/milestones/%"PRIid"%s",
+		                   gcli_get_apibase(ctx),
+		                   e_owner, e_repo, path->data.as_default.id,
+		                   suffix);
+
+		free(e_owner);
+		free(e_repo);
+	} break;
+	case GCLI_PATH_URL: {
+		*url = sn_asprintf("%s%s", path->data.as_url, suffix);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "bad path kind for gitlab milestone");
+	} break;
+	}
+
+	free(suffix);
+
+	return rc;
+}
+
+int
+gitlab_get_milestone(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                     struct gcli_milestone *const out)
+{
+	char *url;
 	struct gcli_fetch_buffer buffer = {0};
 	struct json_stream stream = {0};
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/milestones/%"PRIid, gcli_get_apibase(ctx),
-	                  e_owner, e_repo, milestone);
+	rc = gitlab_milestone_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch(ctx, url, NULL, &buffer);
 	if (rc == 0) {
@@ -92,28 +129,21 @@ gitlab_get_milestone(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	gcli_fetch_buffer_free(&buffer);
 	free(url);
-	free(e_owner);
-	free(e_repo);
 
 	return rc;
 }
 
 int
-gitlab_milestone_get_issues(struct gcli_ctx *ctx, char const *const owner,
-                            char const *const repo, gcli_id const milestone,
+gitlab_milestone_get_issues(struct gcli_ctx *ctx,
+                            struct gcli_path const *const path,
                             struct gcli_issue_list *const out)
 {
-	char *url, *e_owner, *e_repo;
+	char *url = NULL;
+	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/milestones/%"PRIid"/issues",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, milestone);
-
-	free(e_repo);
-	free(e_owner);
-	/* URL is freed by the fetch_issues call */
+	rc = gitlab_milestone_make_url(ctx, path, &url, "/issues");
+	if (rc < 0)
+		return rc;
 
 	return gitlab_fetch_issues(ctx, url, -1, out);;
 }
@@ -159,33 +189,28 @@ gitlab_create_milestone(struct gcli_ctx *ctx,
 }
 
 int
-gitlab_delete_milestone(struct gcli_ctx *ctx, char const *const owner,
-                        char const *const repo, gcli_id const milestone)
+gitlab_delete_milestone(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	char *url, *e_owner, *e_repo;
+	char *url = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/milestones/%"PRIid, gcli_get_apibase(ctx),
-	                  e_owner, e_repo, milestone);
+	rc = gitlab_milestone_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
 
 	free(url);
-	free(e_repo);
-	free(e_owner);
 
 	return rc;
 }
 
 int
-gitlab_milestone_set_duedate(struct gcli_ctx *ctx, char const *const owner,
-                             char const *const repo, gcli_id const milestone,
+gitlab_milestone_set_duedate(struct gcli_ctx *ctx,
+                             struct gcli_path const *const path,
                              char const *const date)
 {
-	char *url, *e_owner, *e_repo, norm_date[9] = {0};
+	char *url = NULL, norm_date[9] = {0};
 	int rc = 0;
 
 	rc = gcli_normalize_date(ctx, DATEFMT_GITLAB, date, norm_date,
@@ -193,18 +218,13 @@ gitlab_milestone_set_duedate(struct gcli_ctx *ctx, char const *const owner,
 	if (rc < 0)
 		return rc;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/milestones/%"PRIid"?due_date=%s",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, milestone,
-	                  norm_date);
+	rc = gitlab_milestone_make_url(ctx, path, &url, "?due_date=%s", norm_date);
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_with_method(ctx, "PUT", url, "", NULL, NULL);
 
 	free(url);
-	free(e_repo);
-	free(e_owner);
 
 	return rc;
 }

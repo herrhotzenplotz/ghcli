@@ -34,6 +34,9 @@
 #include <config.h>
 #endif
 
+#define GCLI_PROMPT_RESULT_MANDATORY NULL
+#define GCLI_PROMPT_RESULT_OPTIONAL ""
+
 char *gcli_cmd_prompt(char const *const fmt, char const *const deflt, ...);
 int gcli_cmd_into_pager(int (*fn)(void *), void *data);
 

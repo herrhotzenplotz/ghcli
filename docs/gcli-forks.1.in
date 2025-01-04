@@ -14,7 +14,7 @@
 .Nm
 .Cm create
 .Op Fl o Ar owner Fl r Ar repo
-.Fl i Ar target-owner
+.Op Fl i Ar target-owner
 .Sh DESCRIPTION
 Use
 .Nm

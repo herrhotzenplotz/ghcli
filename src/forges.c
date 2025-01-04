@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022, 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,6 +32,7 @@
 #include <gcli/forges.h>
 
 #include <gcli/github/api.h>
+#include <gcli/github/checkout.h>
 #include <gcli/github/comments.h>
 #include <gcli/github/config.h>
 #include <gcli/github/forks.h>
@@ -45,6 +46,7 @@
 #include <gcli/github/status.h>
 
 #include <gcli/gitlab/api.h>
+#include <gcli/gitlab/checkout.h>
 #include <gcli/gitlab/comments.h>
 #include <gcli/gitlab/config.h>
 #include <gcli/gitlab/forks.h>
@@ -101,8 +103,7 @@ github_forge_descriptor =
 	.issue_set_title           = github_issue_set_title,
 	.perform_submit_issue      = github_perform_submit_issue,
 	.issue_quirks              = GCLI_ISSUE_QUIRKS_PROD_COMP
-	                           | GCLI_ISSUE_QUIRKS_URL
-	                           | GCLI_ISSUE_QUIRKS_ATTACHMENTS,
+	                           | GCLI_ISSUE_QUIRKS_URL,
 
 	/* Milestones */
 	.create_milestone          = github_create_milestone,
@@ -125,6 +126,7 @@ github_forge_descriptor =
 	.pull_merge                = github_pull_merge,
 	.pull_reopen               = github_pull_reopen,
 	.pull_set_title            = github_pull_set_title,
+	.pull_checkout             = github_pull_checkout,
 
 	/* HACK: Here we can use the same functions as with issues because
 	 * PRs are the same as issues on Github and the functions have the
@@ -159,8 +161,6 @@ github_forge_descriptor =
 	/* Notifications */
 	.get_notifications         = github_get_notifications,
 	.notification_mark_as_read = github_notification_mark_as_read,
-	.notification_get_issue    = github_notification_get_issue,
-	.notification_get_comments = github_notification_get_comments,
 
 	/* Internal stuff */
 	.get_api_error_string      = github_api_error_string,
@@ -201,8 +201,7 @@ gitlab_forge_descriptor =
 	.issue_set_title           = gitlab_issue_set_title,
 	.perform_submit_issue      = gitlab_perform_submit_issue,
 	.issue_quirks              = GCLI_ISSUE_QUIRKS_PROD_COMP
-	                           | GCLI_ISSUE_QUIRKS_URL
-	                           | GCLI_ISSUE_QUIRKS_ATTACHMENTS,
+	                           | GCLI_ISSUE_QUIRKS_URL,
 
 	/* Milestones */
 	.create_milestone          = gitlab_create_milestone,
@@ -230,6 +229,7 @@ gitlab_forge_descriptor =
 	.pull_reopen               = gitlab_mr_reopen,
 	.pull_set_milestone        = gitlab_mr_set_milestone,
 	.pull_set_title            = gitlab_mr_set_title,
+	.pull_checkout             = gitlab_mr_checkout,
 
 	/* Releases */
 	.create_release            = gitlab_create_release,
@@ -254,9 +254,7 @@ gitlab_forge_descriptor =
 
 	/* Notifications */
 	.get_notifications         = gitlab_get_notifications,
-	.notification_get_issue    = gitlab_notification_get_issue,
 	.notification_mark_as_read = gitlab_notification_mark_as_read,
-	.notification_get_comments = gitlab_notification_get_comments,
 
 	/* Internal stuff */
 	.get_api_error_string      = gitlab_api_error_string,
@@ -297,8 +295,7 @@ gitea_forge_descriptor =
 	.issue_set_title           = gitea_issue_set_title,
 	.perform_submit_issue      = gitea_submit_issue,
 	.issue_quirks              = GCLI_ISSUE_QUIRKS_PROD_COMP
-	                           | GCLI_ISSUE_QUIRKS_URL
-	                           | GCLI_ISSUE_QUIRKS_ATTACHMENTS,
+	                           | GCLI_ISSUE_QUIRKS_URL,
 
 	/* Milestones */
 	.create_milestone          = gitea_create_milestone,

@@ -35,15 +35,17 @@
 #endif
 
 #include <gcli/gcli.h>
+#include <gcli/path.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <sn/sn.h>
 
 struct gcli_comment {
 	char *author;               /* Login name of the comment author */
-	char *date;                 /* Creation date of the comment     */
+	time_t date;                /* Creation date of the comment     */
 	gcli_id id;                 /* id of the comment                */
 	char *body;                 /* Raw text of the comment          */
 };
@@ -55,8 +57,7 @@ struct gcli_comment_list {
 
 struct gcli_submit_comment_opts {
 	enum comment_target_type { ISSUE_COMMENT, PR_COMMENT }  target_type;
-	char const *owner, *repo;
-	gcli_id target_id;
+	struct gcli_path target;
 	char const *message;
 };
 
@@ -64,16 +65,16 @@ void gcli_comments_free(struct gcli_comment_list *list);
 
 void gcli_comment_free(struct gcli_comment *const it);
 
-int gcli_get_comment(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                     enum comment_target_type target_type, gcli_id target_id,
+int gcli_get_comment(struct gcli_ctx *ctx, struct gcli_path const *target,
+                     enum comment_target_type target_type,
                      gcli_id comment_id, struct gcli_comment *out);
 
-int gcli_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id issue,
+int gcli_get_issue_comments(struct gcli_ctx *ctx,
+                            struct gcli_path const *issue_path,
                             struct gcli_comment_list *out);
 
-int gcli_get_pull_comments(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id issue,
+int gcli_get_pull_comments(struct gcli_ctx *ctx,
+                           struct gcli_path const *pull_path,
                            struct gcli_comment_list *out);
 
 int gcli_comment_submit(struct gcli_ctx *ctx, struct gcli_submit_comment_opts const *opts);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,7 +50,7 @@
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: gcli issues create [-o owner -r repo] [-y] [title...]\n");
+	fprintf(stderr, "usage: gcli issues create [-o owner -r repo] [-y] [-R reviewer] [title...]\n");
 	fprintf(stderr, "       gcli issues [-o owner -r repo] [-a] [-n number] [-A author] [-L label]\n");
 	fprintf(stderr, "                   [-M milestone] [-s] [search query...]\n");
 	fprintf(stderr, "       gcli issues [-o owner -r repo] -i issue actions...\n");
@@ -65,6 +65,8 @@ usage(void)
 	fprintf(stderr, "  -s                 Print (sort) in reverse order\n");
 	fprintf(stderr, "  -n number          Number of issues to fetch (-1 = everything)\n");
 	fprintf(stderr, "  -i issue           ID of issue to perform actions on\n");
+	fprintf(stderr, "  -R reviewer        Mark a person as a reviewer for the created PR\n");
+	fprintf(stderr, "                     Can be specified more than once.\n");
 	fprintf(stderr, "ACTIONS:\n");
 	fprintf(stderr, "  all                Display both status and and op\n");
 	fprintf(stderr, "  status             Display status information\n");
@@ -159,7 +161,7 @@ gcli_issue_print_summary(struct gcli_issue const *const it)
 	gcli_dict_add(dict, "NUMBER", 0, 0, "%"PRIid, it->number);
 	gcli_dict_add(dict, "TITLE", 0, 0, "%s", it->title);
 
-	gcli_dict_add(dict, "CREATED", 0, 0, "%s", it->created_at);
+	gcli_dict_add_timestamp(dict, "CREATED", 0, 0, it->created_at);
 
 	if ((quirks & GCLI_ISSUE_QUIRKS_PROD_COMP) == 0) {
 		gcli_dict_add(dict, "PRODUCT", 0, 0, "%s", it->product);
@@ -201,7 +203,6 @@ gcli_issue_print_summary(struct gcli_issue const *const it)
 
 	/* Dump the dictionary */
 	gcli_dict_end(dict);
-
 }
 
 void
@@ -275,7 +276,7 @@ subcommand_issue_create_interactive(struct gcli_submit_issue_options *const opts
 	if (!opts->repo)
 		opts->repo = gcli_cmd_prompt("Repository", deflt_repo);
 
-	opts->title = gcli_cmd_prompt("Title", NULL);
+	opts->title = gcli_cmd_prompt("Title", GCLI_PROMPT_RESULT_MANDATORY);
 
 	rc = create_issue(opts, false);
 	if (rc < 0) {
@@ -384,18 +385,15 @@ subcommand_issue_create(int argc, char *argv[])
 }
 
 static inline int handle_issues_actions(int argc, char *argv[],
-                                        char const *const owner,
-                                        char const *const repo,
-                                        int const issue);
+                                        struct gcli_path const *path);
 
 int
 subcommand_issues(int argc, char *argv[])
 {
 	struct gcli_issue_list list = {0};
-	char const *owner = NULL;
-	char const *repo = NULL;
+	struct gcli_path path = {0};
 	char *endptr = NULL;
-	int ch = 0, issue_id = -1, n = 30;
+	int ch = 0, n = 30;
 	struct gcli_issue_fetch_details details = {0};
 	enum gcli_output_flags flags = 0;
 
@@ -451,17 +449,17 @@ subcommand_issues(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "+sn:o:r:i:aA:L:M:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			path.data.as_default.repo = optarg;
 			break;
 		case 'i': {
-			issue_id = strtol(optarg, &endptr, 10);
+			path.data.as_default.id = strtol(optarg, &endptr, 10);
 			if (endptr != (optarg + strlen(optarg)))
 				err(1, "gcli: error: cannot parse issue number");
 
-			if (issue_id < 0)
+			if (path.data.as_default.id == 0)
 				errx(1, "gcli: error: issue number is out of range");
 		} break;
 		case 'n': {
@@ -500,15 +498,15 @@ subcommand_issues(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&path);
 
 	/* No issue number was given, so list all open issues */
-	if (issue_id < 0) {
+	if (path.data.as_default.id == 0) {
 		/* Prepare search term if specified */
 		if (argc)
 			details.search_term = sn_join_with((char const *const *)argv, argc, " ");
 
-		if (gcli_issues_search(g_clictx, owner, repo, &details, n, &list) < 0)
+		if (gcli_issues_search(g_clictx, &path, &details, n, &list) < 0)
 			errx(1, "gcli: error: could not get issues: %s", gcli_get_error(g_clictx));
 
 		gcli_print_issues(flags, &list, n);
@@ -526,18 +524,17 @@ subcommand_issues(int argc, char *argv[])
 	}
 
 	/* Handle all the actions */
-	return handle_issues_actions(argc, argv, owner, repo, issue_id);
+	return handle_issues_actions(argc, argv, &path);
 }
 
 static inline void
-ensure_issue(char const *const owner, char const *const repo,
-             int const issue_id,
+ensure_issue(struct gcli_path const *const path,
              int *const have_fetched_issue, struct gcli_issue *const issue)
 {
 	if (*have_fetched_issue)
 		return;
 
-	if (gcli_get_issue(g_clictx, owner, repo, issue_id, issue) < 0)
+	if (gcli_get_issue(g_clictx, path, issue) < 0)
 		errx(1, "gcli: error: failed to retrieve issue data: %s",
 		     gcli_get_error(g_clictx));
 
@@ -546,9 +543,7 @@ ensure_issue(char const *const owner, char const *const repo,
 
 static inline void
 handle_issue_labels_action(int *argc, char ***argv,
-                           char const *const owner,
-                           char const *const repo,
-                           int const issue_id)
+                           struct gcli_path const *const issue_path)
 {
 	char const **add_labels = NULL;
 	size_t add_labels_size = 0;
@@ -567,8 +562,8 @@ handle_issue_labels_action(int *argc, char ***argv,
 
 	/* actually go about deleting and adding the labels */
 	if (add_labels_size) {
-		rc = gcli_issue_add_labels(g_clictx, owner, repo, issue_id,
-		                           add_labels, add_labels_size);
+		rc = gcli_issue_add_labels(g_clictx, issue_path, add_labels,
+		                           add_labels_size);
 
 		if (rc < 0) {
 			errx(1, "gcli: error: failed to add labels: %s",
@@ -577,7 +572,7 @@ handle_issue_labels_action(int *argc, char ***argv,
 	}
 
 	if (remove_labels_size) {
-		rc = gcli_issue_remove_labels(g_clictx, owner, repo, issue_id,
+		rc = gcli_issue_remove_labels(g_clictx, issue_path,
 		                              remove_labels, remove_labels_size);
 
 		if (rc < 0) {
@@ -592,9 +587,7 @@ handle_issue_labels_action(int *argc, char ***argv,
 
 static inline void
 handle_issue_milestone_action(int *argc, char ***argv,
-                              char const *const owner,
-                              char const *const repo,
-                              int const issue_id)
+                              struct gcli_path const *const path)
 {
 	char const *milestone_str;
 	char *endptr;
@@ -615,10 +608,10 @@ handle_issue_milestone_action(int *argc, char ***argv,
 	/* Check if the milestone_str is -d indicating that we should
 	 * clear the milestone */
 	if (strcmp(milestone_str, "-d") == 0) {
-		rc = gcli_issue_clear_milestone(g_clictx, owner, repo, issue_id);
+		rc = gcli_issue_clear_milestone(g_clictx, path);
 		if (rc < 0) {
-			errx(1, "gcli: error: could not clear milestone of issue #%d: %s",
-			     issue_id, gcli_get_error(g_clictx));
+			errx(1, "gcli: error: could not clear milestone of issue: %s",
+			     gcli_get_error(g_clictx));
 		}
 		return;
 	}
@@ -634,7 +627,7 @@ handle_issue_milestone_action(int *argc, char ***argv,
 	}
 
 	/* Pass it to the dispatch */
-	if (gcli_issue_set_milestone(g_clictx, owner, repo, issue_id, milestone) < 0)
+	if (gcli_issue_set_milestone(g_clictx, path, milestone) < 0)
 		errx(1, "gcli: error: could not assign milestone: %s",
 		     gcli_get_error(g_clictx));
 }
@@ -646,7 +639,7 @@ gcli_print_attachments(struct gcli_attachment_list const *const list)
 	struct gcli_tblcoldef columns[] = {
 		{ .name = "ID",       .type = GCLI_TBLCOLTYPE_ID,     .flags = GCLI_TBLCOL_JUSTIFYR },
 		{ .name = "AUTHOR",   .type = GCLI_TBLCOLTYPE_STRING, .flags = GCLI_TBLCOL_BOLD     },
-		{ .name = "CREATED",  .type = GCLI_TBLCOLTYPE_STRING, .flags = 0                    },
+		{ .name = "CREATED",  .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0                    },
 		{ .name = "CONTENT",  .type = GCLI_TBLCOLTYPE_STRING, .flags = 0                    },
 		{ .name = "OBSOLETE", .type = GCLI_TBLCOLTYPE_BOOL,   .flags = 0                    },
 		{ .name = "FILENAME", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0                    },
@@ -665,9 +658,7 @@ gcli_print_attachments(struct gcli_attachment_list const *const list)
 
 static inline int
 handle_issues_actions(int argc, char *argv[],
-                      char const *const owner,
-                      char const *const repo,
-                      int const issue_id)
+                      struct gcli_path const *const path)
 {
 	int have_fetched_issue = 0;
 	struct gcli_issue issue = {0};
@@ -685,7 +676,7 @@ handle_issues_actions(int argc, char *argv[],
 
 		if (strcmp("all", operation) == 0) {
 			/* Make sure we have fetched the issue data */
-			ensure_issue(owner, repo, issue_id, &have_fetched_issue, &issue);
+			ensure_issue(path, &have_fetched_issue, &issue);
 
 			gcli_issue_print_summary(&issue);
 
@@ -695,56 +686,53 @@ handle_issues_actions(int argc, char *argv[],
 		} else if (strcmp("comments", operation) == 0 ||
 		           strcmp("notes", operation) == 0) {
 			/* Doesn't require fetching the issue data */
-			if (gcli_issue_comments(owner, repo, issue_id) < 0)
+			if (gcli_issue_comments(path) < 0)
 				errx(1, "gcli: error: failed to fetch issue comments: %s",
 				     gcli_get_error(g_clictx));
 
 		} else if (strcmp("op", operation) == 0) {
 			/* Make sure we have fetched the issue data */
-			ensure_issue(owner, repo, issue_id, &have_fetched_issue, &issue);
+			ensure_issue(path, &have_fetched_issue, &issue);
 
 			gcli_issue_print_op(&issue);
 
 		} else if (strcmp("status", operation) == 0) {
 			/* Make sure we have fetched the issue data */
-			ensure_issue(owner, repo, issue_id, &have_fetched_issue, &issue);
+			ensure_issue(path, &have_fetched_issue, &issue);
 
 			gcli_issue_print_summary(&issue);
 
 		} else if (strcmp("close", operation) == 0) {
 
-			if (gcli_issue_close(g_clictx, owner, repo, issue_id) < 0)
+			if (gcli_issue_close(g_clictx, path) < 0)
 				errx(1, "gcli: error: failed to close issue: %s",
 				     gcli_get_error(g_clictx));
 
 		} else if (strcmp("reopen", operation) == 0) {
 
-			if (gcli_issue_reopen(g_clictx, owner, repo, issue_id) < 0)
+			if (gcli_issue_reopen(g_clictx, path) < 0)
 				errx(1, "gcli: error: failed to reopen issue: %s",
 				     gcli_get_error(g_clictx));
 
 		} else if (strcmp("assign", operation) == 0) {
 
 			char const *assignee = shift(&argc, &argv);
-			if (gcli_issue_assign(g_clictx, owner, repo, issue_id, assignee) < 0)
+			if (gcli_issue_assign(g_clictx, path, assignee) < 0)
 				errx(1, "gcli: error: failed to assign issue: %s",
 				     gcli_get_error(g_clictx));
 
 		} else if (strcmp("labels", operation) == 0) {
 
-			handle_issue_labels_action(
-				&argc, &argv, owner, repo, issue_id);
+			handle_issue_labels_action(&argc, &argv, path);
 
 		} else if (strcmp("milestone", operation) == 0) {
 
-			handle_issue_milestone_action(
-				&argc, &argv, owner, repo, issue_id);
+			handle_issue_milestone_action(&argc, &argv, path);
 
 		} else if (strcmp("title", operation) == 0) {
 
 			char const *new_title = shift(&argc, &argv);
-			int rc = gcli_issue_set_title(g_clictx, owner, repo, issue_id,
-			                              new_title);
+			int rc = gcli_issue_set_title(g_clictx, path, new_title);
 
 			if (rc < 0) {
 				errx(1, "gcli: error: failed to set new issue title: %s",
@@ -754,8 +742,8 @@ handle_issues_actions(int argc, char *argv[],
 		} else if (strcmp("attachments", operation) == 0) {
 
 			struct gcli_attachment_list list = {0};
-			int rc = gcli_issue_get_attachments(g_clictx, owner, repo, issue_id,
-			                                    &list);
+
+			int rc = gcli_issue_get_attachments(g_clictx, path, &list);
 			if (rc < 0) {
 				errx(1, "gcli: error: failed to fetch attachments: %s",
 				     gcli_get_error(g_clictx));

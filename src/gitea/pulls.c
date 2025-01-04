@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,20 +28,63 @@
  */
 
 #include <gcli/gitea/pulls.h>
-#include <gcli/github/pulls.h>
+#include <gcli/gitea/repos.h>
 #include <gcli/github/issues.h>
+#include <gcli/github/pulls.h>
 
 #include <gcli/json_gen.h>
 
 #include <templates/github/pulls.h>
 
+#include <stdarg.h>
+
 int
-gitea_search_pulls(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gitea_pull_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                    char **url, char const *const suffix_fmt, ...)
+{
+	char *suffix = NULL;
+	int rc = 0;
+	va_list vp;
+
+	va_start(vp, suffix_fmt);
+	suffix = sn_vasprintf(suffix_fmt, vp);
+	va_end(vp);
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner = NULL, *e_repo = NULL;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo  = gcli_urlencode(path->data.as_default.repo);
+
+		*url = sn_asprintf("%s/repos/%s/%s/pulls/%"PRIid"%s",
+		                   gcli_get_apibase(ctx), e_owner, e_repo,
+		                   path->data.as_default.id, suffix);
+
+		free(e_owner);
+		free(e_repo);
+	} break;
+	case GCLI_PATH_URL: {
+		*url = sn_asprintf("%s%s", path->data.as_url, suffix);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "unsupported path kind for Gitea pulls");
+	} break;
+	}
+
+	free(suffix);
+
+	return rc;
+}
+
+int
+gitea_search_pulls(struct gcli_ctx *ctx, struct gcli_path const *const path,
                    struct gcli_pull_fetch_details const *details,
                    int const max, struct gcli_pull_list *const out)
 {
-	char *url = NULL, *e_owner = NULL, *e_repo = NULL, *e_author = NULL,
-	     *e_label = NULL, *e_milestone = NULL, *e_query = NULL;
+	char *url = NULL, *e_author = NULL, *e_label = NULL,
+	     *e_milestone = NULL, *e_query = NULL;
+	int rc = 0;
 
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &out->pulls,
@@ -74,33 +117,30 @@ gitea_search_pulls(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		free(tmp);
 	}
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/issues?type=pulls&state=%s%s%s%s%s",
-	                  gcli_get_apibase(ctx),
-	                  e_owner, e_repo,
-	                  details->all ? "all" : "open",
-	                  e_author ? e_author : "",
-	                  e_label ? e_label : "",
-	                  e_milestone ? e_milestone : "",
-	                  e_query ? e_query : "");
+	rc = gitea_repo_make_url(ctx, path, &url,
+	                         "/issues?type=pulls&state=%s%s%s%s%s",
+	                         details->all ? "all" : "open",
+	                         e_author ? e_author : "",
+	                         e_label ? e_label : "",
+	                         e_milestone ? e_milestone : "",
+	                         e_query ? e_query : "");
 
 	free(e_query);
 	free(e_milestone);
 	free(e_author);
 	free(e_label);
-	free(e_owner);
-	free(e_repo);
+
+	if (rc < 0)
+		return rc;
 
 	return gcli_fetch_list(ctx, url, &fl);
 }
 
 int
-gitea_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
-               gcli_id const pr_number, struct gcli_pull *const out)
+gitea_get_pull(struct gcli_ctx *ctx, struct gcli_path const *const path,
+               struct gcli_pull *const out)
 {
-	int const rc = github_get_pull(ctx, owner, repo, pr_number, out);
+	int const rc = github_get_pull(ctx, path, out);
 
 	if (rc == 0) {
 		/* fix for https://gitlab.com/herrhotzenplotz/gcli/issues/222:
@@ -110,7 +150,7 @@ gitea_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
 		 * owners of the repository. */
 		for (size_t i = 0; i < out->reviewers_size; ++i) {
 			if (out->reviewers[i] == NULL)
-				out->reviewers[i] = sn_asprintf("%s/Owners", owner);
+				out->reviewers[i] = strdup("Owners");
 		}
 	}
 
@@ -118,11 +158,11 @@ gitea_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 int
-gitea_get_pull_commits(struct gcli_ctx *ctx, char const *owner,
-                       char const *repo, gcli_id const pr_number,
+gitea_get_pull_commits(struct gcli_ctx *ctx,
+                       struct gcli_path const *const path,
                        struct gcli_commit_list *const out)
 {
-	return github_get_pull_commits(ctx, owner, repo, pr_number, out);
+	return github_get_pull_commits(ctx, path, out);
 }
 
 int
@@ -134,14 +174,19 @@ gitea_pull_submit(struct gcli_ctx *ctx, struct gcli_submit_pull_options *opts)
 }
 
 int
-gitea_pull_merge(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                 gcli_id const pr, enum gcli_merge_flags const flags)
+gitea_pull_merge(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                 enum gcli_merge_flags const flags)
 {
 	bool const delete_branch = flags & GCLI_PULL_MERGE_DELETEHEAD;
 	bool const squash = flags & GCLI_PULL_MERGE_SQUASH;
-	char *url = NULL, *e_owner = NULL, *e_repo = NULL, *payload = NULL;
+	char *url = NULL, *payload = NULL;
 	struct gcli_jsongen gen = {0};
 	int rc = 0;
+
+	/* Generate URL */
+	rc = gitea_pull_make_url(ctx, path, &url, "/merge");
+	if (rc < 0)
+		return rc;
 
 	/* Generate payload */
 	gcli_jsongen_init(&gen);
@@ -158,16 +203,6 @@ gitea_pull_merge(struct gcli_ctx *ctx, char const *owner, char const *repo,
 	payload = gcli_jsongen_to_string(&gen);
 	gcli_jsongen_free(&gen);
 
-	/* Generate URL */
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s/pulls/%"PRIid"/merge",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, pr);
-
-	free(e_owner);
-	free(e_repo);
-
 	rc = gcli_fetch_with_method(ctx, "POST", url, payload, NULL, NULL);
 
 	free(url);
@@ -177,146 +212,115 @@ gitea_pull_merge(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 static int
-gitea_pulls_patch_state(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, int const pr_number,
-                        char const *state)
+gitea_pulls_patch_state(struct gcli_ctx *ctx,
+                        struct gcli_path const *const path, char const *state)
 {
 	char *url = NULL;
 	char *data = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
+	rc = gitea_pull_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
-	url = sn_asprintf(
-		"%s/repos/%s/%s/pulls/%d",
-		gcli_get_apibase(ctx),
-		e_owner, e_repo,
-		pr_number);
 	data = sn_asprintf("{ \"state\": \"%s\"}", state);
 
 	rc = gcli_fetch_with_method(ctx, "PATCH", url, data, NULL, NULL);
 
 	free(data);
 	free(url);
-	free(e_owner);
-	free(e_repo);
 
 	return rc;
 }
 
 int
-gitea_pull_close(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                 gcli_id const pr_number)
+gitea_pull_close(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	return gitea_pulls_patch_state(ctx, owner, repo, pr_number, "closed");
+	return gitea_pulls_patch_state(ctx, path, "closed");
 }
 
 int
-gitea_pull_reopen(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                  gcli_id const pr_number)
+gitea_pull_reopen(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	return gitea_pulls_patch_state(ctx, owner, repo, pr_number, "open");
+	return gitea_pulls_patch_state(ctx, path, "open");
 }
 
 int
-gitea_pull_get_patch(struct gcli_ctx *ctx, FILE *const stream, char const *owner,
-                     char const *repo, gcli_id const pr_number)
+gitea_pull_get_patch(struct gcli_ctx *ctx, FILE *const stream,
+                     struct gcli_path const *const path)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf(
-		"%s/repos/%s/%s/pulls/%"PRIid".patch",
-		gcli_get_apibase(ctx),
-		e_owner, e_repo, pr_number);
+	rc = gitea_pull_make_url(ctx, path, &url, ".patch");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_curl(ctx, stream, url, NULL);
 
-	free(e_owner);
-	free(e_repo);
 	free(url);
 
 	return rc;
 }
 int
-gitea_pull_get_diff(struct gcli_ctx *ctx, FILE *const stream, char const *owner,
-                    char const *repo, gcli_id const pr_number)
+gitea_pull_get_diff(struct gcli_ctx *ctx, FILE *const stream,
+                    struct gcli_path const *const path)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf(
-		"%s/repos/%s/%s/pulls/%"PRIid".diff",
-		gcli_get_apibase(ctx),
-		e_owner, e_repo, pr_number);
+	rc = gitea_pull_make_url(ctx, path, &url, ".diff");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_curl(ctx, stream, url, NULL);
 
-	free(e_owner);
-	free(e_repo);
 	free(url);
 
 	return rc;
 }
 
 int
-gitea_pull_get_checks(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                      gcli_id const pr_number, struct gcli_pull_checks_list *out)
+gitea_pull_get_checks(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                      struct gcli_pull_checks_list *out)
 {
 	(void) ctx;
-	(void) owner;
-	(void) repo;
-	(void) pr_number;
+	(void) path;
 	(void) out;
 
 	return gcli_error(ctx, "Pull Request checks are not available on Gitea");
 }
 
 int
-gitea_pull_set_milestone(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, gcli_id pr_number,
+gitea_pull_set_milestone(struct gcli_ctx *ctx,
+                         struct gcli_path const *const pull_path,
                          gcli_id milestone_id)
 {
-	return github_issue_set_milestone(ctx, owner, repo, pr_number,
-	                                  milestone_id);
+	return github_issue_set_milestone(ctx, pull_path, milestone_id);
 }
 
 int
-gitea_pull_clear_milestone(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id pr_number)
+gitea_pull_clear_milestone(struct gcli_ctx *ctx,
+                           struct gcli_path const *const pull_path)
 {
 	/* NOTE: The github routine for clearing issues sets the milestone
 	 * to null (not the integer zero). However this does not work in
 	 * the case of Gitea which clear the milestone by setting it to
 	 * the integer value zero. */
-	return github_issue_set_milestone(ctx, owner, repo, pr_number, 0);
+	return github_issue_set_milestone(ctx, pull_path, 0);
 }
 
 int
-gitea_pull_add_reviewer(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, gcli_id pr_number,
+gitea_pull_add_reviewer(struct gcli_ctx *ctx,
+                        struct gcli_path const *const path,
                         char const *username)
 {
-	return github_pull_add_reviewer(ctx, owner, repo, pr_number, username);
+	return github_pull_add_reviewer(ctx, path, username);
 }
 
 int
-gitea_pull_set_title(struct gcli_ctx *ctx, char const *const owner,
-                     char const *const repo, gcli_id pull,
+gitea_pull_set_title(struct gcli_ctx *ctx, struct gcli_path const *const path,
                      char const *const title)
 {
-	return github_pull_set_title(ctx, owner, repo, pull, title);
+	return github_pull_set_title(ctx, path, title);
 }

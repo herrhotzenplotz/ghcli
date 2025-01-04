@@ -34,15 +34,17 @@
 #include <config.h>
 #endif
 
+#include <gcli/path.h>
 #include <gcli/releases.h>
 
-int gitea_get_releases(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                       int max, struct gcli_release_list *list);
+int gitea_get_releases(struct gcli_ctx *ctx,
+                       struct gcli_path const *repo_path, int max,
+                       struct gcli_release_list *list);
 
 int gitea_create_release(struct gcli_ctx *ctx,
                          struct gcli_new_release const *release);
 
-int gitea_delete_release(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, char const *id);
+int gitea_delete_release(struct gcli_ctx *ctx, struct gcli_path const *path,
+                         char const *id);
 
 #endif /* GITEA_RELEASES_H */

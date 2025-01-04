@@ -32,6 +32,7 @@
 #include <gcli/cmd/table.h>
 
 #include <gcli/gitlab/config.h>
+#include <gcli/gitlab/merge_requests.h>
 #include <gcli/gitlab/pipelines.h>
 #include <gcli/json_util.h>
 #include <gcli/pulls.h>
@@ -107,18 +108,16 @@ gitlab_get_pipeline(struct gcli_ctx *ctx, char const *owner,
 }
 
 int
-gitlab_get_mr_pipelines(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                        gcli_id const mr_id, struct gitlab_pipeline_list *const list)
+gitlab_get_mr_pipelines(struct gcli_ctx *ctx,
+                        struct gcli_path const *const path,
+                        struct gitlab_pipeline_list *const list)
 {
 	char *url = NULL;
-	char *e_owner = gcli_urlencode(owner);
-	char *e_repo = gcli_urlencode(repo);
+	int rc = 0;
 
-	url = sn_asprintf("%s/projects/%s%%2F%s/merge_requests/%"PRIid"/pipelines",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, mr_id);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_mr_make_url(ctx, path, &url, "/pipelines");
+	if (rc < 0)
+		return rc;
 
 	/* fetch everything */
 	return fetch_pipelines(ctx, url, -1, list);
@@ -128,8 +127,6 @@ void
 gitlab_pipeline_free(struct gitlab_pipeline *pipeline)
 {
 	free(pipeline->status);
-	free(pipeline->created_at);
-	free(pipeline->updated_at);
 	free(pipeline->ref);
 	free(pipeline->sha);
 	free(pipeline->source);
@@ -204,9 +201,6 @@ gitlab_free_job(struct gitlab_job *const job)
 	free(job->stage);
 	free(job->name);
 	free(job->ref);
-	free(job->created_at);
-	free(job->started_at);
-	free(job->finished_at);
 	free(job->runner_name);
 	free(job->runner_description);
 }

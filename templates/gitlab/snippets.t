@@ -4,7 +4,7 @@ include "gcli/gitlab/snippets.h";
 parser gitlab_snippet is
 object of struct gcli_gitlab_snippet with
 	("title"      => title as string,
-	 "id"         => id as int,
+	 "id"         => id as id,
 	 "raw_url"    => raw_url as string,
 	 "created_at" => date as string,
 	 "file_name"  => filename as string,

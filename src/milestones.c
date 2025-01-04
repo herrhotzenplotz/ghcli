@@ -31,18 +31,17 @@
 #include <gcli/milestones.h>
 
 int
-gcli_get_milestones(struct gcli_ctx *ctx, char const *const owner,
-                    char const *const repo, int const max,
-                    struct gcli_milestone_list *const out)
+gcli_get_milestones(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                    int const max, struct gcli_milestone_list *const out)
 {
-	gcli_null_check_call(get_milestones, ctx, owner, repo, max, out);
+	gcli_null_check_call(get_milestones, ctx, path, max, out);
 }
 
 int
-gcli_get_milestone(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   gcli_id const milestone, struct gcli_milestone *const out)
+gcli_get_milestone(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                   struct gcli_milestone *const out)
 {
-	gcli_null_check_call(get_milestone, ctx, owner, repo, milestone, out);
+	gcli_null_check_call(get_milestone, ctx, path, out);
 }
 
 int
@@ -53,10 +52,9 @@ gcli_create_milestone(struct gcli_ctx *ctx,
 }
 
 int
-gcli_delete_milestone(struct gcli_ctx *ctx, char const *const owner,
-                      char const *const repo, gcli_id const milestone)
+gcli_delete_milestone(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	gcli_null_check_call(delete_milestone, ctx, owner, repo, milestone);
+	gcli_null_check_call(delete_milestone, ctx, path);
 }
 
 void
@@ -66,15 +64,9 @@ gcli_free_milestone(struct gcli_milestone *const it)
 	it->title = NULL;
 	free(it->state);
 	it->state = NULL;
-	free(it->created_at);
-	it->created_at = NULL;
 
 	free(it->description);
 	it->description = NULL;
-	free(it->updated_at);
-	it->updated_at = NULL;
-	free(it->due_date);
-	it->due_date = NULL;
 }
 
 void
@@ -89,19 +81,17 @@ gcli_free_milestones(struct gcli_milestone_list *const it)
 }
 
 int
-gcli_milestone_get_issues(struct  gcli_ctx *ctx, char const *const owner,
-                          char const *const repo, gcli_id const milestone,
+gcli_milestone_get_issues(struct  gcli_ctx *ctx,
+                          struct gcli_path const *const milestone_path,
                           struct gcli_issue_list *const out)
 {
-	gcli_null_check_call(get_milestone_issues, ctx, owner, repo, milestone,
-	                     out);
+	gcli_null_check_call(get_milestone_issues, ctx, milestone_path, out);
 }
 
 int
-gcli_milestone_set_duedate(struct  gcli_ctx *ctx, char const *const owner,
-                           char const *const repo, gcli_id const milestone,
+gcli_milestone_set_duedate(struct  gcli_ctx *ctx,
+                           struct gcli_path const *const path,
                            char const *const date)
 {
-	gcli_null_check_call(milestone_set_duedate, ctx, owner, repo,
-	                     milestone, date);
+	gcli_null_check_call(milestone_set_duedate, ctx, path, date);
 }

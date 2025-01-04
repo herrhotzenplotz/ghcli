@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -66,8 +66,10 @@ gcli_forge_type gcli_config_get_forge_type(struct gcli_ctx *ctx);
 sn_sv gcli_config_get_override_default_account(struct gcli_ctx *ctx);
 bool gcli_config_pr_inhibit_delete_source_branch(struct gcli_ctx *ctx);
 int gcli_config_get_repo(struct gcli_ctx *ctx, char const **, char const **);
-int gcli_config_have_colours(struct gcli_ctx *ctx);
-int gcli_config_display_progress_spinner(struct gcli_ctx *ctx);
+int gcli_config_get_remote(struct gcli_ctx *ctx, char **remote);
+bool gcli_config_have_colours(struct gcli_ctx *ctx);
+bool gcli_config_display_progress_spinner(struct gcli_ctx *ctx);
+bool gcli_config_render_markdown(struct gcli_ctx *ctx);
 bool gcli_config_enable_experimental(struct gcli_ctx *ctx);
 struct gcli_config_entries const *gcli_config_get_section_entries(
 	struct gcli_ctx *ctx, char const *section_name);

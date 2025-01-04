@@ -87,7 +87,7 @@ ATF_TC_BODY(simple_bugzilla_issue, tc)
 
 	ATF_CHECK_EQ(issue->number, 1);
 	ATF_CHECK_STREQ(issue->title, "[aha] [scsi] Toshiba MK156FB scsi drive does not work with 2.0 kernel");
-	ATF_CHECK_STREQ(issue->created_at, "1994-09-14T09:10:01Z");
+	ATF_CHECK_EQ(issue->created_at, 779533801);
 	ATF_CHECK_STREQ(issue->author, "Dave Evans");
 	ATF_CHECK_STREQ(issue->state, "Closed");
 	ATF_CHECK_STREQ(issue->product, "Base System");
@@ -119,7 +119,7 @@ ATF_TC_BODY(bugzilla_comments, tc)
 	cmt = &list.comments[0];
 	ATF_CHECK_EQ(cmt->id, 1285943);
 	ATF_CHECK_STREQ(cmt->author, "zlei@FreeBSD.org");
-	ATF_CHECK_STREQ(cmt->date, "2023-11-27T17:20:15Z");
+	ATF_CHECK_EQ(cmt->date, 1701105615);
 	ATF_CHECK(cmt->body != NULL);
 
 	gcli_comments_free(&list);
@@ -147,7 +147,7 @@ ATF_TC_BODY(bugzilla_attachments, tc)
 	ATF_CHECK_EQ(it->is_obsolete, true);
 	ATF_CHECK_STREQ(it->author, "nsonack@outlook.com");
 	ATF_CHECK_STREQ(it->content_type, "text/plain");
-	ATF_CHECK_STREQ(it->created_at, "2023-11-04T20:19:11Z");
+	ATF_CHECK_EQ(it->created_at, 1699129151);
 	ATF_CHECK_STREQ(it->file_name, "0001-devel-open62541-Update-to-version-1.3.8.patch");
 	ATF_CHECK_STREQ(it->summary, "Patch for updating the port");
 
@@ -156,7 +156,7 @@ ATF_TC_BODY(bugzilla_attachments, tc)
 	ATF_CHECK_EQ(it->is_obsolete, false);
 	ATF_CHECK_STREQ(it->author, "nsonack@outlook.com");
 	ATF_CHECK_STREQ(it->content_type, "text/plain");
-	ATF_CHECK_STREQ(it->created_at, "2023-12-08T17:10:06Z");
+	ATF_CHECK_EQ(it->created_at, 1702055406);
 	ATF_CHECK_STREQ(it->file_name, "0001-devel-open62541-Update-to-version-1.3.8.patch");
 	ATF_CHECK_STREQ(it->summary, "Patch v2 (now for version 1.3.9)");
 

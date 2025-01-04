@@ -35,14 +35,15 @@
 #endif
 
 #include <gcli/labels.h>
+#include <gcli/path.h>
 
-int gitea_get_labels(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gitea_get_labels(struct gcli_ctx *ctx, struct gcli_path const *path,
                      int max, struct gcli_label_list *out);
 
-int gitea_create_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gitea_create_label(struct gcli_ctx *ctx, struct gcli_path const *path,
                        struct gcli_label *label);
 
-int gitea_delete_label(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gitea_delete_label(struct gcli_ctx *ctx, struct gcli_path const *repo_path,
                        char const *label);
 
 #endif /* GITEA_LABELS_H */

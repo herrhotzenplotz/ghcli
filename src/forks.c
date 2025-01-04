@@ -34,17 +34,18 @@
 #include <gcli/github/forks.h>
 
 int
-gcli_get_forks(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gcli_get_forks(struct gcli_ctx *ctx, struct gcli_path const *const path,
                int const max, struct gcli_fork_list *const out)
 {
-	gcli_null_check_call(get_forks, ctx, owner, repo, max, out);
+	gcli_null_check_call(get_forks, ctx, path, max, out);
 }
 
 int
-gcli_fork_create(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                 char const *_in)
+gcli_fork_create(struct gcli_ctx *ctx,
+                 struct gcli_path const *const repo_path,
+                 char const *const in)
 {
-	gcli_null_check_call(fork_create, ctx, owner, repo, _in);
+	gcli_null_check_call(fork_create, ctx, repo_path, in);
 }
 
 void
@@ -52,7 +53,6 @@ gcli_fork_free(struct gcli_fork *fork)
 {
 	free(fork->full_name);
 	free(fork->owner);
-	free(fork->date);
 }
 
 void

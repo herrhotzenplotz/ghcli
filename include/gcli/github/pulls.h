@@ -37,51 +37,48 @@
 #include <gcli/curl.h>
 #include <gcli/pulls.h>
 
-int github_search_pulls(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int github_pull_make_url(struct gcli_ctx *ctx, struct gcli_path const *path,
+                         char **url, char const *fmt, ...);
+
+int github_search_pulls(struct gcli_ctx *ctx, struct gcli_path const *repo_path,
                         struct gcli_pull_fetch_details const *details, int max,
                         struct gcli_pull_list *out);
 
-int github_pull_get_diff(struct  gcli_ctx *ctx, FILE *stream, char const *owner,
-                         char const *reponame, gcli_id pr_number);
+int github_pull_get_diff(struct gcli_ctx *ctx, FILE *stream,
+                         struct gcli_path const *path);
 
-int github_pull_get_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
-                          char const *reponame, gcli_id pr_number);
+int github_pull_get_patch(struct gcli_ctx *ctx, FILE *stream,
+                          struct gcli_path const *path);
 
 int github_print_pull_patch(struct gcli_ctx *ctx, FILE *stream, char const *owner,
                             char const *reponame, gcli_id pr_number);
 
-int github_pull_get_checks(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id pr_number,
+int github_pull_get_checks(struct gcli_ctx *ctx, struct gcli_path const *path,
                            struct gcli_pull_checks_list *out);
 
-int github_pull_merge(struct gcli_ctx *ctx, char const *owner,
-                      char const *repo, gcli_id pr_number,
+int github_pull_merge(struct gcli_ctx *ctx, struct gcli_path const *path,
                       enum gcli_merge_flags flags);
 
-int github_pull_reopen(struct gcli_ctx *ctx, char const *owner,
-                       char const *reponame, gcli_id pr_number);
+int github_pull_reopen(struct gcli_ctx *ctx, struct gcli_path const *path);
 
-int github_pull_close(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                      gcli_id pr_number);
+int github_pull_close(struct gcli_ctx *ctx, struct gcli_path const *path);
 
 int github_perform_submit_pull(struct gcli_ctx *ctx,
                                struct gcli_submit_pull_options *opts);
 
-int github_get_pull_commits(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id pr_number,
+int github_get_pull_commits(struct gcli_ctx *ctx, struct gcli_path const *path,
                             struct gcli_commit_list *out);
 
-int github_get_pull(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    gcli_id pr_number, struct gcli_pull *out);
+int github_get_pull(struct gcli_ctx *ctx, struct gcli_path const *path,
+                    struct gcli_pull *out);
 
 sn_sv github_pull_try_derive_head(void);
 
-int github_pull_add_reviewer(struct gcli_ctx *ctx, char const *owner,
-                             char const *repo, gcli_id pr_number,
+int github_pull_add_reviewer(struct gcli_ctx *ctx, struct gcli_path const *path,
                              char const *username);
 
-int github_pull_set_title(struct gcli_ctx *ctx, char const *owner,
-                          char const *repo, gcli_id pull, char const *new_title);
+int github_pull_set_title(struct gcli_ctx *ctx, struct gcli_path const *path,
+                          char const *new_title);
 
 int github_pull_create_review(struct gcli_ctx *ctx,
                               struct gcli_pull_create_review_details const *details);

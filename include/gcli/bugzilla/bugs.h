@@ -38,26 +38,24 @@
 
 #include <pdjson/pdjson.h>
 
-int bugzilla_get_bugs(struct gcli_ctx *ctx, char const *product,
-                      char const *component,
-                      struct gcli_issue_fetch_details const *details, int const max,
-                      struct gcli_issue_list *out);
+int bugzilla_get_bugs(struct gcli_ctx *ctx, struct gcli_path const *path,
+                      struct gcli_issue_fetch_details const *details,
+                      int const max, struct gcli_issue_list *out);
 
-int bugzilla_get_bug(struct gcli_ctx *ctx, char const *product,
-                     char const *component, gcli_id bug_id, struct gcli_issue *out);
+int bugzilla_get_bug(struct gcli_ctx *ctx, struct gcli_path const *path,
+                     struct gcli_issue *out);
 
 int bugzilla_bug_get_comments(struct gcli_ctx *const ctx,
-                              char const *const product,
-                              char const *const component, gcli_id const bug_id,
+                              struct gcli_path const *bug_path,
                               struct gcli_comment_list *out);
 
-int bugzilla_bug_get_comment(struct gcli_ctx *ctx, char const *product, char const *component,
-                             enum comment_target_type target_type, gcli_id target_id,
+int bugzilla_bug_get_comment(struct gcli_ctx *ctx,
+                             struct gcli_path const *target,
+                             enum comment_target_type target_type,
                              gcli_id comment_id, struct gcli_comment *out);
 
-int bugzilla_bug_get_attachments(struct gcli_ctx *ctx, char const *const product,
-                                 char const *const component,
-                                 gcli_id const bug_id,
+int bugzilla_bug_get_attachments(struct gcli_ctx *ctx,
+                                 struct gcli_path const *bug_path,
                                  struct gcli_attachment_list *const out);
 
 int bugzilla_bug_submit(struct gcli_ctx *ctx,

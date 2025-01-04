@@ -36,6 +36,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <gcli/gcli.h>
 
@@ -67,6 +68,7 @@ enum gcli_tblcoltype {
 	GCLI_TBLCOLTYPE_LONG,       /* signed long int */
 	GCLI_TBLCOLTYPE_ID,         /* some ID type (uint64_t) */
 	GCLI_TBLCOLTYPE_STRING,     /* C string */
+	GCLI_TBLCOLTYPE_TIME_T,     /* a time_t unix timestamp */
 	GCLI_TBLCOLTYPE_DOUBLE,     /* double precision float */
 	GCLI_TBLCOLTYPE_BOOL,       /* yes/no */
 };
@@ -92,10 +94,14 @@ int gcli_tbl_add_row(gcli_tbl table, ...);
 gcli_dict gcli_dict_begin(void);
 
 int gcli_dict_add(gcli_dict list, char const *key, int flags,
-                  uint32_t colour_args, char const *fmt, ...);
+                  uint32_t colour_args, char const *fmt, ...)
+                  PRINTF_FORMAT(5, 6);
 
 int gcli_dict_add_string(gcli_dict list, char const *key, int flags,
                          uint32_t colour_args, char const *str);
+
+int gcli_dict_add_timestamp(gcli_dict list, char const *key, int flags,
+                            uint32_t colour_args, time_t stamp);
 
 int gcli_dict_add_sv_list(gcli_dict dict, char const *key, sn_sv const *list,
                           size_t list_size);

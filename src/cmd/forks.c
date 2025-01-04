@@ -69,7 +69,7 @@ gcli_print_forks(enum gcli_output_flags const flags,
 	gcli_tbl table;
 	struct gcli_tblcoldef cols[] = {
 		{ .name = "OWNER",    .type = GCLI_TBLCOLTYPE_STRING, .flags = GCLI_TBLCOL_BOLD },
-		{ .name = "DATE",     .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "DATE",     .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
 		{ .name = "FORKS",    .type = GCLI_TBLCOLTYPE_INT,    .flags = GCLI_TBLCOL_JUSTIFYR },
 		{ .name = "FULLNAME", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 	};
@@ -113,9 +113,10 @@ gcli_print_forks(enum gcli_output_flags const flags,
 static int
 subcommand_forks_create(int argc, char *argv[])
 {
-	int         ch;
-	char const *owner = NULL, *repo = NULL, *in = NULL;
-	bool        always_yes = false;
+	bool always_yes = false;
+	char *in = NULL;
+	int ch;
+	struct gcli_path repo_path = {0};
 
 	struct option const options[] = {
 		{ .name    = "repo",
@@ -140,10 +141,10 @@ subcommand_forks_create(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "yo:r:i:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			repo_path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			repo_path.data.as_default.repo = optarg;
 			break;
 		case 'i':
 			in = optarg;
@@ -161,9 +162,9 @@ subcommand_forks_create(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&repo_path);
 
-	if (gcli_fork_create(g_clictx, owner, repo, in) < 0)
+	if (gcli_fork_create(g_clictx, &repo_path, in) < 0)
 		errx(1, "gcli: error: failed to fork repository: %s", gcli_get_error(g_clictx));
 
 	if (!always_yes) {
@@ -178,7 +179,7 @@ subcommand_forks_create(int argc, char *argv[])
 		}
 	}
 
-	gcli_gitconfig_add_fork_remote(in, repo);
+	gcli_gitconfig_add_fork_remote(in, repo_path.data.as_default.repo);
 
 	return EXIT_SUCCESS;
 }
@@ -187,7 +188,7 @@ int
 subcommand_forks(int argc, char *argv[])
 {
 	struct gcli_fork_list forks = {0};
-	char const *owner = NULL, *repo = NULL;
+	struct gcli_path repo_path = {0};
 	int ch = 0;
 	int count = 30;
 	bool always_yes = false;
@@ -226,10 +227,10 @@ subcommand_forks(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "n:o:r:ys", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			repo_path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			repo_path.data.as_default.repo = optarg;
 			break;
 		case 'y':
 			always_yes = true;
@@ -257,10 +258,10 @@ subcommand_forks(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&repo_path);
 
 	if (argc == 0) {
-		if (gcli_get_forks(g_clictx, owner, repo, count, &forks) < 0)
+		if (gcli_get_forks(g_clictx, &repo_path, count, &forks) < 0)
 			errx(1, "gcli: error: could not get forks: %s", gcli_get_error(g_clictx));
 
 		gcli_print_forks(flags, &forks, count);
@@ -273,7 +274,7 @@ subcommand_forks(int argc, char *argv[])
 		char const *action = argv[i];
 
 		if (strcmp(action, "delete") == 0) {
-			delete_repo(always_yes, owner, repo);
+			delete_repo(always_yes, &repo_path);
 		} else {
 			fprintf(stderr, "gcli: error: forks: unknown action '%s'\n", action);
 		}

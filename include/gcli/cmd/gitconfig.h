@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,7 +41,7 @@ struct gcli_gitremote {
 	sn_sv owner;
 	sn_sv repo;
 	sn_sv url;
-	int   forge_type;
+	gcli_forge_type forge_type;
 };
 
 sn_sv gcli_gitconfig_get_current_branch(void);
@@ -53,5 +53,8 @@ int gcli_gitconfig_get_forgetype(struct gcli_ctx *ctx, char const *remote_name);
 int gcli_gitconfig_repo_by_remote(struct gcli_ctx *ctx, char const *const remote_name,
                                   char const **const owner, char const **const repo,
                                   int *const forge);
+
+int gcli_gitconfig_get_remote(struct gcli_ctx *ctx, gcli_forge_type type,
+                              char **remote);
 
 #endif /* GCLI_CMD_GITCONFIG_H */

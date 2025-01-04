@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,6 +33,7 @@
 
 #include <config.h>
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -145,8 +146,10 @@ int
 gcli_jsongen_begin_object(struct gcli_jsongen *gen)
 {
 	/* Cannot put a json object into a json object key */
-	if (is_object_scope(gen) && !gen->await_object_value)
+	if (is_object_scope(gen) && !gen->await_object_value) {
+		assert(0 && "attempt to use json object as object key");
 		return -1;
+	}
 
 	put_comma_if_needed(gen);
 
@@ -163,8 +166,10 @@ gcli_jsongen_begin_object(struct gcli_jsongen *gen)
 int
 gcli_jsongen_end_object(struct gcli_jsongen *gen)
 {
-	if (pop_scope(gen) != GCLI_JSONGEN_OBJECT)
+	if (pop_scope(gen) != GCLI_JSONGEN_OBJECT) {
+		assert(0 && "unbalanced json scopes");
 		return -1;
+	}
 
 	append_str(gen, "}");
 
@@ -178,8 +183,10 @@ int
 gcli_jsongen_begin_array(struct gcli_jsongen *gen)
 {
 	/* Cannot put a json array into a json object key */
-	if (is_object_scope(gen) && !gen->await_object_value)
+	if (is_object_scope(gen) && !gen->await_object_value) {
+		assert(0 && "attempt to use array as object key");
 		return -1;
+	}
 
 	put_comma_if_needed(gen);
 
@@ -196,8 +203,10 @@ gcli_jsongen_begin_array(struct gcli_jsongen *gen)
 int
 gcli_jsongen_end_array(struct gcli_jsongen *gen)
 {
-	if (pop_scope(gen) != GCLI_JSONGEN_ARRAY)
+	if (pop_scope(gen) != GCLI_JSONGEN_ARRAY) {
+		assert(0 && "unbalanced json scopes");
 		return -1;
+	}
 
 	append_str(gen, "]");
 
@@ -235,8 +244,10 @@ append_strf(struct gcli_jsongen *gen, char const *const fmt, ...)
 int
 gcli_jsongen_objmember(struct gcli_jsongen *gen, char const *const key)
 {
-	if (!is_object_scope(gen))
+	if (!is_object_scope(gen)) {
+		assert(0 && "gcli_jsongen_objmember called outside object scope");
 		return -1;
+	}
 
 	put_comma_if_needed(gen);
 	char *const e_key = gcli_json_escape_cstr(key);

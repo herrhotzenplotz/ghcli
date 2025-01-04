@@ -11,7 +11,7 @@ object of struct gcli_issue with
 	("title"             => title as string,
 	 "state"             => state as string,
 	 "description"       => body as string,
-	 "created_at"        => created_at as string,
+	 "created_at"        => created_at as iso8601_time,
 	 "iid"               => number as id,
 	 "user_notes_count"  => comments as int,
 	 "author"            => author as user,

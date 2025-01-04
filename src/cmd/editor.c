@@ -50,10 +50,22 @@ sv_append(sn_sv this, sn_sv const that)
 	return this;
 }
 
+static char *
+get_env_editor(void)
+{
+	static char const *const env_vars[] = { "GIT_EDITOR", "VISUAL", "EDITOR", NULL };
+	size_t i = 0;
+	char *result = NULL;
+	do
+		result = getenv(env_vars[i]);
+	while (!result && env_vars[++i]);
+	return result;
+}
+
 static void
 edit(struct gcli_ctx *ctx, char const *filename)
 {
-	char *editor = getenv("EDITOR");
+	char *editor = get_env_editor();
 	char *env_editor = editor;
 
 	if (!editor) {

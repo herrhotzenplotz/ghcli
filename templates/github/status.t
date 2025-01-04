@@ -4,7 +4,7 @@ parser github_notification_subject is
 object of struct gcli_notification with
 	("title" => title as string,
 	 "type"  => type as github_notification_target_type,
-	 "url"   => target.url as string);
+	 "url"   => target as url_path);
 
 parser github_notification_repository is
 object of struct gcli_notification with

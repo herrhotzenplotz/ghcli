@@ -77,13 +77,13 @@ gcli_print_release(enum gcli_output_flags const flags,
 
 	dict = gcli_dict_begin();
 
-	gcli_dict_add(dict,        "ID",         0, 0, "%s", it->id);
-	gcli_dict_add(dict,        "NAME",       0, 0, "%s", it->name);
-	gcli_dict_add(dict,        "AUTHOR",     0, 0, "%s", it->author);
-	gcli_dict_add(dict,        "DATE",       0, 0, "%s", it->date);
-	gcli_dict_add_string(dict, "DRAFT",      0, 0, sn_bool_yesno(it->draft));
-	gcli_dict_add_string(dict, "PRERELEASE", 0, 0, sn_bool_yesno(it->prerelease));
-	gcli_dict_add_string(dict, "ASSETS",     0, 0, "");
+	gcli_dict_add(dict,           "ID",         0, 0, "%s", it->id);
+	gcli_dict_add(dict,           "NAME",       0, 0, "%s", it->name);
+	gcli_dict_add(dict,           "AUTHOR",     0, 0, "%s", it->author);
+	gcli_dict_add_timestamp(dict, "DATE",       0, 0, it->date);
+	gcli_dict_add_string(dict,    "DRAFT",      0, 0, sn_bool_yesno(it->draft));
+	gcli_dict_add_string(dict,    "PRERELEASE", 0, 0, sn_bool_yesno(it->prerelease));
+	gcli_dict_add_string(dict,    "ASSETS",     0, 0, "");
 
 	/* asset urls */
 	for (size_t i = 0; i < it->assets_size; ++i) {
@@ -132,7 +132,7 @@ gcli_releases_print_short(enum gcli_output_flags const flags,
 	gcli_tbl table;
 	struct gcli_tblcoldef cols[] = {
 		{ .name = "ID",         .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
-		{ .name = "DATE",       .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "DATE",       .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
 		{ .name = "DRAFT",      .type = GCLI_TBLCOLTYPE_BOOL,   .flags = 0 },
 		{ .name = "PRERELEASE", .type = GCLI_TBLCOLTYPE_BOOL,   .flags = 0 },
 		{ .name = "NAME",       .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
@@ -332,9 +332,9 @@ subcommand_releases_create(int argc, char *argv[])
 static int
 subcommand_releases_delete(int argc, char *argv[])
 {
-	int         ch;
-	char const *owner = NULL, *repo = NULL;
-	bool        always_yes = false;
+	int ch = 0;
+	bool always_yes = false;
+	struct gcli_path repo_path = {0};
 
 	struct option const options[] = {
 		{ .name    = "repo",
@@ -355,10 +355,10 @@ subcommand_releases_delete(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "yo:r:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			repo_path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			repo_path.data.as_default.repo = optarg;
 			break;
 		case 'y':
 			always_yes = true;
@@ -373,7 +373,7 @@ subcommand_releases_delete(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&repo_path);
 
 	/* make sure the user supplied the release id */
 	if (argc != 1) {
@@ -386,7 +386,7 @@ subcommand_releases_delete(int argc, char *argv[])
 		if (!sn_yesno("Are you sure you want to delete this release?"))
 			errx(1, "gcli: Aborted by user");
 
-	if (gcli_delete_release(g_clictx, owner, repo, argv[0]) < 0) {
+	if (gcli_delete_release(g_clictx, &repo_path, argv[0]) < 0) {
 		errx(1, "gcli: error: failed to delete the release: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -405,12 +405,10 @@ static struct {
 int
 subcommand_releases(int argc, char *argv[])
 {
-	int ch;
-	int count = 30;
-	char const *owner = NULL;
-	char const *repo = NULL;
-	struct gcli_release_list releases = {0};
 	enum gcli_output_flags flags = 0;
+	int ch, count = 30;
+	struct gcli_path repo_path = {0};
+	struct gcli_release_list releases = {0};
 
 	if (argc > 1) {
 		for (size_t i = 0; i < ARRAY_SIZE(releases_subcommands); ++i) {
@@ -448,10 +446,10 @@ subcommand_releases(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "sn:o:r:l", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			repo_path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			repo_path.data.as_default.repo = optarg;
 			break;
 		case 'n': {
 			char *endptr = NULL;
@@ -486,9 +484,9 @@ subcommand_releases(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&repo_path);
 
-	if (gcli_get_releases(g_clictx, owner, repo, count, &releases) < 0) {
+	if (gcli_get_releases(g_clictx, &repo_path, count, &releases) < 0) {
 		errx(1, "gcli: error: could not get releases: %s",
 		     gcli_get_error(g_clictx));
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,13 +38,65 @@
 #include <templates/github/repos.h>
 
 #include <assert.h>
+#include <stdarg.h>
+
+int
+github_repo_make_url(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                     char **url, char const *const fmt, ...)
+{
+	char *suffix = NULL;
+	int rc = 0;
+	va_list vp;
+
+	va_start(vp, fmt);
+	suffix = sn_vasprintf(fmt, vp);
+	va_end(vp);
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner, *e_repo;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo = gcli_urlencode(path->data.as_default.repo);
+
+		*url = sn_asprintf("%s/repos/%s/%s%s", gcli_get_apibase(ctx),
+		                  e_owner, e_repo, suffix);
+
+		free(e_owner);
+		free(e_repo);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "unsupported path kind for GitHub repository");
+	} break;
+	}
+
+	free(suffix);
+
+	return rc;
+}
+
+/* Github is a little stupid in that it distinguishes
+ * organizations and users. This kludge checks, whether the
+ * <e_owner> param is a user or an actual organization. */
+int
+github_user_is_org(struct gcli_ctx *ctx, char const *e_owner)
+{
+	char *url = sn_asprintf("%s/users/%s", gcli_get_apibase(ctx), e_owner);
+	int const rc = gcli_curl_test_success(ctx, url);
+	free(url);
+
+	/* 0 = failed, 1 = success, -1 = error (just like a BOOL in Win32
+	 * /sarc). But to make the name of the function make sense, reverse
+	 * non-negative return values (failure means user *is* an org);
+	 * negative return to indiciate error is preserved */
+	return rc < 0 ? rc : !rc;
+}
 
 int
 github_get_repos(struct gcli_ctx *ctx, char const *owner, int const max,
                  struct gcli_repo_list *const list)
 {
-	char *url = NULL;
-	char *e_owner = NULL;
+	char *url = NULL, *e_owner = NULL;
 	int rc = 0;
 
 	struct gcli_fetch_list_ctx lf = {
@@ -55,29 +107,18 @@ github_get_repos(struct gcli_ctx *ctx, char const *owner, int const max,
 	};
 
 	e_owner = gcli_urlencode(owner);
+	rc = github_user_is_org(ctx, e_owner);
 
-	/* Github is a little stupid in that it distinguishes
-	 * organizations and users. Thus, we have to find out, whether the
-	 * <org> param is a user or an actual organization. */
-	url = sn_asprintf("%s/users/%s", gcli_get_apibase(ctx), e_owner);
-
-	/* 0 = failed, 1 = success, -1 = error (just like a BOOL in Win32
-	 * /sarc) */
-	rc = gcli_curl_test_success(ctx, url);
-	if (rc < 0) {
-		free(url);
+	if (rc < 0)
 		return rc;
-	}
 
-	if (rc) {
+	if (!rc) {
 		/* it is a user */
-		free(url);
 		url = sn_asprintf("%s/users/%s/repos",
 		                  gcli_get_apibase(ctx),
 		                  e_owner);
 	} else {
 		/* this is an actual organization */
-		free(url);
 		url = sn_asprintf("%s/orgs/%s/repos",
 		                  gcli_get_apibase(ctx),
 		                  e_owner);
@@ -106,24 +147,17 @@ github_get_own_repos(struct gcli_ctx *ctx, int const max,
 }
 
 int
-github_repo_delete(struct gcli_ctx *ctx, char const *owner, char const *repo)
+github_repo_delete(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/repos/%s/%s",
-	                  gcli_get_apibase(ctx),
-	                  e_owner, e_repo);
+	rc = github_repo_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
 
-	free(e_owner);
-	free(e_repo);
 	free(url);
 
 	return rc;
@@ -179,11 +213,11 @@ github_repo_create(struct gcli_ctx *ctx, struct gcli_repo_create_options const *
 }
 
 int
-github_repo_set_visibility(struct gcli_ctx *ctx, char const *const owner,
-                           char const *const repo, gcli_repo_visibility vis)
+github_repo_set_visibility(struct gcli_ctx *ctx,
+                           struct gcli_path const *const path,
+                           gcli_repo_visibility vis)
 {
 	char *url;
-	char *e_owner, *e_repo;
 	char const *vis_str;
 	char *payload;
 	int rc;
@@ -200,17 +234,15 @@ github_repo_set_visibility(struct gcli_ctx *ctx, char const *const owner,
 		return gcli_error(ctx, "bad visibility level");
 	}
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
+	rc = github_repo_make_url(ctx, path, &url, "");
+	if (rc < 0)
+		return rc;
 
-	url = sn_asprintf("%s/repos/%s/%s", gcli_get_apibase(ctx), e_owner, e_repo);
 	payload = sn_asprintf("{ \"visibility\": \"%s\" }", vis_str);
 
 	rc = gcli_fetch_with_method(ctx, "PATCH", url, payload, NULL, NULL);
 
 	free(payload);
-	free(e_owner);
-	free(e_repo);
 	free(url);
 
 	return rc;

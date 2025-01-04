@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,6 +65,7 @@ struct gcli_config {
 	int colours_disabled;       /* NO_COLOR set or output is not a TTY */
 	int force_colours;          /* -c option was given */
 	int no_spinner;             /* don't show a progress spinner */
+	int no_markdown;            /* do not render markdown (when built with lowdown) */
 	int enable_experimental;    /* enable experimental features */
 
 	sn_sv  buffer;
@@ -433,7 +434,7 @@ ensure_config(struct gcli_ctx *ctx)
 
 /** Check input for a value that indicates yes/true */
 static int
-check_yes(char const *const tmp)
+string_means_true(char const *const tmp)
 {
 	size_t tmplen = strlen(tmp) + 1;
 	char *tmp_lower = malloc(tmplen);
@@ -450,6 +451,12 @@ check_yes(char const *const tmp)
 
 	free(tmp_lower);
 	return is_yes;
+}
+
+static bool
+string_means_false(char const *const tmp)
+{
+	return !string_means_true(tmp);
 }
 
 /* readenv: Read values of environment variables and pre-populate the
@@ -474,13 +481,16 @@ readenv(struct gcli_config *cfg)
 	 * violate the definition to get expected and sane behaviour. */
 	tmp = getenv("NO_COLOR");
 	if (tmp && tmp[0] != '\0')
-		cfg->colours_disabled = check_yes(tmp);
+		cfg->colours_disabled = string_means_true(tmp);
 
 	if ((tmp = getenv("GCLI_NOSPINNER")))
-		cfg->no_spinner = check_yes(tmp);
+		cfg->no_spinner = string_means_true(tmp);
+
+	if ((tmp = getenv("GCLI_RENDER_MARKDOWN")))
+		cfg->no_markdown = string_means_false(tmp);
 
 	if ((tmp = getenv("GCLI_ENABLE_EXPERIMENTAL")))
-		cfg->enable_experimental = check_yes(tmp);
+		cfg->enable_experimental = string_means_true(tmp);
 }
 
 int
@@ -527,6 +537,10 @@ gcli_config_parse_args(struct gcli_ctx *ctx, int *argc, char ***argv)
 		{ .name    = "no-spinner",
 		  .has_arg = no_argument,
 		  .flag    = &cfg->no_spinner,
+		  .val     = 1 },
+		{ .name    = "no-markdown",
+		  .has_arg = no_argument,
+		  .flag    = &cfg->no_markdown,
 		  .val     = 1 },
 		{ .name    = "type",
 		  .has_arg = required_argument,
@@ -748,8 +762,19 @@ gcli_config_get_apibase(struct gcli_ctx *ctx)
 	char *url = NULL;
 
 	if (acct) {
-		sn_sv url_sv = gcli_config_find_by_key(ctx, acct, "apibase");
-		if (url_sv.length)
+		sn_sv url_sv = {0};
+
+		url_sv = gcli_config_find_by_key(ctx, acct, "api-base");
+
+		/* https://github.com/herrhotzenplotz/gcli/issues/138
+		 *
+		 * Above is correct behaviour. Below is bad/buggy behaviour.
+		 * Check for the second (buggy) option apibase and
+		 * use it if needed. */
+		if (sn_sv_null(url_sv))
+			url_sv = gcli_config_find_by_key(ctx, acct, "apibase");
+
+		if (!sn_sv_null(url_sv))
 			url = sn_sv_to_cstr(url_sv);
 	}
 
@@ -766,9 +791,12 @@ char *
 gcli_config_get_account_name(struct gcli_ctx *ctx)
 {
 	char *account = gcli_config_get_account(ctx);
-	sn_sv actname = gcli_config_find_by_key(
-		ctx, account, "account");
+	sn_sv actname;
 
+	if (!account)
+		return NULL;
+
+	actname = gcli_config_find_by_key(ctx, account, "account");
 	free(account);
 
 	return sn_sv_to_cstr(actname);
@@ -931,6 +959,26 @@ gcli_config_get_forge_type(struct gcli_ctx *ctx)
 }
 
 int
+gcli_config_get_remote(struct gcli_ctx *ctx, char **remote)
+{
+	struct gcli_config *cfg;
+	gcli_forge_type type;
+	int rc;
+
+	cfg = ensure_config(ctx);
+
+	if (cfg->override_remote) {
+		*remote = strdup(cfg->override_remote);
+		return 0;
+	}
+
+	type = gcli_config_get_forge_type(ctx);
+	rc = gcli_gitconfig_get_remote(ctx, type, remote);
+
+	return rc;
+}
+
+int
 gcli_config_get_repo(struct gcli_ctx *ctx, char const **const owner,
                      char const **const repo)
 {
@@ -969,19 +1017,19 @@ gcli_config_get_repo(struct gcli_ctx *ctx, char const **const owner,
 	return gcli_gitconfig_repo_by_remote(ctx, NULL, owner, repo, NULL);
 }
 
-int
+bool
 gcli_config_have_colours(struct gcli_ctx *ctx)
 {
-	static int tested_tty = 0;
+	static bool tested_tty = 0;
 	struct gcli_config *cfg;
 
 	cfg = ctx_config(ctx);
 
 	if (cfg->force_colours)
-		return 1;
+		return true;
 
 	if (cfg->colours_disabled)
-		return 0;
+		return false;
 
 	if (tested_tty)
 		return !cfg->colours_disabled;
@@ -991,12 +1039,12 @@ gcli_config_have_colours(struct gcli_ctx *ctx)
 	else
 		cfg->colours_disabled = true;
 
-	tested_tty = 1;
+	tested_tty = true;
 
 	return !cfg->colours_disabled;
 }
 
-int
+bool
 gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
 {
 	ensure_config(ctx);
@@ -1005,16 +1053,39 @@ gcli_config_display_progress_spinner(struct gcli_ctx *ctx)
 	cfg = ctx_config(ctx);
 
 	if (cfg->no_spinner)
-		return 0;
+		return false;
 
 	sn_sv cfg_entry = gcli_config_find_by_key(ctx, "defaults", "disable-spinner");
 	if (sn_sv_null(cfg_entry))
-		return 1;
+		return true;
 
-	if (check_yes(sn_sv_to_cstr(cfg_entry)))
-		return 0;
+	if (string_means_true(sn_sv_to_cstr(cfg_entry)))
+		return false;
 
-	return 1;
+	return true;
+}
+
+bool
+gcli_config_render_markdown(struct gcli_ctx *ctx)
+{
+	ensure_config(ctx);
+
+	struct gcli_config *cfg;
+	cfg = ctx_config(ctx);
+
+	if (cfg->no_markdown)
+		return false;
+
+	sn_sv cfg_entry = gcli_config_find_by_key(ctx, "defaults", "render-markdown");
+	if (sn_sv_null(cfg_entry))
+		return true;
+
+	if (string_means_false(sn_sv_to_cstr(cfg_entry))) {
+		cfg->no_markdown = true;
+		return false;
+	}
+
+	return true;
 }
 
 bool
@@ -1032,5 +1103,5 @@ gcli_config_enable_experimental(struct gcli_ctx *ctx)
 	if (sn_sv_null(cfg_entry))
 		return false;
 
-	return check_yes(sn_sv_to_cstr(cfg_entry));
+	return string_means_true(sn_sv_to_cstr(cfg_entry));
 }

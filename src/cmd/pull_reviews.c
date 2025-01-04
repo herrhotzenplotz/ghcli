@@ -29,6 +29,7 @@
 
 #include <config.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -37,6 +38,7 @@
 #include <unistd.h>
 
 #include <gcli/cmd/cmd.h>
+#include <gcli/cmd/colour.h>
 #include <gcli/cmd/editor.h>
 #include <gcli/diffutil.h>
 #include <gcli/pulls.h>
@@ -122,28 +124,28 @@ ensure_cache_dir_exists(void)
 }
 
 static char *
-make_review_diff_file_name(char const *const owner, char const *const repo,
-                           gcli_id const pull_id)
+make_review_diff_file_name(struct gcli_path const *const path)
 {
 	unsigned long hash = 0;
 
-	hash ^= djb2((unsigned char const *)owner);
-	hash ^= djb2((unsigned char const *)repo);
+	assert(path->kind == GCLI_PATH_DEFAULT);
 
-	return sn_asprintf("%lx_%lu.diff", hash, pull_id);
+	hash ^= djb2((unsigned char const *)path->data.as_default.owner);
+	hash ^= djb2((unsigned char const *)path->data.as_default.repo);
+
+	return sn_asprintf("%lx_%lu.diff", hash, path->data.as_default.id);
 }
 
 static char *
-get_review_diff_file_name(char const *const owner, char const *const repo,
-                          gcli_id const pull_id)
+get_review_diff_file_name(struct gcli_path const *const path)
 {
 	char *base = get_review_file_cache_dir();
-	char *file = make_review_diff_file_name(owner, repo, pull_id);
-	char *path = sn_asprintf("%s/%s", base, file);
+	char *file = make_review_diff_file_name(path);
+	char *file_path = sn_asprintf("%s/%s", base, file);
 	free(base);
 	free(file);
 
-	return path;
+	return file_path;
 }
 
 struct review_ctx {
@@ -159,7 +161,7 @@ fetch_patch(struct review_ctx *ctx)
 	if (f == NULL)
 		err(1, "gcli: error: cannot open %s", ctx->diff_path);
 
-	if (gcli_pull_get_diff(g_clictx, f, ctx->details.owner, ctx->details.repo, ctx->details.pull_id) < 0) {
+	if (gcli_pull_get_diff(g_clictx, f, &ctx->details.path) < 0) {
 		errx(1, "gcli: error: failed to get patch: %s",
 		     gcli_get_error(g_clictx));
 	}
@@ -264,16 +266,50 @@ edit_diff(struct review_ctx *ctx)
 }
 
 static void
+gcli_pretty_print_diff(char const *const input)
+{
+	char const *hd = input;
+
+	for (;;) {
+		char const *eol;
+		char const *start_colour, *end_colour;
+		size_t linelen;
+
+		if (hd == NULL || *hd == '\0')
+			return;
+
+		eol = strchr(hd, '\n');
+		if (eol == NULL)
+			eol = hd + strlen(hd);
+
+		linelen = eol - hd;
+		end_colour = gcli_resetcolour();
+		if (*hd == '+')
+			start_colour = gcli_setcolour(GCLI_COLOR_GREEN);
+		else if (*hd == '-')
+			start_colour = gcli_setcolour(GCLI_COLOR_RED);
+		else
+			start_colour = "";
+
+		printf("%s%.*s%s\n", start_colour, (int)linelen, hd, end_colour);
+		hd = eol + 1;
+	}
+}
+
+static void
 print_comment_list(struct gcli_diff_comments const *comments)
 {
 	struct gcli_diff_comment const *comment;
 
 	TAILQ_FOREACH(comment, comments, next) {
-		printf("%s: %d: %s\n%s\n\n",
-		       comment->after.filename, comment->after.start_row,
-		       comment->comment,
-		       comment->diff_text);
+		printf("=====================================\n");
+		printf("%s:%d:\n", comment->after.filename, comment->after.start_row);
+		gcli_pretty_print(comment->comment, 6, 80, stdout);
+		printf("The diff is:\n\n");
+		gcli_pretty_print_diff(comment->diff_text);
 	}
+
+	printf("=====================================\n");
 }
 
 static int
@@ -314,15 +350,13 @@ ask_for_review_state(void)
 }
 
 void
-do_review_session(char const *owner, char const *repo, gcli_id const pull_id)
+do_review_session(struct gcli_path const *const path)
 {
 	struct review_ctx ctx = {
 		.details = {
-			.owner = owner,
-			.repo = repo,
-			.pull_id = pull_id,
+			.path = *path,
 		},
-		.diff_path = get_review_diff_file_name(owner, repo, pull_id),
+		.diff_path = get_review_diff_file_name(path),
 	};
 
 	ensure_cache_dir_exists();

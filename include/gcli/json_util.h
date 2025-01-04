@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -58,6 +58,9 @@
 #define get_label(ctx, input, out)         get_label_(ctx, input, out, __func__)
 #define get_is_string(ctx, input, out)     ((void)ctx, (*out = json_next(input) == JSON_STRING), 1)
 #define get_int_to_string(ctx, input, out) get_int_to_string_(ctx, input, out, __func__)
+#define get_iso8601_time(ctx, input, out)  get_iso8601_time_(ctx, input, out, __func__)
+#define get_url_path(ctx, input, out)      get_url_path_(ctx, input, out, __func__)
+#define get_gitlab_notification_target(ctx, input, out) get_gitlab_notification_target_(ctx, input, out, __func__)
 
 int get_int_(struct gcli_ctx *ctx, json_stream *input, int *out, char const *function);
 int get_id_(struct gcli_ctx *ctx, json_stream *input, gcli_id *out, char const *function);
@@ -71,6 +74,7 @@ int get_string_(struct gcli_ctx *ctx, json_stream *input, char **out, char const
 int get_sv_(struct gcli_ctx *ctx, json_stream *input, sn_sv *out, char const *function);
 int get_user_(struct gcli_ctx *ctx, json_stream *input, char **out, char const *function);
 int get_label_(struct gcli_ctx *ctx, json_stream *input, char const **out, char const *function);
+int get_iso8601_time_(struct gcli_ctx *ctx, json_stream *input, time_t *out, char const *function);
 int get_github_style_colour(struct gcli_ctx *ctx, json_stream *input, uint32_t *out);
 int get_gitlab_style_colour(struct gcli_ctx *ctx, json_stream *input, uint32_t *out);
 int get_github_is_pr(struct gcli_ctx *ctx, json_stream *input, int *out);
@@ -85,6 +89,8 @@ int get_gitea_visibility(struct gcli_ctx *ctx, json_stream *input, char **out);
 sn_sv gcli_json_escape(sn_sv);
 #define     gcli_json_escape_cstr(x) (gcli_json_escape(SV((char *)(x))).data)
 int gcli_json_advance(struct gcli_ctx *ctx, json_stream *input, char const *fmt, ...);
+int get_url_path_(struct gcli_ctx *ctx, json_stream *input, struct gcli_path *out, char const *function);
+int get_gitlab_notification_target_(struct gcli_ctx *ctx, json_stream *input, struct gcli_path *out, char const *function);
 
 static inline char const *
 gcli_json_bool(bool it)

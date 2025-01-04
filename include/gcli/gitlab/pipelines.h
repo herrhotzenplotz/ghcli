@@ -39,8 +39,8 @@
 struct gitlab_pipeline {
 	gcli_id id;
 	char *status;
-	char *created_at;
-	char *updated_at;
+	time_t created_at;
+	time_t updated_at;
 	char *ref;
 	char *sha;
 	char *source;
@@ -58,9 +58,9 @@ struct gitlab_job {
 	char *stage;
 	char *name;
 	char *ref;
-	char *created_at;
-	char *started_at;
-	char *finished_at;
+	time_t created_at;
+	time_t started_at;
+	time_t finished_at;
 	double duration;
 	char *runner_name;
 	char *runner_description;
@@ -107,8 +107,7 @@ int gitlab_job_download_artifacts(struct gcli_ctx *ctx, char const *owner,
                                   char const *repo, gcli_id jid,
                                   char const *outfile);
 
-int gitlab_get_mr_pipelines(struct gcli_ctx *ctx, char const *owner,
-                            char const *repo, gcli_id mr_id,
+int gitlab_get_mr_pipelines(struct gcli_ctx *ctx, struct gcli_path const *path,
                             struct gitlab_pipeline_list *list);
 
 int gitlab_get_job(struct gcli_ctx *ctx, char const *owner, char const *repo,

@@ -2,6 +2,96 @@
 
 This changelog does not follow semantic versioning.
 
+## 2.6.0 (2025-Jan-04)
+
+### Added
+
+- Added a `checkout` action to the `pulls` subcommand that allows
+  quickly checking out the target branch of a pull request.
+
+- Added a `-R` command line option to the `pulls create` subcommand
+  that allows specifying reviewers directly when creating the pull
+  request.
+  gcli now also asks for reviewers when creating a pull request
+  interactively.
+  See `gcli-pulls(1)`.
+
+- Support for pull requests has been added to the interactive
+  `status` subcommand.
+
+### Fixed
+
+- Fixed bad owner/repo when inferred repository information from
+  a git remote with an ssh-url contained a port number
+
+- gcli now handles nested projects on Gitlab correctly
+
+- The documentation in `gcli(5)` mentioned the forge option
+  `api-base` however it didn't work because of a typo in the
+  responsible code. Parts of the other documentation however was
+  using the incorrect option name without the option.  The config
+  option and related documentation has been fixed to spell `api-base`.
+  In order not to break existing configurations an alias has been
+  added such that `apibase` is also a valid name, however `api-base`
+  is preferred.
+
+  Reported by: Jiří Štefka
+
+- The previously added Markdown rendering functionality through
+  liblowdown can now be disabled at runtime by providing a command
+  line flag, setting an environment variable or by setting a
+  configuration variable.
+
+  Reported-by: Gavin-John Noonan <mail@gjnoonan.co.uk>
+
+- The interactive status subcommand now doesn't crash anymore
+  for release notifications on Github.
+
+- Compatibility with the newly released liblowdown 1.4.0 has been
+  restored. The new minor version broke the API causing compilation
+  failures in gcli.
+
+  Submitted by: Hoang Nguyen <https://github.com/folliehiyuki>
+
+- Fix a segfault when no default account is declared in gcli config
+
+  Submitted by: remph <lhr@disroot.org>
+
+- Fix a segfault when listing repositories
+
+  Submitted by: remph <lhr@disroot.org>
+
+- Fix github API error 422 on `gcli forks create`
+
+  This is caused by the distinction between users and organisations
+  on Github.
+
+  Submitted by: remph <lhr@disroot.org>
+
+### Changed
+
+- gcli now uses `time_t` internally to represent timestamps. This
+  is visible to the user in that all timestamps are now printed
+  in the consistent format `YYYY-mmm-dd HH:MM:SS` instead of the
+  default format that each forge uses.
+
+- When searching for a usable editor gcli now consults the following
+  places in this order:
+
+  - gcli config file
+  - `$GIT_EDITOR`
+  - `$VISUAL`
+  - `$EDITOR`
+
+  Submitted by: remph <lhr@disroot.org>
+
+- gcli now uses a dedicated type for paths to objects on forges
+  internally. This change is a quite intrusive in the code base and
+  has been tested extensively over the past month in real scenarios.
+  If you encounter bugs where things can't be found, command line
+  option parsing seems to not work correctly anymore or stuff is
+  submitted incorrectly otherwise please report a bug.
+
 ## 2.5.0 (2024-Aug-26)
 
 ### Added

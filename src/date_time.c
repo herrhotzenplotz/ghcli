@@ -32,6 +32,9 @@
 #include <gcli/gcli.h>
 
 #include <assert.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 int
@@ -72,6 +75,69 @@ gcli_normalize_date(struct gcli_ctx *ctx, int fmt, char const *const input,
 
 	/* Format the output string - now in UTC */
 	strftime(output, output_size, sfmt, utm_buf);
+
+	return 0;
+}
+
+int
+gcli_parse_iso8601_date_time(struct gcli_ctx *ctx, char const *const input,
+                             time_t *const out)
+{
+	char *endptr = NULL, *oldtz = NULL;
+	struct tm tm_buf = {0};
+
+	endptr = strptime(input, "%Y-%m-%dT%H:%M:%S", &tm_buf);
+	if (endptr && *endptr != '.' && *endptr != 'Z') {
+		return gcli_error(ctx, "failed to parse ISO8601 timestamp \"%s\": %s",
+		                  input, strerror(errno));
+	}
+
+	/* Thanks, POSIX, for this ugly pile of rubbish! */
+	{
+		oldtz = getenv("TZ");
+		if (oldtz)
+			oldtz = strdup(oldtz);
+
+		/* TODO error handling */
+		setenv("TZ", "GMT0", 1);
+		tzset();
+
+		*out = mktime(&tm_buf);
+
+		if (oldtz) {
+			setenv("TZ", oldtz, 1);
+			free(oldtz);
+		} else {
+			unsetenv("TZ");
+		}
+
+		tzset();
+	}
+
+
+	return 0;
+}
+
+int
+gcli_format_as_localtime(struct gcli_ctx *ctx, time_t timestamp, char **out)
+{
+	char tmp[sizeof "YYYY-MMM-DD HH:MM:SS"] = {0};
+	struct tm tm_buf = {0};
+	size_t rc = 0;
+
+	/* if the timestamp is 0 we assume it is unset. */
+	if (timestamp == 0) {
+		*out = strdup("N/A");
+		return 0;
+	}
+
+	rc = strftime(tmp, sizeof tmp, "%Y-%b-%d %H:%M:%S",
+	              localtime_r(&timestamp, &tm_buf));
+
+	if (rc + 1 != sizeof tmp)
+		return gcli_error(ctx, "error formatting time stamp");
+
+	*out = strdup(tmp);
 
 	return 0;
 }

@@ -30,6 +30,7 @@
 #include <gcli/curl.h>
 #include <gcli/gitlab/config.h>
 #include <gcli/gitlab/releases.h>
+#include <gcli/gitlab/repos.h>
 #include <gcli/json_gen.h>
 #include <gcli/json_util.h>
 
@@ -62,12 +63,11 @@ fixup_release_asset_names(struct gcli_ctx *ctx, struct gcli_release_list *list)
 }
 
 int
-gitlab_get_releases(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                    int const max, struct gcli_release_list *const list)
+gitlab_get_releases(struct gcli_ctx *ctx,
+                    struct gcli_path const *const repo_path, int const max,
+                    struct gcli_release_list *const list)
 {
 	char *url = NULL;
-	char *e_owner = NULL;
-	char *e_repo = NULL;
 	int rc = 0;
 
 	struct gcli_fetch_list_ctx fl = {
@@ -79,14 +79,9 @@ gitlab_get_releases(struct gcli_ctx *ctx, char const *owner, char const *repo,
 
 	*list = (struct gcli_release_list) {0};
 
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/releases", gcli_get_apibase(ctx),
-	                  e_owner, e_repo);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_repo_make_url(ctx, repo_path, &url, "/releases");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_list(ctx, url, &fl);
 
@@ -159,25 +154,19 @@ gitlab_create_release(struct gcli_ctx *ctx, struct gcli_new_release const *relea
 }
 
 int
-gitlab_delete_release(struct gcli_ctx *ctx, char const *owner,
-                      char const *repo, char const *id)
+gitlab_delete_release(struct gcli_ctx *ctx, struct gcli_path const *const path,
+                      char const *const id)
 {
-	char *url     = NULL;
-	char *e_owner = NULL;
-	char *e_repo  = NULL;
-	int   rc      = 0;
+	char *url = NULL;
+	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo  = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/releases/%s", gcli_get_apibase(ctx),
-	                  e_owner, e_repo, id);
+	rc = gitlab_repo_make_url(ctx, path, &url, "/releases/%s", id);
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_with_method(ctx, "DELETE", url, NULL, NULL, NULL);
 
 	free(url);
-	free(e_owner);
-	free(e_repo);
 
 	return rc;
 }

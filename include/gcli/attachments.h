@@ -38,13 +38,14 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <gcli/gcli.h>
 
 struct gcli_attachment {
 	gcli_id id;
 	bool is_obsolete;
-	char *created_at;
+	time_t created_at;
 	char *author;
 	char *file_name;
 	char *summary;

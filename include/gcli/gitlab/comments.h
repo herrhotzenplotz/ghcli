@@ -40,17 +40,16 @@
 int gitlab_perform_submit_comment(struct gcli_ctx *ctx,
                                   struct gcli_submit_comment_opts const *opts);
 
-int gitlab_get_comment(struct gcli_ctx *ctx, char const *owner,
-                       char const *repo, enum comment_target_type target_type,
-                       gcli_id issue_id, gcli_id comment_id,
-                       struct gcli_comment *out);
+int gitlab_get_comment(struct gcli_ctx *ctx, struct gcli_path const *target,
+                       enum comment_target_type target_type,
+                       gcli_id comment_id, struct gcli_comment *out);
 
-int gitlab_get_issue_comments(struct gcli_ctx *ctx, char const *owner,
-                              char const *repo, gcli_id issue,
+int gitlab_get_issue_comments(struct gcli_ctx *ctx,
+                              struct gcli_path const *issue_path,
                               struct gcli_comment_list *out);
 
-int gitlab_get_mr_comments(struct gcli_ctx *ctx, char const *owner,
-                           char const *repo, gcli_id issue,
+int gitlab_get_mr_comments(struct gcli_ctx *ctx,
+                           struct gcli_path const *mr_path,
                            struct gcli_comment_list *out);
 
 int gitlab_fetch_comments(struct gcli_ctx *ctx, char *url,

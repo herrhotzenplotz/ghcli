@@ -84,9 +84,9 @@ ATF_TC_BODY(simple_github_issue, tc)
 
 	ATF_REQUIRE(parse_github_issue(ctx, &stream, &issue) == 0);
 
-	ATF_CHECK(issue.number = 115);
+	ATF_CHECK_EQ(issue.number, 115);
 	ATF_CHECK_STREQ(issue.title, "consider removing FILE *out from printing functions");
-	ATF_CHECK_STREQ(issue.created_at, "2022-03-22T16:06:10Z");
+	ATF_CHECK_EQ(issue.created_at, 1647965170);
 	ATF_CHECK_STREQ(issue.author, "herrhotzenplotz");
 	ATF_CHECK_STREQ(issue.state, "closed");
 	ATF_CHECK(issue.comments == 0);
@@ -129,7 +129,7 @@ ATF_TC_BODY(simple_github_pull, tc)
 	ATF_CHECK_STREQ(pull.state, "closed");
 	ATF_CHECK_STREQ(pull.title, "mark notifications as read/done");
 	ATF_CHECK_STREQ(pull.body, "Fixes #99\n");
-	ATF_CHECK_STREQ(pull.created_at, "2022-03-22T13:20:57Z");
+	ATF_CHECK_EQ(pull.created_at, 1647955257);
 	ATF_CHECK_STREQ(pull.head_label, "herrhotzenplotz:99");
 	ATF_CHECK_STREQ(pull.base_label, "herrhotzenplotz:trunk");
 	ATF_CHECK_STREQ(pull.head_sha, "a00f475af1e31d56c7a5839508a21e2b76a31e49");
@@ -191,10 +191,10 @@ ATF_TC_BODY(simple_github_milestone, tc)
 	ATF_CHECK(milestone.id == 1);
 	ATF_CHECK_STREQ(milestone.title, "Gitlab support");
 	ATF_CHECK_STREQ(milestone.state, "open");
-	ATF_CHECK_STREQ(milestone.created_at, "2021-12-14T07:02:05Z");
+	ATF_CHECK_EQ(milestone.created_at, 1639465325);
 	ATF_CHECK_STREQ(milestone.description, "");
-	ATF_CHECK_STREQ(milestone.updated_at, "2021-12-19T14:49:43Z");
-	ATF_CHECK(milestone.due_date == NULL);
+	ATF_CHECK_EQ(milestone.updated_at, 1639925383);
+	ATF_CHECK_EQ(milestone.due_date, 0);
 	ATF_CHECK(milestone.expired == false);
 	ATF_CHECK(milestone.open_issues == 0);
 	ATF_CHECK(milestone.closed_issues == 8);
@@ -223,7 +223,7 @@ ATF_TC_BODY(simple_github_release, tc)
 	ATF_CHECK_STREQ(release.name, "1.2.0");
 	ATF_CHECK_STREQ(release.body, "# Version 1.2.0\n\nThis is version 1.2.0 of gcli.\n\n## Notes\n\nPlease test and report bugs.\n\nYou can download autotoolized tarballs at: https://herrhotzenplotz.de/gcli/releases/gcli-1.2.0/\n\n## Bug Fixes\n\n- Fix compile error when providing --with-libcurl without any arguments\n- Fix memory leaks in string processing functions\n- Fix missing nul termination in read-file function\n- Fix segmentation fault when clearing the milestone of a PR on Gitea\n- Fix missing documentation for milestone action in issues and pulls\n- Set the 'merged' flag properly when showing Gitlab merge requests\n\n## New features\n\n- Add a config subcommand for managing ssh keys (see gcli-config(1))\n- Show number of comments/notes in list of issues and PRs\n- Add support for milestone management in pull requests\n");
 	ATF_CHECK_STREQ(release.author, "herrhotzenplotz");
-	ATF_CHECK_STREQ(release.date, "2023-08-11T07:42:37Z");
+	ATF_CHECK_EQ(release.date, 1691739757);
 	ATF_CHECK_STREQ(release.upload_url, "https://uploads.github.com/repos/herrhotzenplotz/gcli/releases/116031718/assets{?name,label}");
 	ATF_CHECK(release.draft == false);
 	ATF_CHECK(release.prerelease == false);
@@ -250,7 +250,7 @@ ATF_TC_BODY(simple_github_repo, tc)
 	ATF_CHECK_STREQ(repo.full_name, "herrhotzenplotz/gcli");
 	ATF_CHECK_STREQ(repo.name, "gcli");
 	ATF_CHECK_STREQ(repo.owner, "herrhotzenplotz");
-	ATF_CHECK_STREQ(repo.date, "2021-10-08T14:20:15Z");
+	ATF_CHECK_EQ(repo.date, 1633702815);
 	ATF_CHECK_STREQ(repo.visibility, "public");
 	ATF_CHECK(repo.is_fork == false);
 
@@ -274,7 +274,7 @@ ATF_TC_BODY(simple_github_fork, tc)
 
 	ATF_CHECK_STREQ(fork.full_name, "gjnoonan/quick-lint-js");
 	ATF_CHECK_STREQ(fork.owner, "gjnoonan");
-	ATF_CHECK_STREQ(fork.date, "2023-05-11T05:37:41Z");
+	ATF_CHECK_EQ(fork.date, 1683783461);
 	ATF_CHECK(fork.forks == 0);
 
 	json_close(&stream);
@@ -297,7 +297,7 @@ ATF_TC_BODY(simple_github_comment, tc)
 
 	ATF_CHECK(comment.id == 1424392601);
 	ATF_CHECK_STREQ(comment.author, "herrhotzenplotz");
-	ATF_CHECK_STREQ(comment.date, "2023-02-09T15:37:54Z");
+	ATF_CHECK_EQ(comment.date, 1675957074);
 	ATF_CHECK_STREQ(comment.body, "Hey,\n\nthe current trunk on Github might be a little outdated. I pushed the staging branch for version 1.0.0 from Gitlab to Github (cleanup-1.0). Could you try again with that branch and see if it still faults at the same place? If it does, please provide a full backtrace and if possible check with valgrind.\n");
 
 	json_close(&stream);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -47,6 +47,16 @@
 #include <lowdown.h>
 #endif
 
+#if defined(HAVE_LIBREADLINE) && !defined(HAVE_LIBEDIT)
+#define USE_READLINE 1
+#include <readline/readline.h>
+#endif
+
+#if defined(HAVE_LIBEDIT)
+#define USE_LIBEDIT 1
+#include <histedit.h>
+#endif
+
 void
 copyright(void)
 {
@@ -66,13 +76,20 @@ void
 longversion(void)
 {
 	version();
-	fprintf(stderr,
-	        "Using %s\n"
-	        "Using vendored pdjson library\n"
-	        "\n"
-	        "Project website: "PACKAGE_URL"\n"
-	        "Bug reports: "PACKAGE_BUGREPORT"\n",
-	        curl_version());
+	fprintf(stderr, "Using %s\n", curl_version());
+	fprintf(stderr, "Using vendored pdjson library\n");
+#ifdef USE_READLINE
+	fprintf(stderr, "Using readline version %d.%d\n", RL_VERSION_MAJOR, RL_VERSION_MINOR);
+#endif /* USE_READLINE */
+#ifdef USE_LIBEDIT
+	fprintf(stderr, "Using libedit version %d.%d\n", LIBEDIT_MAJOR, LIBEDIT_MINOR);
+#endif /* USE_LIBEDIT */
+#ifdef HAVE_LIBLOWDOWN
+	fprintf(stderr, "Using liblowdown\n");
+#endif /* HAVE_LIBLOWDOWN */
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Project website: "PACKAGE_URL"\n");
+	fprintf(stderr, "Bug reports: "PACKAGE_BUGREPORT"\n");
 }
 
 void
@@ -91,6 +108,14 @@ check_owner_and_repo(const char **owner, const char **repo)
 		if (rc < 0)
 			errx(1, "gcli: error: %s", gcli_get_error(g_clictx));
 	}
+}
+
+void
+check_path(struct gcli_path *path)
+{
+	check_owner_and_repo(
+		(char const **)&path->data.as_default.owner,
+		(char const **)&path->data.as_default.repo);
 }
 
 /* Parses (and updates) the given argument list into two seperate lists:
@@ -140,14 +165,12 @@ parse_labels_options(int *argc, char ***argv,
  * and repo subcommand. Ideally it should be moved into the 'repos'
  * code but I don't wanna make it exported from there. */
 void
-delete_repo(bool always_yes, const char *owner, const char *repo)
+delete_repo(bool always_yes, struct gcli_path const *const path)
 {
 	bool delete = false;
 
 	if (!always_yes) {
-		delete = sn_yesno(
-			"Are you sure you want to delete %s/%s?",
-			owner, repo);
+		delete = sn_yesno("Are you sure you want to delete the repo?");
 	} else {
 		delete = true;
 	}
@@ -155,13 +178,13 @@ delete_repo(bool always_yes, const char *owner, const char *repo)
 	if (!delete)
 		errx(1, "gcli: Operation aborted");
 
-	if (gcli_repo_delete(g_clictx, owner, repo) < 0)
+	if (gcli_repo_delete(g_clictx, path) < 0)
 		errx(1, "gcli: error: failed to delete repo");
 }
 
 #ifdef HAVE_LIBLOWDOWN
-void
-gcli_pretty_print(char const *input, int indent, int maxlinelen, FILE *stream)
+static void
+gcli_render_markdown(char const *input, int indent, int maxlinelen, FILE *stream)
 {
 	size_t input_size;
 	struct lowdown_buf *out;
@@ -179,9 +202,20 @@ gcli_pretty_print(char const *input, int indent, int maxlinelen, FILE *stream)
 	if (!gcli_config_have_colours(g_clictx))
 		opts.oflags |= (LOWDOWN_TERM_NOANSI|LOWDOWN_TERM_NOCOLOUR);
 
+	/* Lowdown 1.4.0 broke the api in a minor version update. Work around
+	 * this by checking versions.
+	 *
+	 * See: https://github.com/kristapsdz/lowdown/issues/148 and
+	 *      https://github.com/kristapsdz/lowdown/releases/tag/VERSION_1_4_0 */
+#if (LIBLOWDOWN_MAJOR == 1 && LIBLOWDOWN_MINOR >= 4) || LIBLOWDOWN_MAJOR >= 2
+	opts.term.vmargin = 1;
+	opts.term.hmargin = indent - 4; /* somehow there's always 4 spaces being emitted by lowdown */
+	opts.term.cols = maxlinelen;
+#else
 	opts.vmargin = 1;
-	opts.hmargin = indent - 4; /* somehow there's always 4 spaces being emitted by lowdown */
+	opts.hmargin = indent - 4;
 	opts.cols = maxlinelen;
+#endif
 
 	if ((doc = lowdown_doc_new(&opts)) == NULL)
 		err(1, NULL);
@@ -205,7 +239,8 @@ gcli_pretty_print(char const *input, int indent, int maxlinelen, FILE *stream)
 	lowdown_node_free(n);
 	lowdown_doc_free(doc);
 }
-#else
+#endif
+
 static int
 word_length(const char *x)
 {
@@ -223,6 +258,13 @@ gcli_pretty_print(const char *input, int indent, int maxlinelen, FILE *out)
 
 	if (!it)
 		return;
+
+#ifdef HAVE_LIBLOWDOWN
+	if (gcli_config_render_markdown(g_clictx)) {
+		gcli_render_markdown(input, indent, maxlinelen, out);
+		return;
+	}
+#endif
 
 	while (*it) {
 		int linelength = indent;
@@ -248,4 +290,3 @@ gcli_pretty_print(const char *input, int indent, int maxlinelen, FILE *out)
 		fputc('\n', out);
 	}
 }
-#endif

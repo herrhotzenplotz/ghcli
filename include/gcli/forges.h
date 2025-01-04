@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,6 +40,7 @@
 #include <gcli/issues.h>
 #include <gcli/labels.h>
 #include <gcli/milestones.h>
+#include <gcli/path.h>
 #include <gcli/pulls.h>
 #include <gcli/releases.h>
 #include <gcli/repos.h>
@@ -48,7 +49,7 @@
 
 /* Hopefully temporary hack */
 typedef int (*gcli_get_pull_checks_cb)(
-	struct gcli_ctx *, char const *, char const *, gcli_id,
+	struct gcli_ctx *, struct gcli_path const *,
 	struct gcli_pull_checks_list *);
 
 /**
@@ -65,37 +66,30 @@ struct gcli_forge_descriptor {
 	 * List comments on the given issue */
 	int (*get_issue_comments)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue,
+		struct gcli_path const *issue_path,
 		struct gcli_comment_list *out);
 
 	/**
 	 * List comments on the given PR */
 	int (*get_pull_comments)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id pr,
+		struct gcli_path const *pull_path,
 		struct gcli_comment_list *out);
 
 	/**
 	 * Get a specific comment on an issue or pull request with the given ID */
 	int (*get_comment)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_path const *target,
 		enum comment_target_type target_type,
-		gcli_id target_id,
-		gcli_id comment_id,
+        	gcli_id comment_id,
 		struct gcli_comment *out);
 
 	/**
 	 * List forks of the given repo */
 	int (*get_forks)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_path const *repo_path,
 		int max,
 		struct gcli_fork_list *out);
 
@@ -103,16 +97,14 @@ struct gcli_forge_descriptor {
 	 * Fork the given repo into the owner _in */
 	int (*fork_create)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_path const *repo_path,
 		char const *_in);
 
 	/**
 	 * Get a list of issues on the given repo */
 	int (*search_issues)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_path const *path,
 		struct gcli_issue_fetch_details const *details,
 		int max,
 		struct gcli_issue_list *out);
@@ -121,43 +113,33 @@ struct gcli_forge_descriptor {
 	 * Get a summary of an issue */
 	int (*get_issue_summary)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue_number,
+		struct gcli_path const *path,
 		struct gcli_issue *out);
 
 	/**
 	 * Close the given issue */
 	int (*issue_close)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue_number);
+		struct gcli_path const *path);
 
 	/**
 	 * Reopen the given issue */
 	int (*issue_reopen)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue_number);
+		struct gcli_path const *path);
 
 	/**
 	 * Assign an issue to a user */
 	int (*issue_assign)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue_number,
+		struct gcli_path const *issue_path,
 		char const *assignee);
 
 	/**
 	 * Add labels to issues */
 	int (*issue_add_labels)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue,
+		struct gcli_path const *issue_path,
 		char const *const labels[],
 		size_t labels_size);
 
@@ -165,9 +147,7 @@ struct gcli_forge_descriptor {
 	 * Removes labels from issues */
 	int (*issue_remove_labels)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue,
+		struct gcli_path const *issue_path,
 		char const *const labels[],
 		size_t labels_size);
 
@@ -182,18 +162,14 @@ struct gcli_forge_descriptor {
 	 * Change the title of an issue */
 	int (*issue_set_title)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue,
+		struct gcli_path const *issue_path,
 		char const *new_title);
 
 	/**
 	 * Get attachments of an issue */
 	int (*get_issue_attachments)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue,
+		struct gcli_path const *issue_path,
 		struct gcli_attachment_list *out);
 
 	/**
@@ -209,7 +185,6 @@ struct gcli_forge_descriptor {
 		GCLI_ISSUE_QUIRKS_COMMENTS    = 0x2,
 		GCLI_ISSUE_QUIRKS_PROD_COMP   = 0x4,
 		GCLI_ISSUE_QUIRKS_URL         = 0x8,
-		GCLI_ISSUE_QUIRKS_ATTACHMENTS = 0x10,
 	} const issue_quirks;
 
 	/**
@@ -225,8 +200,7 @@ struct gcli_forge_descriptor {
 	 * Get list of milestones */
 	int (*get_milestones)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_path const *path,
 		int max,
 		struct gcli_milestone_list *out);
 
@@ -234,9 +208,7 @@ struct gcli_forge_descriptor {
 	 * Get a single milestone */
 	int (*get_milestone)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id milestone,
+		struct gcli_path const *path,
 		struct gcli_milestone *out);
 
 	/**
@@ -249,50 +221,39 @@ struct gcli_forge_descriptor {
 	 * delete a milestone */
 	int (*delete_milestone)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id milestone);
+		struct gcli_path const *path);
 
 	/**
 	 * delete a milestone */
 	int (*milestone_set_duedate)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id milestone,
+		struct gcli_path const *path,
 		char const *date);
 
 	/**
 	 * Get list of issues attached to this milestone */
 	int (*get_milestone_issues)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id milestone,
+		struct gcli_path const *const path,
 		struct gcli_issue_list *out);
 
 	/** Assign an issue to a milestone */
 	int (*issue_set_milestone)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue,
+		struct gcli_path const *issue_path,
 		gcli_id milestone);
 
 	/**
 	 * Clear the milestones of an issue */
 	int (*issue_clear_milestone)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id issue);
+		struct gcli_path const *issue_path);
 
 	/**
 	 * Get a list of PRs/MRs on the given repo */
 	int (*search_pulls)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *reponame,
+		struct gcli_path const *repo_path,
 		struct gcli_pull_fetch_details const *details,
 		int max,
 		struct gcli_pull_list *out);
@@ -302,18 +263,14 @@ struct gcli_forge_descriptor {
 	int (*pull_get_diff)(
 		struct gcli_ctx *ctx,
 		FILE *stream,
-		char const *owner,
-		char const *reponame,
-		gcli_id pr_number);
+		struct gcli_path const *path);
 
 	/**
 	 * Fetch the PR patch series into the file */
 	int (*pull_get_patch)(
 		struct gcli_ctx *ctx,
 		FILE *stream,
-		char const *owner,
-		char const *repo,
-		gcli_id pull_id);
+		struct gcli_path const *const pull_path);
 
 	/**
 	 * Return a list of checks associated with the given pull.
@@ -326,26 +283,20 @@ struct gcli_forge_descriptor {
 	 * Merge the given PR/MR */
 	int (*pull_merge)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *reponame,
-		gcli_id pr_number,
+		struct gcli_path const *path,
 		enum gcli_merge_flags flags);
 
 	/**
 	 * Reopen the given PR/MR */
 	int (*pull_reopen)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *reponame,
-		gcli_id pr_number);
+		struct gcli_path const *path);
 
 	/**
 	 * Close the given PR/MR */
 	int (*pull_close)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *reponame,
-		gcli_id pr_number);
+		struct gcli_path const *path);
 
 	/**
 	 * Submit PR/MR */
@@ -357,9 +308,7 @@ struct gcli_forge_descriptor {
 	 * Get a list of commits in the given PR/MR */
 	int (*get_pull_commits)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id pr_number,
+		struct gcli_path const *path,
 		struct gcli_commit_list *out);
 
 	/** Bitmask of unsupported fields in the pull summary for this
@@ -378,18 +327,14 @@ struct gcli_forge_descriptor {
 	 * Get a summary of the given PR/MR */
 	int (*get_pull)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id pr_number,
+		struct gcli_path const *path,
 		struct gcli_pull *out);
 
 	/**
 	 * Add labels to Pull Requests */
 	int (*pull_add_labels)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id pr,
+		struct gcli_path const *pull_path,
 		char const *const labels[],
 		size_t labels_size);
 
@@ -397,9 +342,7 @@ struct gcli_forge_descriptor {
 	 * Removes labels from Pull Requests */
 	int (*pull_remove_labels)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id pr,
+		struct gcli_path const *pull_path,
 		char const *const labels[],
 		size_t labels_size);
 
@@ -407,35 +350,27 @@ struct gcli_forge_descriptor {
 	 * Assign a PR to a milestone */
 	int (*pull_set_milestone)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id pull,
+		struct gcli_path const *pull_path,
 		gcli_id milestone_id);
 
 	/**
 	 * Clear a milestone on a PR */
 	int (*pull_clear_milestone)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id pull);
+		struct gcli_path const *issue_path);
 
 	/**
-     * Request review of a given pull request by a user */
+	 * Request review of a given pull request by a user */
 	int (*pull_add_reviewer)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id pull,
+		struct gcli_path const *path,
 		char const *username);
 
 	/**
 	 * Change the title of a pull request */
 	int (*pull_set_title)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
-		gcli_id pull,
+		struct gcli_path const *path,
 		char const *new_title);
 
 	/**
@@ -444,12 +379,17 @@ struct gcli_forge_descriptor {
 		struct gcli_ctx *ctx,
 		struct gcli_pull_create_review_details const *details);
 
+	/** Checkout this PR */
+	int (*pull_checkout)(
+		struct gcli_ctx *ctx,
+		char const *remote,
+		struct gcli_path const *pull_path);
+
 	/**
 	 * Get a list of releases in the given repo */
 	int (*get_releases)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_path const *repo_path,
 		int max,
 		struct gcli_release_list *out);
 
@@ -463,16 +403,14 @@ struct gcli_forge_descriptor {
 	 * Delete the release */
 	int (*delete_release)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_path const *repo_path,
 		char const *id);
 
 	/**
 	 * Get a list of labels that are valid in the given repository */
-    int (*get_labels)(
-	    struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+	int (*get_labels)(
+		struct gcli_ctx *ctx,
+		struct gcli_path const *path,
 		int max,
 		struct gcli_label_list *out);
 
@@ -481,17 +419,15 @@ struct gcli_forge_descriptor {
 	 *
 	 * The ID will be filled in for you */
 	int (*create_label)(
-	    struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_ctx *ctx,
+		struct gcli_path const *repo_path,
 		struct gcli_label *label);
 
 	/**
 	 * Delete the given label */
 	int (*delete_label)(
-	    struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_ctx *ctx,
+		struct gcli_path const *path,
 		char const *label);
 
 	/**
@@ -513,15 +449,13 @@ struct gcli_forge_descriptor {
 	 * Delete the given repo */
 	int (*repo_delete)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo);
+		struct gcli_path const *path);
 
 	/**
 	 * Change the visibility level of a repository */
 	int (*repo_set_visibility)(
 		struct gcli_ctx *ctx,
-		char const *owner,
-		char const *repo,
+		struct gcli_path const *path,
 		gcli_repo_visibility vis);
 
 	/**
@@ -530,13 +464,6 @@ struct gcli_forge_descriptor {
 		struct gcli_ctx *ctx,
 		int max,
 		struct gcli_notification_list *notifications);
-
-	/**
-	 * *Given an issue notification grab the associated issue. */
-	int (*notification_get_issue)(
-		struct gcli_ctx *ctx,
-		struct gcli_notification const *const notification,
-		struct gcli_issue *out);
 
 	/**
 	 * Given a notification fetch the target's comments */

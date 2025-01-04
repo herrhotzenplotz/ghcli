@@ -4,8 +4,8 @@
 
 CONFIGURE_CMD_ARGS="${*}"
 
-PACKAGE_VERSION="2.5.0"
-PACKAGE_DATE="2024-Aug-26"
+PACKAGE_VERSION="2.6.0"
+PACKAGE_DATE="2025-Jan-04"
 PACKAGE_STRING="gcli $PACKAGE_VERSION"
 PACKAGE_BUGREPORT="https://lists.sr.ht/~herrhotzenplotz/gcli-discuss"
 PACKAGE_URL="https://sr.ht/~herrhotzenplotz/gcli"
@@ -27,6 +27,11 @@ find_program() {
 
 }
 
+die() {
+	printf "%s\n" "${*}"
+	exit 1
+}
+
 REALPATH=${REALPATH:-$(find_program realpath realpath grealpath)}
 [ $? -eq 0 ] || die "error: need realpath" # exit code of find_program()
 
@@ -37,11 +42,6 @@ tolower() {
 	tr '[:upper:]' '[:lower:]'
 }
 
-die() {
-	printf "%s\n" "${*}"
-	exit 1
-}
-
 compiler_type() {
 	if ${1} -v 2>&1 | grep clang > /dev/null; then
 		echo "clang"
@@ -49,8 +49,9 @@ compiler_type() {
 		echo "gcc"
 	elif ${1} -qversion 2>&1 | grep 'IBM XL C' >/dev/null; then
 		echo "xlc"
+	elif ${1} -V 2>&1 | grep 'Studio' > /dev/null; then
+		echo "sunstudio"
 	else
-		# TODO: implement studio
 		echo "unknown"
 	fi
 }
@@ -82,6 +83,15 @@ compiler_target() {
 			$xlc_as --version 2>&1 | grep 'GNU assembler' >/dev/null || die "Can only derive compiler target from GNU assembler, please submit fix for your assembler"
 			$xlc_as --version 2>&1 | grep target | sed "s|.*\`\([^']*\)'.*|\1|"
 			;;
+		sunstudio)
+			# Only tested on Solaris 10 ... if this messes up on Linux or SunOS
+			# i86pc feel free to send a patch...
+			if $cc -V 2>&1 | grep SunOS_sparc > /dev/null; then
+				echo "sparc64-unknown-solaris"
+			else
+				echo "unknown-unknown-unknown"
+			fi
+			;;
 		*)
 			echo "unknown-unknown-unknown"
 			;;
@@ -107,6 +117,8 @@ find_package() {
 	export ${2}_CFLAGS="$($PKG_CONFIG --cflags $1 | sed 's|-D_XOPEN_SOURCE=[[:digit:]]*||g')"
 	export ${2}_LIBS="$($PKG_CONFIG --libs $1)"
 	export ${2}_FOUND=1
+	export ${2}_VERSION="$($PKG_CONFIG --modversion $1)"
+
 	printf " found\n" >&2
 }
 
@@ -122,6 +134,8 @@ OPTIONS:
     --disable-libedit       Do not use libedit
     --enable-libreadline    Search and use libreadline for interactive editing [DEFAULT: yes]
     --disable-libreadline   Disable use of libreadline
+    --enable-liblowdown     Search and use liblowdown for markdown rendering [DEFAULT: yes]
+    --disable-liblowdown    Disable use of liblowdown
     --debug                 Compile without optimisations, generate code with
                             debug information and enable additional compiler-specific
                             warnings and portability checks.
@@ -278,6 +292,12 @@ fi
 # Lowdown
 if [ $ENABLE_LIBLOWDOWN -eq 1 ]; then
 	find_package lowdown LIBLOWDOWN optional
+
+	# Workaround for breaking API changes and header without versions:
+	#
+	# See https://github.com/kristapsdz/lowdown/issues/148
+	LIBLOWDOWN_MAJOR=$(echo $LIBLOWDOWN_VERSION | cut -d. -f1)
+	LIBLOWDOWN_MINOR=$(echo $LIBLOWDOWN_VERSION | cut -d. -f2)
 else
 	LIBLOWDOWN_FOUND=0
 fi
@@ -291,6 +311,7 @@ RM=${RM:-rm}
 KYUA=${KYUA:-$(find_program kyua kyua)}
 CCACHE=${CCACHE:-$(find_program ccache ccache)}
 INSTALL=${INSTALL:-$(find_program install install ginstall)}
+SHELL=${SHELL:-$(find_program sh sh zsh bash)}
 [ $? -eq 0 ] || die "error: need install program"
 
 ###################################################################
@@ -322,6 +343,8 @@ sed \
 	-e "s|@LIBLOWDOWN_FOUND@|$LIBLOWDOWN_FOUND|g" \
 	-e "s|@LIBLOWDOWN_CFLAGS@|$LIBLOWDOWN_CFLAGS|g" \
 	-e "s|@LIBLOWDOWN_LIBS@|$LIBLOWDOWN_LIBS|g" \
+	-e "s|@LIBLOWDOWN_MAJOR@|$LIBLOWDOWN_MAJOR|g" \
+	-e "s|@LIBLOWDOWN_MINOR@|$LIBLOWDOWN_MINOR|g" \
 	-e "s|@CONFIGURE_CMD_ARGS@|$CONFIGURE_CMD_ARGS|g" \
 	-e "s|@CC@|$CC|g" \
 	-e "s|@CCOM@|$CCOM|g" \
@@ -339,6 +362,7 @@ sed \
 	-e "s|@RM@|$RM|g" \
 	-e "s|@KYUA@|$KYUA|g" \
 	-e "s|@INSTALL@|$INSTALL|g" \
+	-e "s|@SHELL@|$SHELL|g" \
 	-e "s|@PREFIX@|$PREFIX|g" \
 	-e "s|@PACKAGE_STRING@|$PACKAGE_STRING|g" \
 	-e "s|@PACKAGE_DATE@|$PACKAGE_DATE|g" \
@@ -380,7 +404,7 @@ echo "   LIBREADLINE_CFLAGS: ${LIBREADLINE_CFLAGS}"
 echo "     LIBREADLINE_LIBS: ${LIBREADLINE_LIBS}"
 fi
 if [ $LIBLOWDOWN_FOUND -eq 1 ]; then
-echo " Using lowdown:"
+echo " Using lowdown ${LIBLOWDOWN_VERSION}:"
 echo "    LIBLOWDOWN_CFLAGS: ${LIBLOWDOWN_CFLAGS}"
 echo "      LIBLOWDOWN_LIBS: ${LIBLOWDOWN_LIBS}"
 fi

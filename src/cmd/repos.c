@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,7 +74,7 @@ gcli_print_repos(enum gcli_output_flags const flags,
 	struct gcli_tblcoldef cols[] = {
 		{ .name = "FORK",     .type = GCLI_TBLCOLTYPE_BOOL,   .flags = 0 },
 		{ .name = "VISBLTY",  .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
-		{ .name = "DATE",     .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "DATE",     .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
 		{ .name = "FULLNAME", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 	};
 
@@ -121,13 +121,13 @@ gcli_repo_print(struct gcli_repo const *it)
 	gcli_dict dict;
 
 	dict = gcli_dict_begin();
-	gcli_dict_add(dict, "ID",         0, 0, "%"PRIid, it->id);
-	gcli_dict_add(dict, "FULL NAME",  0, 0, "%s", it->full_name);
-	gcli_dict_add(dict, "NAME",       0, 0, "%s", it->name);
-	gcli_dict_add(dict, "OWNER",      0, 0, "%s", it->owner);
-	gcli_dict_add(dict, "DATE",       0, 0, "%s", it->date);
-	gcli_dict_add(dict, "VISIBILITY", 0, 0, "%s", it->visibility);
-	gcli_dict_add(dict, "IS FORK",    0, 0, "%s", sn_bool_yesno(it->is_fork));
+	gcli_dict_add(dict,           "ID",         0, 0, "%"PRIid, it->id);
+	gcli_dict_add(dict,           "FULL NAME",  0, 0, "%s", it->full_name);
+	gcli_dict_add(dict,           "NAME",       0, 0, "%s", it->name);
+	gcli_dict_add(dict,           "OWNER",      0, 0, "%s", it->owner);
+	gcli_dict_add_timestamp(dict, "DATE",       0, 0, it->date);
+	gcli_dict_add(dict,           "VISIBILITY", 0, 0, "%s", it->visibility);
+	gcli_dict_add(dict,           "IS FORK",    0, 0, "%s", sn_bool_yesno(it->is_fork));
 
 	gcli_dict_end(dict);
 }
@@ -196,8 +196,7 @@ subcommand_repos_create(int argc, char *argv[])
 }
 
 static int
-action_delete(char const *const owner, char const *const repo, int *argc,
-              char ***argv)
+action_delete(struct gcli_path const *const path, int *argc, char ***argv)
 {
 	int ch;
 	bool always_yes = false;
@@ -223,7 +222,7 @@ action_delete(char const *const owner, char const *const repo, int *argc,
 	*argc -= optind;
 	*argv += optind;
 
-	delete_repo(always_yes, owner, repo);
+	delete_repo(always_yes, path);
 
 	return 0;
 }
@@ -244,8 +243,8 @@ parse_visibility(char const *str)
 /* Change the visibility level of a repository (e.g. public, private
  * etc) */
 static int
-action_set_visibility(char const *const owner, char const *const repo,
-                      int *argc , char ***argv)
+action_set_visibility(struct gcli_path const *const path, int *argc,
+                      char ***argv)
 {
 	char const *visblty_str;
 	gcli_repo_visibility visblty;
@@ -262,7 +261,7 @@ action_set_visibility(char const *const owner, char const *const repo,
 
 	visblty = parse_visibility(visblty_str);
 
-	if ((rc = gcli_repo_set_visibility(g_clictx, owner, repo, visblty)) < 0) {
+	if ((rc = gcli_repo_set_visibility(g_clictx, path, visblty)) < 0) {
 		fprintf(stderr, "gcli: error: failed to set visibility: %s\n",
 		        gcli_get_error(g_clictx));
 		return 1;
@@ -273,8 +272,7 @@ action_set_visibility(char const *const owner, char const *const repo,
 
 static struct action {
 	char const *const name;
-	int (*fn)(char const *const owner, char const *const repo, int *argc,
-	          char ***argv);
+	int (*fn)(struct gcli_path const *const path, int *argc, char ***argv);
 } const actions[] = {
 	{ .name = "delete",         .fn = action_delete },
 	{ .name = "set-visibility", .fn = action_set_visibility },
@@ -297,8 +295,8 @@ int
 subcommand_repos(int argc, char *argv[])
 {
 	int ch, n = 30;
-	char const *owner = NULL;
-	char const *repo = NULL;
+	char *owner = NULL;
+	char *repo = NULL;
 	struct gcli_repo_list repos = {0};
 	enum gcli_output_flags flags = 0;
 
@@ -391,7 +389,16 @@ subcommand_repos(int argc, char *argv[])
 		gcli_print_repos(flags, &repos, n);
 		gcli_repos_free(&repos);
 	} else {
-		check_owner_and_repo(&owner, &repo);
+		struct gcli_path path = {
+			.data = {
+				.as_default = {
+					.owner = owner,
+					.repo = repo,
+				},
+			},
+		};
+
+		check_path(&path);
 
 		while (argc) {
 			struct action const *action = find_action(argv[0]);
@@ -402,7 +409,7 @@ subcommand_repos(int argc, char *argv[])
 				return EXIT_FAILURE;
 			}
 
-			rc = action->fn(owner, repo, &argc, &argv);
+			rc = action->fn(&path, &argc, &argv);
 			if (rc)
 				return rc;
 		}

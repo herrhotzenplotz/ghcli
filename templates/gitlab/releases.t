@@ -16,7 +16,7 @@ object of struct gcli_release with
 	 "description"      => body as string,
 	 "assets"           => use parse_gitlab_release_assets,
 	 "author"           => author as user,
-	 "created_at"       => date as string,
+	 "created_at"       => date as iso8601_time,
 	 "upcoming_release" => prerelease as bool);
 
 parser gitlab_releases is

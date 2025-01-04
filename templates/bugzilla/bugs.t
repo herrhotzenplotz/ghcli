@@ -15,7 +15,7 @@ parser bugzilla_bug_item is
 object of struct gcli_issue with
 	("id" => number as id,
 	 "summary" => title as string,
-	 "creation_time" => created_at as string,
+	 "creation_time" => created_at as iso8601_time,
 	 "creator_detail" => use parse_bugzilla_bug_creator,
 	 "status" => state as string,
 	 "product" => product as string,
@@ -34,7 +34,7 @@ parser bugzilla_comment is
 object of struct gcli_comment with
 	("id" => id as id,
 	 "text" => body as string,
-	 "creation_time" => date as string,
+	 "creation_time" => date as iso8601_time,
 	 "creator" => author as string);
 
 parser bugzilla_comments_internal_skip_first is
@@ -65,7 +65,7 @@ object of struct gcli_attachment with
 	("id" => id as id,
 	 "summary" => summary as string,
 	 "file_name" => file_name as string,
-	 "creation_time" => created_at as string,
+	 "creation_time" => created_at as iso8601_time,
 	 "creator" => author as string,
 	 "content_type" => content_type as string,
 	 "is_obsolete" => is_obsolete as bool_relaxed,

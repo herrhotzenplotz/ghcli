@@ -102,6 +102,8 @@ sn_min(int x, int y)
 /* string functions */
 char *sn_strndup (const char *it, size_t len);
 char *sn_asprintf(const char *fmt, ...) PRINTF_FORMAT(1, 2);
+char *sn_vasprintf(char const *const fmt, va_list vp);
+
 // modifies the underlying string
 char *sn_strip_suffix(char *it, const char *suffix);
 
@@ -131,6 +133,7 @@ sn_sv_from_parts(char *buf, size_t len)
 sn_sv sn_sv_trim_front(sn_sv);
 sn_sv sn_sv_trim(sn_sv);
 sn_sv sn_sv_chop_until(sn_sv *, char);
+sn_sv sn_sv_chop_to_last(sn_sv *, char);
 bool sn_sv_has_prefix(sn_sv, const char *);
 bool sn_sv_eq(const sn_sv, const sn_sv);
 bool sn_sv_eq_to(const sn_sv, const char *);

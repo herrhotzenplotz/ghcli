@@ -35,11 +35,13 @@
 #endif
 
 #include <gcli/forks.h>
+#include <gcli/path.h>
 
-int gitea_get_forks(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gitea_get_forks(struct gcli_ctx *ctx, struct gcli_path const *path,
                     int max, struct gcli_fork_list *out);
 
-int gitea_fork_create(struct gcli_ctx *ctx, char const *owner, char const *repo,
+int gitea_fork_create(struct gcli_ctx *ctx,
+                      struct gcli_path const *repo_path,
                       char const *_in);
 
 #endif /* GITEA_FORKS_H */

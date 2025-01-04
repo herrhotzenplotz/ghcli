@@ -22,7 +22,7 @@ object of struct gcli_pull with
 	("title"                        => title as string,
 	 "state"                        => state as string,
 	 "description"                  => body as string,
-	 "created_at"                   => created_at as string,
+	 "created_at"                   => created_at as iso8601_time,
 	 "iid"                          => number as id,
 	 "id"                           => id as id,
 	 "labels"                       => labels as array of char* use get_string,

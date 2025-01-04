@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +34,7 @@
 #include <gcli/gcli.h>
 #include <sn/sn.h>
 
+#include <ctype.h>
 #include <dirent.h>
 #include <signal.h>
 #include <stdio.h>
@@ -302,7 +303,7 @@ http_extractor(struct gcli_gitremote *const remote, char const *prefix)
 	pair.length -= prefix_size;
 	pair.data   += prefix_size;
 
-	remote->owner = sn_sv_chop_until(&pair, '/');
+	remote->owner = sn_sv_chop_to_last(&pair, '/');
 
 	pair.data   += 1;
 	pair.length -= 1;
@@ -332,7 +333,15 @@ ssh_extractor(struct gcli_gitremote *const remote, char const *prefix)
 	pair.data   += 1;
 	pair.length -= 1;
 
-	remote->owner = sn_sv_chop_until(&pair, '/');
+	/* sometimes we see port numbers in the SSH url */
+	if (isdigit(*pair.data)) {
+		sn_sv_chop_until(&pair, '/');
+
+		pair.data   += 1;
+		pair.length -= 1;
+	}
+
+	remote->owner = sn_sv_chop_to_last(&pair, '/');
 
 	pair.data   += 1;
 	pair.length -= 1;
@@ -561,4 +570,20 @@ gcli_gitconfig_repo_by_remote(struct gcli_ctx *ctx, char const *const remote,
 		*forge = remotes[0].forge_type;
 
 	return 0;
+}
+
+int
+gcli_gitconfig_get_remote(struct gcli_ctx *ctx, gcli_forge_type const type,
+                          char **remote)
+{
+	gcli_gitconfig_read_gitconfig();
+
+	for (size_t i = 0; i < remotes_size; ++i) {
+		if (remotes[i].forge_type == type) {
+			*remote = sn_sv_to_cstr(remotes[i].url);
+			return 0;
+		}
+	}
+
+	return gcli_error(ctx, "no suitable remote for forge type");
 }

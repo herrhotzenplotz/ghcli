@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,11 +42,11 @@ void gcli_print_pulls(enum gcli_output_flags flags, struct gcli_pull_list const 
 int gcli_print_pull_diff(FILE *stream, char const *owner, char const *reponame,
                          int pr_number);
 
-void gcli_print_pull(struct gcli_pull const *pull);
+void gcli_pull_print(struct gcli_pull const *pull);
 
 void gcli_pull_print_op(struct gcli_pull const *pull);
 
-int gcli_pull_checks(char const *owner, char const *repo, int pr_number);
+int gcli_pull_checks(struct gcli_path const *path);
 
 void gcli_print_commits(struct gcli_commit_list const *const list);
 

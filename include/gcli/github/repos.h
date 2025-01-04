@@ -36,21 +36,25 @@
 
 #include <gcli/repos.h>
 
+int github_repo_make_url(struct gcli_ctx *ctx, struct gcli_path const *path,
+                         char **url, char const *suffix_fmt, ...);
+
+int github_user_is_org(struct gcli_ctx *ctx, char const *e_owner);
+
 int github_get_repos(struct gcli_ctx *ctx, char const *owner, int max,
                      struct gcli_repo_list *out);
 
 int github_get_own_repos(struct gcli_ctx *ctx, int max,
                          struct gcli_repo_list *out);
 
-int github_repo_delete(struct gcli_ctx *ctx, char const *owner,
-                       char const *repo);
+int github_repo_delete(struct gcli_ctx *ctx, struct gcli_path const *const path);
 
 int github_repo_create(struct gcli_ctx *ctx,
                        struct gcli_repo_create_options const *options,
                        struct gcli_repo *out);
 
-int github_repo_set_visibility(struct gcli_ctx *ctx, char const *const owner,
-                               char const *const repo,
+int github_repo_set_visibility(struct gcli_ctx *ctx,
+                               struct gcli_path const *path,
                                gcli_repo_visibility vis);
 
 #endif /* GITHUB_REPOS_H */

@@ -75,21 +75,6 @@ usage(void)
 	copyright();
 }
 
-int
-gitlab_mr_pipelines(char const *owner, char const *repo, int const mr_id)
-{
-	struct gitlab_pipeline_list list = {0};
-	int rc = 0;
-
-	rc = gitlab_get_mr_pipelines(g_clictx, owner, repo, mr_id, &list);
-	if (rc == 0)
-		gitlab_print_pipelines(&list);
-
-	gitlab_pipelines_free(&list);
-
-	return rc;
-}
-
 void
 gitlab_print_pipelines(struct gitlab_pipeline_list const *const list)
 {
@@ -97,8 +82,8 @@ gitlab_print_pipelines(struct gitlab_pipeline_list const *const list)
 	struct gcli_tblcoldef cols[] = {
 		{ .name = "ID",      .type = GCLI_TBLCOLTYPE_ID,     .flags = GCLI_TBLCOL_JUSTIFYR },
 		{ .name = "STATUS",  .type = GCLI_TBLCOLTYPE_STRING, .flags = GCLI_TBLCOL_STATECOLOURED },
-		{ .name = "CREATED", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
-		{ .name = "UPDATED", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "CREATED", .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
+		{ .name = "UPDATED", .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
 		{ .name = "NAME",    .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 		{ .name = "REF",     .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 	};
@@ -133,8 +118,8 @@ gitlab_print_jobs(struct gitlab_job_list const *const list)
 		{ .name = "ID",         .type = GCLI_TBLCOLTYPE_ID,     .flags = GCLI_TBLCOL_JUSTIFYR },
 		{ .name = "NAME",       .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 		{ .name = "STATUS",     .type = GCLI_TBLCOLTYPE_STRING, .flags = GCLI_TBLCOL_STATECOLOURED },
-		{ .name = "STARTED",    .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
-		{ .name = "FINISHED",   .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
+		{ .name = "STARTED",    .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
+		{ .name = "FINISHED",   .type = GCLI_TBLCOLTYPE_TIME_T, .flags = 0 },
 		{ .name = "RUNNERDESC", .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 		{ .name = "REF",        .type = GCLI_TBLCOLTYPE_STRING, .flags = 0 },
 	};
@@ -169,18 +154,18 @@ gitlab_print_job_status(struct gitlab_job const *const job)
 
 	printer = gcli_dict_begin();
 
-	gcli_dict_add(printer,        "ID", 0, 0, "%"PRIid, job->id);
-	gcli_dict_add_string(printer, "STATUS", GCLI_TBLCOL_STATECOLOURED, 0, job->status);
-	gcli_dict_add_string(printer, "STAGE", 0, 0, job->stage);
-	gcli_dict_add_string(printer, "NAME", GCLI_TBLCOL_BOLD, 0, job->name);
-	gcli_dict_add_string(printer, "REF", GCLI_TBLCOL_COLOUREXPL, GCLI_COLOR_YELLOW, job->ref);
-	gcli_dict_add_string(printer, "CREATED", 0, 0, job->created_at);
-	gcli_dict_add_string(printer, "STARTED", 0, 0, job->started_at);
-	gcli_dict_add_string(printer, "FINISHED", 0, 0, job->finished_at);
-	gcli_dict_add(printer,        "DURATION", 0, 0, "%-.2lfs", job->duration);
-	gcli_dict_add(printer,        "COVERAGE", 0, 0, "%.1lf%%", job->coverage);
-	gcli_dict_add_string(printer, "RUNNER NAME", 0, 0, job->runner_name);
-	gcli_dict_add_string(printer, "RUNNER DESCR", 0, 0, job->runner_description);
+	gcli_dict_add(printer,           "ID", 0, 0, "%"PRIid, job->id);
+	gcli_dict_add_string(printer,    "STATUS", GCLI_TBLCOL_STATECOLOURED, 0, job->status);
+	gcli_dict_add_string(printer,    "STAGE", 0, 0, job->stage);
+	gcli_dict_add_string(printer,    "NAME", GCLI_TBLCOL_BOLD, 0, job->name);
+	gcli_dict_add_string(printer,    "REF", GCLI_TBLCOL_COLOUREXPL, GCLI_COLOR_YELLOW, job->ref);
+	gcli_dict_add_timestamp(printer, "CREATED", 0, 0, job->created_at);
+	gcli_dict_add_timestamp(printer, "STARTED", 0, 0, job->started_at);
+	gcli_dict_add_timestamp(printer, "FINISHED", 0, 0, job->finished_at);
+	gcli_dict_add(printer,           "DURATION", 0, 0, "%-.2lfs", job->duration);
+	gcli_dict_add(printer,           "COVERAGE", 0, 0, "%.1lf%%", job->coverage);
+	gcli_dict_add_string(printer,    "RUNNER NAME", 0, 0, job->runner_name);
+	gcli_dict_add_string(printer,    "RUNNER DESCR", 0, 0, job->runner_description);
 
 	gcli_dict_end(printer);
 }
@@ -192,14 +177,14 @@ gitlab_print_pipeline(struct gitlab_pipeline const *const pipeline)
 
 	printer = gcli_dict_begin();
 
-	gcli_dict_add(printer,        "ID", 0, 0, "%"PRIid, pipeline->id);
-	gcli_dict_add_string(printer, "NAME", 0, 0, pipeline->name ? pipeline->name : "N/A");
-	gcli_dict_add_string(printer, "STATUS", GCLI_TBLCOL_STATECOLOURED, 0, pipeline->status);
-	gcli_dict_add_string(printer, "CREATED", 0, 0, pipeline->created_at);
-	gcli_dict_add_string(printer, "UPDATED", 0, 0, pipeline->updated_at);
-	gcli_dict_add_string(printer, "REF", GCLI_TBLCOL_COLOUREXPL, GCLI_COLOR_YELLOW, pipeline->ref);
-	gcli_dict_add_string(printer, "SHA", GCLI_TBLCOL_COLOUREXPL, GCLI_COLOR_YELLOW, pipeline->sha);
-	gcli_dict_add_string(printer, "SOURCE", 0, 0, pipeline->source);
+	gcli_dict_add(printer,           "ID", 0, 0, "%"PRIid, pipeline->id);
+	gcli_dict_add_string(printer,    "NAME", 0, 0, pipeline->name ? pipeline->name : "N/A");
+	gcli_dict_add_string(printer,    "STATUS", GCLI_TBLCOL_STATECOLOURED, 0, pipeline->status);
+	gcli_dict_add_timestamp(printer, "CREATED", 0, 0, pipeline->created_at);
+	gcli_dict_add_timestamp(printer, "UPDATED", 0, 0, pipeline->updated_at);
+	gcli_dict_add_string(printer,    "REF", GCLI_TBLCOL_COLOUREXPL, GCLI_COLOR_YELLOW, pipeline->ref);
+	gcli_dict_add_string(printer,    "SHA", GCLI_TBLCOL_COLOUREXPL, GCLI_COLOR_YELLOW, pipeline->sha);
+	gcli_dict_add_string(printer,    "SOURCE", 0, 0, pipeline->source);
 
 	gcli_dict_end(printer);
 }
