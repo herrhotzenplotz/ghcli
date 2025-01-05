@@ -42,6 +42,10 @@ tolower() {
 	tr '[:upper:]' '[:lower:]'
 }
 
+check_compiler() {
+	command -v "${1}" > /dev/null 2>&1 || die " '${1}' not found"
+}
+
 compiler_type() {
 	if ${1} -v 2>&1 | grep clang > /dev/null; then
 		echo "clang"
@@ -227,6 +231,7 @@ done
 # Host Compiler
 printf "Checking host compiler ..."
 CC=${CC:-cc}
+check_compiler "${CC}"
 printf " $CC\n"
 
 # Detect the compiler type and enable dependency tracking
@@ -239,28 +244,19 @@ HOST=$(compiler_target $CCOM "$CC $CFLAGS $CPPFLAGS")
 printf " $HOST\n"
 
 # Build compiler
-printf "Checking for cross-compilation setup ..."
-is_cross=0
 CC_FOR_BUILD=${CC_FOR_BUILD:-${CC}}
-if ! [ "${CC_FOR_BUILD}" = "${CC}" ]; then
-	is_cross=1
-	printf " yes\n"
-else
-	printf " no\n"
-fi
 
-if [ $is_cross -eq 1 ]; then
-	printf "Checking build compiler type..."
-	CCOM_FOR_BUILD=$(compiler_type "${CC_FOR_BUILD}")
-	printf " ${CCOM_FOR_BUILD}\n"
+printf "Checking for build compiler..."
+check_compiler "${CC_FOR_BUILD}"
+printf " ${CC_FOR_BUILD}\n"
 
-	printf "Checking build compiler target ..."
-	BUILD=$(compiler_target $CCOM_FOR_BUILD $CC_FOR_BUILD)
-	printf " $BUILD\n"
-else
-	CCOM_FOR_BUILD="${CCOM}"
-	BUILD="${HOST}"
-fi
+printf "Checking build compiler type..."
+CCOM_FOR_BUILD=$(compiler_type "${CC_FOR_BUILD}")
+printf " ${CCOM_FOR_BUILD}\n"
+
+printf "Checking build compiler target ..."
+BUILD=$(compiler_target $CCOM_FOR_BUILD $CC_FOR_BUILD)
+printf " $BUILD\n"
 
 ############################################################################
 # LIBRARIES
