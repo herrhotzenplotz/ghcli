@@ -3,7 +3,7 @@
 .Os @PACKAGE_STRING@
 .Dd $Mdocdate$
 .Sh NAME
-.Nm gcli comment
+.Nm gcli\ comment
 .Nd Comment on tickets in git forges
 .Sh SYNOPSIS
 .Nm

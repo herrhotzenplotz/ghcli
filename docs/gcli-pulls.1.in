@@ -2,7 +2,7 @@
 .Dt GCLI-PULLS 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli pulls
+.Nm gcli\ pulls
 .Nd Manage Pull Requests on Git Forges
 .Sh SYNOPSIS
 .Nm

@@ -2,7 +2,7 @@
 .Dt GCLI-LABELS 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli labels
+.Nm gcli\ labels
 .Nd Manage ticket labels in git forges
 .Sh SYNOPSIS
 .Nm

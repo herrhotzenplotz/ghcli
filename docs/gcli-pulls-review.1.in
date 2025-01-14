@@ -2,7 +2,7 @@
 .Dt GCLI-PULLS-REVIEW 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli pulls review
+.Nm gcli\ pulls\ review
 .Nd GCLI Integrated Code Review Tool
 .Sh SYNOPSIS
 .Nm

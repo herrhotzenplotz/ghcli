@@ -2,7 +2,7 @@
 .Dt GCLI-GISTS 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli gists
+.Nm gcli\ gists
 .Nd manage GitHub Gists
 .Sh SYNOPSIS
 .Nm

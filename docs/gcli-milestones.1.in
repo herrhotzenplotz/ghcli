@@ -2,7 +2,7 @@
 .Dt GCLI-MILESTONES 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli milestones
+.Nm gcli\ milestones
 .Nd List and manage milestones in various Git Forges
 .Sh SYNOPSIS
 .Nm

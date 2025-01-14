@@ -2,7 +2,7 @@
 .Dt GCLI-RELEASES 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli releases
+.Nm gcli\ releases
 .Nd manage releases on git forges
 .Sh SYNOPSIS
 .Nm

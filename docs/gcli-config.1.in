@@ -2,7 +2,7 @@
 .Dt GCLI-ISSUES 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli config
+.Nm gcli\ config
 .Nd Git Forge Configuration
 .Sh SYNOPSIS
 .Nm
