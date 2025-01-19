@@ -2,7 +2,7 @@
 .Dt GCLI-API 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli api
+.Nm gcli\ api
 .Nd Perform API Calls to Git Forges and retrieve results
 .Sh SYNOPSIS
 .Nm

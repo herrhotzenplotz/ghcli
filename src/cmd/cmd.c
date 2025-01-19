@@ -209,11 +209,11 @@ gcli_render_markdown(char const *input, int indent, int maxlinelen, FILE *stream
 	 *      https://github.com/kristapsdz/lowdown/releases/tag/VERSION_1_4_0 */
 #if (LIBLOWDOWN_MAJOR == 1 && LIBLOWDOWN_MINOR >= 4) || LIBLOWDOWN_MAJOR >= 2
 	opts.term.vmargin = 1;
-	opts.term.hmargin = indent - 4; /* somehow there's always 4 spaces being emitted by lowdown */
+	opts.term.hmargin = indent; /* Not only did the minor version break the API but also behaviour ... */
 	opts.term.cols = maxlinelen;
 #else
 	opts.vmargin = 1;
-	opts.hmargin = indent - 4;
+	opts.hmargin = indent - 4; /* somehow there's always 4 spaces being emitted by lowdown */
 	opts.cols = maxlinelen;
 #endif
 

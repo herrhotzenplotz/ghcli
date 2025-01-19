@@ -2,7 +2,7 @@
 .Dt GCLI-STATUS 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli status
+.Nm gcli\ status
 .Nd Print a list of notifications and/or TODOs
 .Sh SYNOPSIS
 .Nm

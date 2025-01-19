@@ -2,7 +2,7 @@
 .Dt GCLI-SNIPPETS 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli snippets
+.Nm gcli\ snippets
 .Nd manage GitLab snippets
 .Sh SYNOPSIS
 .Nm

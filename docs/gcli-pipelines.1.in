@@ -2,7 +2,7 @@
 .Dt GCLI-PIPELINES 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli pipelines
+.Nm gcli\ pipelines
 .Nd Inspect and manage GitLab Pipelines
 .Sh SYNOPSIS
 .Nm

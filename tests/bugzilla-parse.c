@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -76,7 +76,7 @@ ATF_TC_BODY(simple_bugzilla_issue, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("bugzilla_simple_bug.json"));
+	ATF_REQUIRE((f = open_sample("bugzilla_simple_bug.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_bugzilla_bugs(ctx, &stream, &list) == 0);
@@ -106,7 +106,7 @@ ATF_TC_BODY(bugzilla_comments, tc)
 	struct gcli_ctx *ctx = test_context();
 	struct json_stream stream;
 
-	ATF_REQUIRE(f = open_sample("bugzilla_comments.json"));
+	ATF_REQUIRE((f = open_sample("bugzilla_comments.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_bugzilla_comments(ctx, &stream, &list) == 0);
@@ -135,7 +135,7 @@ ATF_TC_BODY(bugzilla_attachments, tc)
 	struct gcli_ctx *ctx = test_context();
 	struct json_stream stream = {0};
 
-	ATF_REQUIRE(f = open_sample("bugzilla_attachments.json"));
+	ATF_REQUIRE((f = open_sample("bugzilla_attachments.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_bugzilla_bug_attachments(ctx, &stream, &list) == 0);

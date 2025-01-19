@@ -2,7 +2,7 @@
 .Dt GCLI-REPOS 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli repos
+.Nm gcli\ repos
 .Nd Manage remote repositories on various git forges
 .Sh SYNOPSIS
 .Nm

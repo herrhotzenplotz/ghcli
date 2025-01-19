@@ -2,7 +2,7 @@
 .Dt GCLI-RELEASES 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli releases
+.Nm gcli\ releases
 .Nd manage releases on git forges
 .Sh SYNOPSIS
 .Nm
@@ -94,6 +94,10 @@ and be made available for download. You can specify this option
 multiple times to attach more than one asset to the release.
 .It Fl y , -yes
 Do not ask for confirmation before creating the release. Assume yes.
+.It Fl d , --draft
+Mark this release as a draft.
+.It Fl p , --prerelease
+Mark this release as a prerelease.
 .El
 .It Cm delete
 Delete a release.

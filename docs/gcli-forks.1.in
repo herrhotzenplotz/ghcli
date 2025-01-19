@@ -2,7 +2,7 @@
 .Dt GCLI-FORKS 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli forks
+.Nm gcli\ forks
 .Nd Manage repository forks in git forges
 .Sh SYNOPSIS
 .Nm

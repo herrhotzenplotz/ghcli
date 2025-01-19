@@ -2,7 +2,7 @@
 .Dt GCLI-ISSUES 1
 .Os @PACKAGE_STRING@
 .Sh NAME
-.Nm gcli issues
+.Nm gcli\ issues
 .Nd Manage issues in various git forges
 .Sh SYNOPSIS
 .Nm
