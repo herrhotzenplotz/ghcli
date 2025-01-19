@@ -2,15 +2,22 @@
 
 This changelog does not follow semantic versioning.
 
-## UNRELEASED
-
-### Added
+## 2.6.1 (2025-Jan-19)
 
 ### Fixed
 
-### Changed
+- Fix rendering bug caused by liblowdown 1.4 API breakage.
 
-### Removed
+- Fixed missing documentation in `gcli-releases(1)`
+
+  Reported by: xaizek <https://github.com/xaizek>
+
+- Fix configure to fail when the compiler in `CC` does not exist
+
+- Fix manual page compatibility with `groff_mdoc`
+
+  Submitted by: remph <lhr@disroot.org>
+
 
 ## 2.6.0 (2025-Jan-04)
 
