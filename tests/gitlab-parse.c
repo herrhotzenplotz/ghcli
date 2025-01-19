@@ -39,7 +39,7 @@ open_sample(char const *const name)
 
 	snprintf(p, sizeof p, "%s/samples/%s", TESTSRCDIR, name);
 
-	ATF_REQUIRE(r = fopen(p, "r"));
+	ATF_REQUIRE((r = fopen(p, "r")));
 
 	return r;
 }

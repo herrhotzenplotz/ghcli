@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -79,7 +79,7 @@ ATF_TC_BODY(simple_github_issue, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("github_simple_issue.json"));
+	ATF_REQUIRE((f = open_sample("github_simple_issue.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_github_issue(ctx, &stream, &issue) == 0);
@@ -120,7 +120,7 @@ ATF_TC_BODY(simple_github_pull, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("github_simple_pull.json"));
+	ATF_REQUIRE((f = open_sample("github_simple_pull.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_github_pull(ctx, &stream, &pull) == 0);
@@ -160,7 +160,7 @@ ATF_TC_BODY(simple_github_label, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("github_simple_label.json"));
+	ATF_REQUIRE((f = open_sample("github_simple_label.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_github_label(ctx, &stream, &label) == 0);
@@ -183,7 +183,7 @@ ATF_TC_BODY(simple_github_milestone, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("github_simple_milestone.json"));
+	ATF_REQUIRE((f = open_sample("github_simple_milestone.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_github_milestone(ctx, &stream, &milestone) == 0);
@@ -212,7 +212,7 @@ ATF_TC_BODY(simple_github_release, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("github_simple_release.json"));
+	ATF_REQUIRE((f = open_sample("github_simple_release.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_github_release(ctx, &stream, &release) == 0);
@@ -241,7 +241,7 @@ ATF_TC_BODY(simple_github_repo, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("github_simple_repo.json"));
+	ATF_REQUIRE((f = open_sample("github_simple_repo.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_github_repo(ctx, &stream, &repo) == 0);
@@ -267,7 +267,7 @@ ATF_TC_BODY(simple_github_fork, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("github_simple_fork.json"));
+	ATF_REQUIRE((f = open_sample("github_simple_fork.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_github_fork(ctx, &stream, &fork) == 0);
@@ -290,7 +290,7 @@ ATF_TC_BODY(simple_github_comment, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("github_simple_comment.json"));
+	ATF_REQUIRE((f = open_sample("github_simple_comment.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_github_comment(ctx, &stream, &comment) == 0);
@@ -313,7 +313,7 @@ ATF_TC_BODY(simple_github_check, tc)
 	struct json_stream stream;
 	struct gcli_ctx *ctx = test_context();
 
-	ATF_REQUIRE(f = open_sample("github_simple_check.json"));
+	ATF_REQUIRE((f = open_sample("github_simple_check.json")));
 	json_open_stream(&stream, f);
 
 	ATF_REQUIRE(parse_github_check(ctx, &stream, &check) == 0);

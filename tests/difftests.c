@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,7 +42,7 @@ open_sample(char const *const name)
 
 	snprintf(p, sizeof p, "%s/samples/%s", TESTSRCDIR, name);
 
-	ATF_REQUIRE(r = fopen(p, "r"));
+	ATF_REQUIRE((r = fopen(p, "r")));
 
 	return r;
 }
@@ -825,7 +825,7 @@ ATF_TC_BODY(simple_patch_series, tc)
 	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch_series(&parser, &series) == 0);
 
-	ATF_REQUIRE(patch = TAILQ_FIRST(&series.patches));
+	ATF_REQUIRE((patch = TAILQ_FIRST(&series.patches)));
 
 	ATF_CHECK_STREQ(patch->prelude,
 	                "From 361f83923b9924a3e8796b0ddf03f768e26a1236 Mon Sep 17 00:00:00 2001\n"
@@ -838,7 +838,7 @@ ATF_TC_BODY(simple_patch_series, tc)
 	                " 1 file changed, 3 insertions(+)\n"
 	                "\n");
 
-	ATF_REQUIRE(patch = TAILQ_NEXT(patch, next));
+	ATF_REQUIRE((patch = TAILQ_NEXT(patch, next)));
 	ATF_CHECK_STREQ(patch->prelude,
 	                "From d9cbace712a92fdd0bac4f08b6d42e75069af363 Mon Sep 17 00:00:00 2001\n"
 	                "From: Nico Sonack <nsonack@herrhotzenplotz.de>\n"
@@ -856,7 +856,7 @@ ATF_TC_BODY(simple_patch_series, tc)
 	TAILQ_INIT(&comments);
 	ATF_REQUIRE(gcli_patch_series_get_comments(&series, &comments) == 0);
 
-	ATF_REQUIRE(comment = TAILQ_FIRST(&comments));
+	ATF_REQUIRE((comment = TAILQ_FIRST(&comments)));
 
 	ATF_CHECK_STREQ(comment->comment, "Why so much whitespace?\n");
 	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n");
@@ -865,7 +865,7 @@ ATF_TC_BODY(simple_patch_series, tc)
 	ATF_CHECK(comment->before.start_row == 4);
 	ATF_CHECK(comment->before.end_row == 4);
 
-	ATF_REQUIRE(comment = TAILQ_NEXT(comment, next));
+	ATF_REQUIRE((comment = TAILQ_NEXT(comment, next)));
 
 	ATF_CHECK_STREQ(comment->comment, "Why all this whitespace?\n");
 	ATF_CHECK_STREQ(comment->diff_text, "+\n+\n+\n+\n+\n+\n+\n");
@@ -909,7 +909,7 @@ ATF_TC_BODY(patch_for_git_object_format_version_1, tc)
 	ATF_REQUIRE(gcli_diff_parser_from_file(inf, fname, &parser) == 0);
 	ATF_REQUIRE(gcli_parse_patch_series(&parser, &series) == 0);
 
-	ATF_REQUIRE(patch = TAILQ_FIRST(&series.patches));
+	ATF_REQUIRE((patch = TAILQ_FIRST(&series.patches)));
 	ATF_CHECK_STREQ(
 		patch->commit_hash,
 		"a4545b5e32af1be6ba8f41a80dc885ce6c34d36aa5958dfba05b79ffeef8a084");
@@ -933,7 +933,7 @@ ATF_TC_BODY(multiline_change_with_comment, tc)
 	TAILQ_INIT(&comments);
 	ATF_REQUIRE(gcli_patch_get_comments(&patch, &comments) == 0);
 
-	ATF_REQUIRE(comment = TAILQ_FIRST(&comments));
+	ATF_REQUIRE((comment = TAILQ_FIRST(&comments)));
 	ATF_CHECK(comment->before.start_row == 9);
 	ATF_CHECK(comment->before.end_row == 11);
 	ATF_CHECK(comment->after.start_row == 9);
