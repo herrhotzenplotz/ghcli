@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,7 @@
 
 #include <config.h>
 
+#include <gcli/cmd/actions.h>
 #include <gcli/cmd/cmd.h>
 #include <gcli/cmd/issues.h>
 #include <gcli/cmd/table.h>
@@ -132,9 +133,179 @@ gcli_print_milestone(struct gcli_milestone const *const milestone)
 	}
 }
 
-static int handle_milestone_actions(int argc, char *argv[],
-                                    struct gcli_path const *path);
+static int
+action_milestone_all(struct gcli_path const *const path,
+                     struct gcli_milestone const *item,
+                     int *argc, char **argv[])
+{
+	struct gcli_issue_list issues = {0};
+	int rc = 0;
 
+	(void) argc;
+	(void) argv;
+
+	gcli_print_milestone(item);
+	rc = gcli_milestone_get_issues(g_clictx, path, &issues);
+
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to fetch issues: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	printf("\nISSUES:\n");
+	gcli_print_issues(0, &issues, -1);
+	gcli_issues_free(&issues);
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_milestone_issues(struct gcli_path const *const path,
+                        struct gcli_milestone const *item,
+                        int *argc, char **argv[])
+{
+	int rc = 0;
+	struct gcli_issue_list issues = {0};
+
+	(void) item;
+	(void) argc;
+	(void) argv;
+
+	/* Fetch list of issues associated with milestone */
+	rc = gcli_milestone_get_issues(g_clictx, path, &issues);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to get issues: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	/* Print them as a table */
+	gcli_print_issues(0, &issues, -1);
+
+	/* Cleanup */
+	gcli_issues_free(&issues);
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_milestone_status(struct gcli_path const *const path,
+                        struct gcli_milestone const *const milestone,
+                        int *argc, char **argv[])
+{
+	(void) path;
+	(void) argc;
+	(void) argv;
+
+	gcli_print_milestone(milestone);
+	return GCLI_EX_OK;
+}
+
+static int
+action_milestone_delete(struct gcli_path const *const path,
+                        struct gcli_milestone const *const milestone,
+                        int *argc, char **argv[])
+{
+	int rc;
+
+	(void) milestone;
+	(void) argc;
+	(void) argv;
+
+	/* Delete the milestone */
+	rc = gcli_delete_milestone(g_clictx, path);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: could not delete milestone: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_milestone_set_duedate(struct gcli_path const *const path,
+                             struct gcli_milestone const *const milestone,
+                             int *argc, char **argv[])
+{
+	char *new_date = NULL;
+	int rc = 0;
+
+	(void) milestone;
+
+	/* grab the the date that the user provided */
+	if (*argc < 2) {
+		fprintf(stderr, "gcli: error: missing date for set-duedate\n");
+		return GCLI_EX_USAGE;
+	}
+
+	shift(argc, argv);
+	new_date = (*argv)[0];
+
+	/* Do it! */
+	rc = gcli_milestone_set_duedate(g_clictx, path, new_date);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: could not update milestone due date: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
+struct gcli_cmd_actions milestone_actions = {
+	.fetch_item = (gcli_cmd_action_fetcher)gcli_get_milestone,
+	.free_item = (gcli_cmd_action_freeer)gcli_free_milestone,
+	.item_size = sizeof(struct gcli_milestone),
+
+	.defs = {
+		{
+			.name = "all",
+			.needs_item = true,
+			.handler = (gcli_cmd_action_handler)action_milestone_all,
+		},
+		{
+			.name = "issues",
+			.needs_item = false,
+			.handler = (gcli_cmd_action_handler)action_milestone_issues,
+		},
+		{
+			.name = "status",
+			.needs_item = true,
+			.handler = (gcli_cmd_action_handler)action_milestone_status,
+		},
+		{
+			.name = "delete",
+			.needs_item = false,
+			.handler = (gcli_cmd_action_handler)action_milestone_delete,
+		},
+		{
+			.name = "set-duedate",
+			.needs_item = false,
+			.handler = (gcli_cmd_action_handler)action_milestone_set_duedate,
+		},
+		{0},
+	},
+};
+
+static int
+handle_milestone_actions(int argc, char *argv[],
+                         struct gcli_path const *const path)
+{
+	int rc = 0;
+
+	rc = gcli_cmd_actions_handle(&milestone_actions, path, &argc, &argv);
+	if (rc == GCLI_EX_USAGE) {
+		usage();
+	}
+
+	return rc ? EXIT_FAILURE : EXIT_SUCCESS;
+}
 
 static int
 subcommand_milestone_create(int argc, char *argv[])
@@ -283,134 +454,4 @@ subcommand_milestones(int argc, char *argv[])
 	}
 
 	return handle_milestone_actions(argc, argv, &path);
-}
-
-static void
-ensure_milestone(struct gcli_path const *const path,
-                 int *const fetched_milestone,
-                 struct gcli_milestone *const milestone)
-{
-	int rc;
-
-	if (*fetched_milestone)
-		return;
-
-	rc = gcli_get_milestone(g_clictx, path, milestone);
-	if (rc < 0)
-		errx(1, "gcli: error: could not get milestone: %s",
-		     gcli_get_error(g_clictx));
-
-	*fetched_milestone = 1;
-}
-
-static int
-handle_milestone_actions(int argc, char *argv[],
-                         struct gcli_path const *const path)
-{
-	struct gcli_milestone milestone = {0};
-	int fetched_milestone = 0;
-
-	/* Check if the user missed out on supplying actions */
-	if (argc == 0) {
-		fprintf(stderr, "gcli: error: no actions supplied\n");
-		usage();
-		exit(EXIT_FAILURE);
-	}
-
-
-	/* Iterate over all the actions */
-	while (argc) {
-		/* Read in action */
-		char const *action = shift(&argc, &argv);
-
-		/* Dispatch */
-		if (strcmp(action, "all") == 0) {
-			int rc = 0;
-
-			struct gcli_issue_list issues = {0};
-
-			ensure_milestone(path, &fetched_milestone, &milestone);
-
-			gcli_print_milestone(&milestone);
-			rc = gcli_milestone_get_issues(g_clictx, path, &issues);
-
-			if (rc < 0) {
-				errx(1, "gcli: error: failed to fetch issues: %s",
-				     gcli_get_error(g_clictx));
-			}
-
-			printf("\nISSUES:\n");
-			gcli_print_issues(0, &issues, -1);
-			gcli_issues_free(&issues);
-
-		} else if (strcmp(action, "issues") == 0) {
-			int rc = 0;
-			struct gcli_issue_list issues = {0};
-
-			/* Fetch list of issues associated with milestone */
-			rc = gcli_milestone_get_issues(g_clictx, path, &issues);
-			if (rc < 0) {
-				errx(1, "gcli: error: failed to fetch issues: %s",
-				     gcli_get_error(g_clictx));
-			}
-
-			/* Print them as a table */
-			gcli_print_issues(0, &issues, -1);
-
-			/* Cleanup */
-			gcli_issues_free(&issues);
-
-		} else if (strcmp(action, "status") == 0) {
-
-			/* Make sure we have the milestone data */
-			ensure_milestone(path, &fetched_milestone, &milestone);
-
-			/* Print meta */
-			gcli_print_milestone(&milestone);
-		} else if (strcmp(action, "delete") == 0) {
-
-			/* Delete the milestone */
-			if (gcli_delete_milestone(g_clictx, path) < 0) {
-				errx(1, "gcli: error: could not delete milestone: %s",
-				     gcli_get_error(g_clictx));
-			}
-
-		} else if (strcmp(action, "set-duedate") == 0) {
-
-			char *new_date = NULL;
-			int rc = 0;
-
-			/* grab the the date that the user provided */
-			if (!argc)
-				errx(1, "gcli: error: missing date for set-duedate");
-
-			new_date = shift(&argc, &argv);
-
-			/* Do it! */
-			rc = gcli_milestone_set_duedate(g_clictx, path, new_date);
-			if (rc < 0) {
-				errx(1, "gcli: error: could not update milestone due date: %s",
-				     gcli_get_error(g_clictx));;
-			}
-
-		} else {
-
-			/* We don't know of the action - maybe a syntax error or
-			 * trailing garbage. Error out in this case. */
-			fprintf(stderr, "gcli: error: unknown action %s\n", action);
-			usage();
-			return EXIT_FAILURE;
-		}
-
-
-		/* Print a blank line if we are not at the end */
-		if (argc)
-			putchar('\n');
-	}
-
-	/* Cleanup the milestone if we ever fetched it */
-	if (fetched_milestone)
-		gcli_free_milestone(&milestone);
-
-	return EXIT_SUCCESS;
 }
