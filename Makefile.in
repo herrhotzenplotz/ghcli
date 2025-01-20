@@ -198,6 +198,7 @@ LIBGCLI_SRCS = \
 	thirdparty/sn/sn.c
 
 GCLI_SRCS= \
+	src/cmd/actions.c \
 	src/cmd/api.c \
 	src/cmd/attachments.c \
 	src/cmd/ci.c \
