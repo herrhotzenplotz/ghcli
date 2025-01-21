@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 # set -o pipefail
 
@@ -16,9 +16,10 @@ find_program() {
 
 	printf "Checking for $varname ..." >&2
 	for x in $*; do
-		if (command -v $x >/dev/null 2>&1) && [ -x $(command -v $x) ]; then
-			printf " $x\n" >&2
-			echo $x
+		if command -v $x >/dev/null 2>&1 && [ -x $(command -v $x) ]; then
+			binary="$(command -v $x)"
+			printf " $binary\n" >&2
+			echo "${binary}"
 			exit 0
 		fi
 	done
