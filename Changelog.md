@@ -8,6 +8,10 @@ This changelog does not follow semantic versioning.
 
 ### Fixed
 
+- Fixed a printf formatting bug on 32-bit platforms in review tool.
+
+  Submitted by: Artyom Sinyugin <writers@altlinux.org>
+
 ### Changed
 
 ### Removed
