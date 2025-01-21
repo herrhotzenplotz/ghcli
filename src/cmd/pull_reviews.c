@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include <gcli/cmd/cmd.h>
 #include <gcli/cmd/colour.h>
@@ -133,7 +134,7 @@ make_review_diff_file_name(struct gcli_path const *const path)
 	hash ^= djb2((unsigned char const *)path->data.as_default.owner);
 	hash ^= djb2((unsigned char const *)path->data.as_default.repo);
 
-	return sn_asprintf("%lx_%lu.diff", hash, path->data.as_default.id);
+	return sn_asprintf("%lx_%" PRIu64 ".diff", hash, path->data.as_default.id);
 }
 
 static char *
