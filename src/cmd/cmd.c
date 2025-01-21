@@ -173,24 +173,26 @@ parse_labels_options(int *argc, char ***argv,
 	size_t       add_labels_size = 0, remove_labels_size = 0;
 
 	/* Collect add/delete labels */
-	while (*argc > 0) {
-		if (strcmp(**argv, "add") == 0) {
-			shift(argc, argv);
+	while (*argc >= 3) {
+		char const *const action = (*argv)[1];
+		char const *const name = (*argv)[2];
 
+		if (strcmp(action, "add") == 0) {
 			add_labels = realloc(
 				add_labels,
 				(add_labels_size + 1) * sizeof(*add_labels));
-			add_labels[add_labels_size++] = shift(argc, argv);
-		} else if (strcmp(**argv, "remove") == 0) {
-			shift(argc, argv);
-
+			add_labels[add_labels_size++] = name;
+		} else if (strcmp(action, "remove") == 0) {
 			remove_labels = realloc(
 				remove_labels,
 				(remove_labels_size + 1) * sizeof(*remove_labels));
-			remove_labels[remove_labels_size++] = shift(argc, argv);
+			remove_labels[remove_labels_size++] = name;
 		} else {
 			break;
 		}
+
+		*argc -= 2;
+		*argv += 2;
 	}
 
 	*_add_labels      = add_labels;

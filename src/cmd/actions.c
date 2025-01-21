@@ -63,7 +63,7 @@ gcli_cmd_actions_handle(struct gcli_cmd_actions const *const actions,
 	}
 
 	/* check until we don't have any more remaining arguments */
-	while (*argc) {
+	for (;;) {
 
 		/* fetch the action name */
 		char *const action_name = (*argv)[0];
@@ -75,7 +75,9 @@ gcli_cmd_actions_handle(struct gcli_cmd_actions const *const actions,
 		if (action == NULL) {
 			fprintf(stderr, "gcli: error: unknown action '%s'\n",
 			        action_name);
-			return 1;
+
+			rc = GCLI_EX_USAGE;
+			break;
 		}
 
 		/* check whether we need to fetch the item */
@@ -90,7 +92,8 @@ gcli_cmd_actions_handle(struct gcli_cmd_actions const *const actions,
 				fprintf(stderr, "gcli: error: failed to fetch: %s\n",
 				        gcli_get_error(g_clictx));
 
-				return 1;
+				rc = GCLI_EX_DATAERR;
+				break;
 			}
 		}
 
@@ -98,10 +101,15 @@ gcli_cmd_actions_handle(struct gcli_cmd_actions const *const actions,
 		rc = action->handler(path, item, argc, argv);
 		if (rc < 0) {
 			fprintf(stderr, "gcli: action %s failed\n", action_name);
-			return 1;
+			break;
 		}
 
 		shift(argc, argv);
+
+		if (*argc == 0)
+			break;
+
+		fputc('\n', stdout);
 	}
 
 	if (item) {
@@ -110,5 +118,5 @@ gcli_cmd_actions_handle(struct gcli_cmd_actions const *const actions,
 		item = NULL;
 	}
 
-	return 0;
+	return rc;
 }
