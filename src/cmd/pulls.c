@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -372,7 +372,9 @@ pull_init_user_file(struct gcli_ctx *ctx, FILE *stream, void *_opts)
 		stream,
 		"! PR TITLE : %s\n"
 		"! Enter PR comments above.\n"
-		"! All lines starting with '!' will be discarded.\n",
+		"! All lines starting with '!' will be discarded.\n"
+		"!\n"
+		"! vim: ft=markdown\n",
 		opts->title);
 }
 

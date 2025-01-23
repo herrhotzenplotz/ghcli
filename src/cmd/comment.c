@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -118,7 +118,9 @@ comment_init(struct gcli_ctx *ctx, FILE *f, void *_data)
 		f,
 		"! Enter your comment above, save and exit.\n"
 		"! All lines with a leading '!' are discarded and will not\n"
-		"! appear in your comment.\n");
+		"! appear in your comment.\n"
+		"!\n"
+		"! vim: ft=markdown\n");
 
 	/* XXX */
 	if (sctx->opts.target.kind == GCLI_PATH_DEFAULT) {

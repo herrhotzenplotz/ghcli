@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -199,7 +199,9 @@ releasemsg_init(struct gcli_ctx *ctx, FILE *f, void *_data)
 		"! appear in the final release note.\n"
 		"!       IN : %s/%s\n"
 		"! TAG NAME : %s\n"
-		"!     NAME : %s\n",
+		"!     NAME : %s\n"
+		"!\n"
+		"! vim: ft=markdown\n",
 		info->owner, info->repo, info->tag, info->name);
 }
 
