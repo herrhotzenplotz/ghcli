@@ -405,24 +405,26 @@ create_pull(struct gcli_submit_pull_options *const opts, int always_yes)
 {
 	opts->body = gcli_pull_get_user_message(opts);
 
-	fprintf(stdout,
-	        "The following PR will be created:\n"
-	        "\n"
-	        "TITLE   : %s\n"
-	        "BASE    : %s\n"
-	        "HEAD    : %s\n"
-	        "IN      : %s/%s\n"
-	        "MESSAGE :\n%s\n",
-	        opts->title, opts->target_branch, opts->from,
-	        pull_request_target_owner(&opts->target_repo),
-	        pull_request_target_repo(&opts->target_repo),
-	        opts->body ? opts->body : "No message.");
+	printf("The following PR will be created:\n"
+	       "\n"
+	       "TITLE   : %s\n"
+	       "BASE    : %s\n"
+	       "HEAD    : %s\n"
+	       "IN      : %s/%s\n"
+	       "MESSAGE :\n",
+	       opts->title, opts->target_branch, opts->from,
+	       pull_request_target_owner(&opts->target_repo),
+	       pull_request_target_repo(&opts->target_repo));
 
-	fputc('\n', stdout);
+	if (opts->body)
+		gcli_pretty_print(opts->body, 4, 80, stdout);
+	else
+		puts("No message.");
 
-	if (!always_yes)
+	if (!always_yes) {
 		if (!sn_yesno("Do you want to continue?"))
 			errx(1, "gcli: PR aborted.");
+	}
 
 	return gcli_pull_submit(g_clictx, opts);
 }
