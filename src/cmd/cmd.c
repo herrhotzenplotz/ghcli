@@ -113,6 +113,47 @@ check_owner_and_repo(const char **owner, const char **repo)
 void
 check_path(struct gcli_path *path)
 {
+	/* Two special cases for Bugzilla support:
+	 *
+	 * When no ID was specified with bugzilla we only have a combination of
+	 * product/component. in this case we force the path kind to BUGZILLA.
+	 *
+	 * The other case is a (possibly) missing product and component but an
+	 * ID was set. In this case we change the path kind to GCLI_PATH_ID.
+	 * We don't ignore product/component because that would be incorrect
+	 * and/or leak memory.
+	 *
+	 * For reasons of human error the juggling below is done such that if
+	 * someone by accident breaks the ABI of gcli_path this doesn't fall
+	 * apart. */
+	if (gcli_config_get_forge_type(g_clictx) == GCLI_FORGE_BUGZILLA &&
+	    path->kind == GCLI_PATH_DEFAULT) {
+
+		/* first case */
+		if (path->data.as_default.id == 0) {
+			char *const product = path->data.as_default.owner;
+			char *const component = path->data.as_default.repo;
+
+			path->kind = GCLI_PATH_BUGZILLA;
+			path->data.as_bugzilla.product = product;
+			path->data.as_bugzilla.component = component;
+
+			return; /* no more checking required */
+		}
+
+		/* second case */
+		if (path->data.as_default.id != 0
+		    && path->data.as_default.owner == NULL
+		    && path->data.as_default.repo == NULL)
+		{
+			 gcli_id const id = path->data.as_default.id;
+			 path->kind = GCLI_PATH_ID;
+			 path->data.as_id = id;
+
+			 return;
+		}
+	}
+
 	check_owner_and_repo(
 		(char const **)&path->data.as_default.owner,
 		(char const **)&path->data.as_default.repo);
