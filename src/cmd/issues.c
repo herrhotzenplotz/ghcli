@@ -29,6 +29,7 @@
 
 #include <config.h>
 
+#include <gcli/cmd/actions.h>
 #include <gcli/cmd/cmd.h>
 #include <gcli/cmd/cmdconfig.h>
 #include <gcli/cmd/comment.h>
@@ -531,23 +532,10 @@ subcommand_issues(int argc, char *argv[])
 	return handle_issues_actions(argc, argv, &path);
 }
 
-static inline void
-ensure_issue(struct gcli_path const *const path,
-             int *const have_fetched_issue, struct gcli_issue *const issue)
-{
-	if (*have_fetched_issue)
-		return;
-
-	if (gcli_get_issue(g_clictx, path, issue) < 0)
-		errx(1, "gcli: error: failed to retrieve issue data: %s",
-		     gcli_get_error(g_clictx));
-
-	*have_fetched_issue = 1;
-}
-
-static inline void
-handle_issue_labels_action(int *argc, char ***argv,
-                           struct gcli_path const *const issue_path)
+static int
+action_labels(struct gcli_path const *const issue_path,
+              struct gcli_issue const *const issue,
+              int *argc, char **argv[])
 {
 	char const **add_labels = NULL;
 	size_t add_labels_size = 0;
@@ -555,10 +543,11 @@ handle_issue_labels_action(int *argc, char ***argv,
 	size_t remove_labels_size = 0;
 	int rc = 0;
 
-	if (argc == 0) {
+	(void) issue;
+
+	if (*argc < 2) {
 		fprintf(stderr, "gcli: error: expected label operations\n");
-		usage();
-		exit(EXIT_FAILURE);
+		return GCLI_EX_USAGE;
 	}
 
 	parse_labels_options(argc, argv, &add_labels, &add_labels_size,
@@ -570,8 +559,11 @@ handle_issue_labels_action(int *argc, char ***argv,
 		                           add_labels_size);
 
 		if (rc < 0) {
-			errx(1, "gcli: error: failed to add labels: %s",
-			     gcli_get_error(g_clictx));
+			fprintf(stderr, "gcli: error: failed to add labels: %s\n",
+			        gcli_get_error(g_clictx));
+
+			rc = GCLI_EX_DATAERR;
+			goto bail;
 		}
 	}
 
@@ -580,44 +572,187 @@ handle_issue_labels_action(int *argc, char ***argv,
 		                              remove_labels, remove_labels_size);
 
 		if (rc < 0) {
-			errx(1, "gcli: error: failed to remove labels: %s",
-			     gcli_get_error(g_clictx));
+			fprintf(stderr, "gcli: error: failed to remove labels: %s\n",
+			        gcli_get_error(g_clictx));
+
+			rc = GCLI_EX_DATAERR;
+			goto bail;
 		}
 	}
 
+bail:
 	free(add_labels);
 	free(remove_labels);
+
+	return rc;
 }
 
-static inline void
-handle_issue_milestone_action(int *argc, char ***argv,
-                              struct gcli_path const *const path)
+static int
+action_all(struct gcli_path const *const path, struct gcli_issue const *issue,
+           int *argc, char **argv[])
+{
+	(void) path;
+	(void) argc;
+	(void) argv;
+
+	gcli_issue_print_summary(issue);
+
+	puts("\nORIGINAL POST\n");
+	gcli_issue_print_op(issue);
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_comments(struct gcli_path const *const path,
+                struct gcli_issue const *issue,
+                int *argc, char **argv[])
+{
+	(void) issue;
+	(void) argc;
+	(void) argv;
+
+	if (gcli_issue_comments(path) < 0) {
+		fprintf(stderr, "gcli: error: failed to fetch issue comments: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_op(struct gcli_path const *const path,
+          struct gcli_issue const *issue,
+          int *argc, char **argv[])
+{
+	(void) path;
+	(void) argc;
+	(void) argv;
+
+	gcli_issue_print_op(issue);
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_status(struct gcli_path const *const path,
+              struct gcli_issue const *issue,
+              int *argc, char **argv[])
+{
+	(void) path;
+	(void) argc;
+	(void) argv;
+
+	gcli_issue_print_summary(issue);
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_close(struct gcli_path const *const path,
+             struct gcli_issue const *issue,
+             int *argc, char **argv[])
+{
+	(void) issue;
+	(void) argc;
+	(void) argv;
+
+	if (gcli_issue_close(g_clictx, path) < 0) {
+		fprintf(stderr, "gcli: error: failed to close issue: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_reopen(struct gcli_path const *const path,
+              struct gcli_issue const *issue,
+              int *argc, char **argv[])
+{
+	(void) issue;
+	(void) argc;
+	(void) argv;
+
+	if (gcli_issue_reopen(g_clictx, path) < 0) {
+		fprintf(stderr, "gcli: error: failed to reopen issue: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_assign(struct gcli_path const *const path,
+              struct gcli_issue const *issue,
+              int *argc, char **argv[])
+{
+	char const *assignee;
+
+	(void) issue;
+
+	if (*argc < 2) {
+		fprintf(stderr, "gcli: error: missing assignee\n");
+		return GCLI_EX_USAGE;
+	}
+
+	*argc -= 1;
+	*argv += 1;
+	assignee = (*argv)[0];
+
+	if (gcli_issue_assign(g_clictx, path, assignee) < 0) {
+		fprintf(stderr, "gcli: error: failed to assign issue: %s\n",
+		     gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_milestone(struct gcli_path const *const path,
+                 struct gcli_issue const *const issue,
+                 int *argc, char ***argv)
 {
 	char const *milestone_str;
 	char *endptr;
 	int milestone, rc;
 
+	(void) issue;
+
 	/* Set the milestone for the issue
 	 *
 	 * Check that the user provided a milestone id */
-	if (!argc) {
+	if (*argc < 2) {
 		fprintf(stderr, "gcli: error: missing milestone id\n");
-		usage();
-		exit(EXIT_FAILURE);
+		return GCLI_EX_USAGE;
 	}
 
 	/* Fetch the milestone from the argument vector */
-	milestone_str = shift(argc, argv);
+	*argc -= 1;
+	*argv += 1;
+	milestone_str = (*argv)[0];
 
 	/* Check if the milestone_str is -d indicating that we should
 	 * clear the milestone */
 	if (strcmp(milestone_str, "-d") == 0) {
 		rc = gcli_issue_clear_milestone(g_clictx, path);
 		if (rc < 0) {
-			errx(1, "gcli: error: could not clear milestone of issue: %s",
-			     gcli_get_error(g_clictx));
+			fprintf(stderr,
+			        "gcli: error: could not clear milestone of issue: %s\n",
+			        gcli_get_error(g_clictx));
+
+			return GCLI_EX_DATAERR;
 		}
-		return;
+
+		return GCLI_EX_OK;
 	}
 
 	/* It is a milestone ID. Parse it. */
@@ -626,14 +761,49 @@ handle_issue_milestone_action(int *argc, char ***argv,
 	/* Check successful for parse */
 	if (endptr != milestone_str + strlen(milestone_str)) {
 		fprintf(stderr, "gcli: error: could not parse milestone id\n");
-		usage();
-		exit(EXIT_FAILURE);
+		return GCLI_EX_USAGE;
 	}
 
 	/* Pass it to the dispatch */
-	if (gcli_issue_set_milestone(g_clictx, path, milestone) < 0)
-		errx(1, "gcli: error: could not assign milestone: %s",
-		     gcli_get_error(g_clictx));
+	if (gcli_issue_set_milestone(g_clictx, path, milestone) < 0) {
+		fprintf(stderr, "gcli: error: could not assign milestone: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
+static int
+action_title(struct gcli_path const *const path,
+             struct gcli_issue const *const issue,
+             int *argc, char **argv[])
+{
+	char const *new_title = NULL;
+	int rc;
+
+	(void) issue;
+
+	if (*argc < 2) {
+		fprintf(stderr, "gcli: error: missing new title\n");
+		return GCLI_EX_USAGE;
+	}
+
+	*argc -= 1;
+	*argv += 1;
+	new_title = (*argv)[0];
+
+	rc = gcli_issue_set_title(g_clictx, path, new_title);
+
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to set new issue title: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
 }
 
 static void
@@ -660,111 +830,70 @@ gcli_print_attachments(struct gcli_attachment_list const *const list)
 	gcli_tbl_end(tbl);
 }
 
-static inline int
+static int
+action_attachments(struct gcli_path const *const path,
+                   struct gcli_issue const *const issue,
+                   int *argc, char **argv[])
+{
+	struct gcli_attachment_list list = {0};
+
+	(void) issue;
+	(void) argc;
+	(void) argv;
+
+	int rc = gcli_issue_get_attachments(g_clictx, path, &list);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to fetch attachments: %s\n",
+		        gcli_get_error(g_clictx));
+
+		return GCLI_EX_DATAERR;
+	}
+
+	gcli_print_attachments(&list);
+	gcli_attachments_free(&list);
+
+	return GCLI_EX_OK;
+}
+
+struct gcli_cmd_actions issue_actions = {
+	.fetch_item = (gcli_cmd_action_fetcher)gcli_get_issue,
+	.free_item = (gcli_cmd_action_freeer)gcli_issue_free,
+	.item_size = sizeof(struct gcli_issue),
+
+
+	.defs = {
+		{ .name = "all",         .needs_item = true,  .handler = (gcli_cmd_action_handler)action_all,         },
+		{ .name = "comments",    .needs_item = false, .handler = (gcli_cmd_action_handler)action_comments,    },
+		{ .name = "notes",       .needs_item = false, .handler = (gcli_cmd_action_handler)action_comments,    },
+		{ .name = "op",          .needs_item = true,  .handler = (gcli_cmd_action_handler)action_op,          },
+		{ .name = "status",      .needs_item = true,  .handler = (gcli_cmd_action_handler)action_status,      },
+		{ .name = "close",       .needs_item = false, .handler = (gcli_cmd_action_handler)action_close,       },
+		{ .name = "reopen",      .needs_item = false, .handler = (gcli_cmd_action_handler)action_reopen,      },
+		{ .name = "assign",      .needs_item = false, .handler = (gcli_cmd_action_handler)action_assign,      },
+		{ .name = "labels",      .needs_item = false, .handler = (gcli_cmd_action_handler)action_labels,      },
+		{ .name = "milestone",   .needs_item = false, .handler = (gcli_cmd_action_handler)action_milestone,   },
+		{ .name = "title",       .needs_item = false, .handler = (gcli_cmd_action_handler)action_title,       },
+		{ .name = "attachments", .needs_item = false, .handler = (gcli_cmd_action_handler)action_attachments, },
+	},
+};
+
+static int
 handle_issues_actions(int argc, char *argv[],
                       struct gcli_path const *const path)
 {
-	int have_fetched_issue = 0;
-	struct gcli_issue issue = {0};
+	int rc = 0;
 
 	/* Check if the user missed out on supplying actions */
 	if (argc == 0) {
 		fprintf(stderr, "gcli: error: no actions supplied\n");
 		usage();
-		exit(EXIT_FAILURE);
+		return EXIT_FAILURE;
 	}
 
-	/* execute all operations on the given issue */
-	while (argc > 0) {
-		char const *operation = shift(&argc, &argv);
-
-		if (strcmp("all", operation) == 0) {
-			/* Make sure we have fetched the issue data */
-			ensure_issue(path, &have_fetched_issue, &issue);
-
-			gcli_issue_print_summary(&issue);
-
-			puts("\nORIGINAL POST\n");
-			gcli_issue_print_op(&issue);
-
-		} else if (strcmp("comments", operation) == 0 ||
-		           strcmp("notes", operation) == 0) {
-			/* Doesn't require fetching the issue data */
-			if (gcli_issue_comments(path) < 0)
-				errx(1, "gcli: error: failed to fetch issue comments: %s",
-				     gcli_get_error(g_clictx));
-
-		} else if (strcmp("op", operation) == 0) {
-			/* Make sure we have fetched the issue data */
-			ensure_issue(path, &have_fetched_issue, &issue);
-
-			gcli_issue_print_op(&issue);
-
-		} else if (strcmp("status", operation) == 0) {
-			/* Make sure we have fetched the issue data */
-			ensure_issue(path, &have_fetched_issue, &issue);
-
-			gcli_issue_print_summary(&issue);
-
-		} else if (strcmp("close", operation) == 0) {
-
-			if (gcli_issue_close(g_clictx, path) < 0)
-				errx(1, "gcli: error: failed to close issue: %s",
-				     gcli_get_error(g_clictx));
-
-		} else if (strcmp("reopen", operation) == 0) {
-
-			if (gcli_issue_reopen(g_clictx, path) < 0)
-				errx(1, "gcli: error: failed to reopen issue: %s",
-				     gcli_get_error(g_clictx));
-
-		} else if (strcmp("assign", operation) == 0) {
-
-			char const *assignee = shift(&argc, &argv);
-			if (gcli_issue_assign(g_clictx, path, assignee) < 0)
-				errx(1, "gcli: error: failed to assign issue: %s",
-				     gcli_get_error(g_clictx));
-
-		} else if (strcmp("labels", operation) == 0) {
-
-			handle_issue_labels_action(&argc, &argv, path);
-
-		} else if (strcmp("milestone", operation) == 0) {
-
-			handle_issue_milestone_action(&argc, &argv, path);
-
-		} else if (strcmp("title", operation) == 0) {
-
-			char const *new_title = shift(&argc, &argv);
-			int rc = gcli_issue_set_title(g_clictx, path, new_title);
-
-			if (rc < 0) {
-				errx(1, "gcli: error: failed to set new issue title: %s",
-				     gcli_get_error(g_clictx));
-			}
-
-		} else if (strcmp("attachments", operation) == 0) {
-
-			struct gcli_attachment_list list = {0};
-
-			int rc = gcli_issue_get_attachments(g_clictx, path, &list);
-			if (rc < 0) {
-				errx(1, "gcli: error: failed to fetch attachments: %s",
-				     gcli_get_error(g_clictx));
-			}
-
-			gcli_print_attachments(&list);
-			gcli_attachments_free(&list);
-
-		} else {
-			fprintf(stderr, "gcli: error: unknown operation %s\n", operation);
-			usage();
-			return EXIT_FAILURE;
-		}
+	rc = gcli_cmd_actions_handle(&issue_actions, path, &argc, &argv);
+	if (rc == GCLI_EX_USAGE) {
+		usage();
 	}
 
-	if (have_fetched_issue)
-		gcli_issue_free(&issue);
-
-	return EXIT_SUCCESS;
+	return !!rc;
 }
