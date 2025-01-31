@@ -32,6 +32,7 @@
 #include <gcli/cmd/actions.h>
 #include <gcli/cmd/cmd.h>
 #include <gcli/cmd/issues.h>
+#include <gcli/cmd/open.h>
 #include <gcli/cmd/table.h>
 
 #include <gcli/forges.h>
@@ -59,6 +60,7 @@ usage(void)
 	fprintf(stderr, "  issues               List issues associated with the milestone\n");
 	fprintf(stderr, "  set-duedate <date>   Set due date \n");
 	fprintf(stderr, "  delete               Delete this milestone\n");
+	fprintf(stderr, "  open                 Open this milestone in a web browser\n");
 	fprintf(stderr, "\n");
 	version();
 	copyright();
@@ -258,6 +260,26 @@ action_milestone_set_duedate(struct gcli_path const *const path,
 	return GCLI_EX_OK;
 }
 
+static int
+action_milestone_open(struct gcli_path const *const path,
+                      struct gcli_milestone const *const milestone,
+                      int *argc, char **argv[])
+{
+	int rc;
+
+	(void) path;
+	(void) argc;
+	(void) argv;
+
+	rc = gcli_cmd_open_url(milestone->web_url);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to open url\n");
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
 struct gcli_cmd_actions milestone_actions = {
 	.fetch_item = (gcli_cmd_action_fetcher)gcli_get_milestone,
 	.free_item = (gcli_cmd_action_freeer)gcli_free_milestone,
@@ -288,6 +310,11 @@ struct gcli_cmd_actions milestone_actions = {
 			.name = "set-duedate",
 			.needs_item = false,
 			.handler = (gcli_cmd_action_handler)action_milestone_set_duedate,
+		},
+		{
+			.name = "open",
+			.needs_item = true,
+			.handler = (gcli_cmd_action_handler)action_milestone_open,
 		},
 		{0},
 	},

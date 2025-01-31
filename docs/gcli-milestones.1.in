@@ -53,6 +53,8 @@ Print general metadata and information about the milestone.
 Print a list of issues attached to the milestone.
 .It Cm delete
 Delete this milestone.
+.It Cm open
+Open this milestone in a web browser.
 .El
 .Sh EXAMPLES
 Print a list of milestones for the current auto-detected forge:
