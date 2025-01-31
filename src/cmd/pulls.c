@@ -38,9 +38,10 @@
 #include <gcli/cmd/editor.h>
 #include <gcli/cmd/gitconfig.h>
 #include <gcli/cmd/interactive.h>
+#include <gcli/cmd/open.h>
 #include <gcli/cmd/pipelines.h>
-#include <gcli/cmd/pulls.h>
 #include <gcli/cmd/pull_reviews.h>
+#include <gcli/cmd/pulls.h>
 #include <gcli/cmd/table.h>
 
 #include <gcli/comments.h>
@@ -100,6 +101,7 @@ usage(void)
 	fprintf(stderr, "  title <new-title>      Change the title of the pull request\n");
 	fprintf(stderr, "  request-review <user>  Add <user> as a reviewer of the PR\n");
 	fprintf(stderr, "  checkout               Do a git-checkout of this PR (GitHub- and GitLab only)\n");
+	fprintf(stderr, "  open                   Open the PR in a web browser\n");
 	if (gcli_config_enable_experimental(g_clictx))
 		fprintf(stderr, "  review                 Start a review of this PR\n");
 
@@ -1261,6 +1263,26 @@ action_checkout(struct gcli_path const *const path, struct gcli_pull *pull,
 	return GCLI_EX_OK;
 }
 
+static int
+action_open(struct gcli_path const *const path,
+            struct gcli_pull const *const pull,
+            int *argc, char **argv[])
+{
+	int rc;
+
+	(void) path;
+	(void) argc;
+	(void) argv;
+
+	rc = gcli_cmd_open_url(pull->web_url);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to open url\n");
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
 struct gcli_cmd_actions pull_actions = {
 	.fetch_item = (gcli_cmd_action_fetcher)gcli_get_pull,
 	.free_item = (gcli_cmd_action_freeer)gcli_pull_free,
@@ -1356,6 +1378,11 @@ struct gcli_cmd_actions pull_actions = {
 			.name = "checkout",
 			.needs_item = false,
 			.handler = (gcli_cmd_action_handler) action_checkout,
+		},
+		{
+			.name = "open",
+			.needs_item = true,
+			.handler = (gcli_cmd_action_handler) action_open,
 		},
 	},
 };

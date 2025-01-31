@@ -209,6 +209,9 @@ Change the title of the pull request to
 Review the pull request. See
 .Xr gcli-pulls-review 1
 for more details on this action.
+.It Cm open
+Open the PR in a web browser using
+.Xr xdg-open 1 .
 .El
 .Sh EXAMPLES
 Print a list of open PRs in the current project:
