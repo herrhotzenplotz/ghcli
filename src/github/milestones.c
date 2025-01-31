@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -119,7 +119,7 @@ github_milestone_make_url(struct gcli_ctx *ctx,
 		e_owner = gcli_urlencode(path->data.as_default.owner);
 		e_repo = gcli_urlencode(path->data.as_default.repo);
 
-		*url = sn_asprintf("%s/repos/%s/%s/milestone/%"PRIid"%s",
+		*url = sn_asprintf("%s/repos/%s/%s/milestones/%"PRIid"%s",
 		                   gcli_get_apibase(ctx), e_owner, e_repo,
 		                   path->data.as_default.id, suffix);
 
