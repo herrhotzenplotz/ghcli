@@ -21,7 +21,8 @@ object of struct gcli_issue with
 	                   use parse_github_label_text,
 	 "assignees"    => assignees as array of char* use get_user,
 	 "pull_request" => is_pr as github_is_pr,
-	 "milestone"    => use parse_github_issue_milestone);
+	 "milestone"    => use parse_github_issue_milestone,
+	 "html_url"     => web_url as string);
 
 parser github_issues is array of struct gcli_issue use parse_github_issue;
 

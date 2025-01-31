@@ -19,6 +19,7 @@ object of struct gcli_issue with
 	 "labels"            => labels as array of char* use get_string,
 	 "assignees"         => assignees as array of gitlab_user
 	                        use parse_gitlab_user,
-	 "milestone"         => use parse_gitlab_issue_milestone);
+	 "milestone"         => use parse_gitlab_issue_milestone,
+	 "web_url"           => web_url as string);
 
 parser gitlab_issues is array of struct gcli_issue use parse_gitlab_issue;
