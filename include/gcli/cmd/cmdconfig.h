@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2021-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -59,6 +59,7 @@ sn_sv gcli_config_find_by_key(struct gcli_ctx *ctx, char const *section_name,
 char *gcli_config_get_editor(struct gcli_ctx *ctx);
 char *gcli_config_get_token(struct gcli_ctx *ctx);
 char *gcli_config_get_pager(struct gcli_ctx *ctx);
+char *gcli_config_get_url_open_program(struct gcli_ctx *ctx);
 char *gcli_config_get_account_name(struct gcli_ctx *ctx);
 sn_sv gcli_config_get_upstream(struct gcli_ctx *ctx);
 sn_sv gcli_config_get_base(struct gcli_ctx *ctx);

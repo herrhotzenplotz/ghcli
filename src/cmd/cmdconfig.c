@@ -713,6 +713,16 @@ gcli_config_get_pager(struct gcli_ctx *ctx)
 	return sn_sv_to_cstr(gcli_config_find_by_key(ctx, "defaults", "pager"));
 }
 
+char *
+gcli_config_get_url_open_program(struct gcli_ctx *ctx)
+{
+	ensure_config(ctx);
+
+	return sn_sv_to_cstr(
+		gcli_config_find_by_key(ctx, "defaults", "url-open-program")
+	);
+}
+
 static char const *const
 default_account_entry_names[] = {
 	[GCLI_FORGE_GITHUB]   = "github-default-account",
