@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -246,6 +246,10 @@ bugzilla_get_bug(struct gcli_ctx *ctx, struct gcli_path const *const path,
 	/* don't use gcli_issues_free because it frees data behind pointers we
 	 * just copied */
 	free(list.issues);
+
+	/* insert the web-url which is not provided by the API ... */
+	out->web_url = sn_asprintf("%s/show_bug.cgi?id=%"PRIid,
+	                           gcli_get_apibase(ctx), bug_id);
 
 	/* The OP is in the comments. Fetch it separately. */
 	rc = bugzilla_bug_get_op(ctx, bug_id, &out->body);
