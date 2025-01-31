@@ -12,6 +12,14 @@ This changelog does not follow semantic versioning.
 
   Submitted by: Artyom Sinyugin <writers@altlinux.org>
 
+- Fixed Bugzilla support
+
+  Bugzilla support was broken due to the path refactoring in 2.6.0.
+  This caused the backend to not properly recognise the options
+  passed to it. Compatibility has now been restored.
+
+  Reported by: Baptiste Daroussin <bapt@FreeBSD.org>
+
 ### Changed
 
 ### Removed
