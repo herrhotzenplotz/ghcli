@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -67,6 +67,9 @@ gcli_free_milestone(struct gcli_milestone *const it)
 
 	free(it->description);
 	it->description = NULL;
+
+	free(it->web_url);
+	it->web_url = NULL;
 }
 
 void

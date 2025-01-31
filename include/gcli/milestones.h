@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2023-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -56,6 +56,8 @@ struct gcli_milestone {
 	/* Github and Gitea Specific */
 	int open_issues;
 	int closed_issues;
+
+	char *web_url;
 };
 
 struct gcli_milestone_list {
