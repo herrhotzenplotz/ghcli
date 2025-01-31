@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2024-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,10 @@
 
 #ifndef GCLI_WAITPROC_H
 #define GCLI_WAITPROC_H
+
+#include <gcli/gcli.h>
+
+#include <sys/types.h> /* for pid_t */
 
 int gcli_wait_proc_ok(struct gcli_ctx *ctx, pid_t pid);
 
