@@ -35,6 +35,7 @@
 #include <gcli/cmd/comment.h>
 #include <gcli/cmd/editor.h>
 #include <gcli/cmd/interactive.h>
+#include <gcli/cmd/open.h>
 #include <gcli/cmd/table.h>
 
 #include <gcli/comments.h>
@@ -83,6 +84,7 @@ usage(void)
 	fprintf(stderr, "  milestone -d       Clear the assigned milestone of the given issue\n");
 	fprintf(stderr, "  notes              Alias for comments\n");
 	fprintf(stderr, "  title <new-title>  Change the title of the issue\n");
+	fprintf(stderr, "  open               Open the issue in a web browser\n");
 	fprintf(stderr, "\n");
 	version();
 	copyright();
@@ -855,6 +857,26 @@ action_attachments(struct gcli_path const *const path,
 	return GCLI_EX_OK;
 }
 
+static int
+action_open(struct gcli_path const *const path,
+            struct gcli_issue const *const issue,
+            int *argc, char **argv[])
+{
+	int rc;
+
+	(void) path;
+	(void) argc;
+	(void) argv;
+
+	rc = gcli_cmd_open_url(issue->web_url);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to open url\n");
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
 struct gcli_cmd_actions issue_actions = {
 	.fetch_item = (gcli_cmd_action_fetcher)gcli_get_issue,
 	.free_item = (gcli_cmd_action_freeer)gcli_issue_free,
@@ -874,6 +896,7 @@ struct gcli_cmd_actions issue_actions = {
 		{ .name = "milestone",   .needs_item = false, .handler = (gcli_cmd_action_handler)action_milestone,   },
 		{ .name = "title",       .needs_item = false, .handler = (gcli_cmd_action_handler)action_title,       },
 		{ .name = "attachments", .needs_item = false, .handler = (gcli_cmd_action_handler)action_attachments, },
+		{ .name = "open",        .needs_item = true,  .handler = (gcli_cmd_action_handler)action_open,        },
 	},
 };
 
