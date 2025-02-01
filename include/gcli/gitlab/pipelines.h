@@ -72,45 +72,44 @@ struct gitlab_job_list {
 	size_t jobs_size;
 };
 
-int gitlab_get_pipelines(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, int max,
+int gitlab_get_pipelines(struct gcli_ctx *ctx,
+                         struct gcli_path const *repo_path, int max,
                          struct gitlab_pipeline_list *out);
 
-int gitlab_get_pipeline(struct gcli_ctx *ctx, char const *owner,
-                        char const *repo, gcli_id pipeline_id,
+int gitlab_get_pipeline(struct gcli_ctx *ctx,
+                        struct gcli_path const *pipeline_path,
                         struct gitlab_pipeline *out);
 
 void gitlab_pipeline_free(struct gitlab_pipeline *pipeline);
 void gitlab_pipelines_free(struct gitlab_pipeline_list *list);
 
-int gitlab_get_pipeline_jobs(struct gcli_ctx *ctx, char const *owner,
-                             char const *repo, gcli_id pipeline, int count,
-                             struct gitlab_job_list *out);
+int gitlab_get_pipeline_jobs(struct gcli_ctx *ctx,
+                             struct gcli_path const *pipeline_path,
+                             int count, struct gitlab_job_list *out);
 
-int gitlab_get_pipeline_children(struct gcli_ctx *ctx, char const *owner,
-                                 char const *repo, gcli_id pipeline, int count,
-                                 struct gitlab_pipeline_list *out);
+int gitlab_get_pipeline_children(struct gcli_ctx *ctx,
+                                 struct gcli_path const *pipeline_path,
+                                 int count, struct gitlab_pipeline_list *out);
 
 void gitlab_free_jobs(struct gitlab_job_list *jobs);
+
 void gitlab_free_job(struct gitlab_job *job);
 
-int gitlab_job_get_log(struct  gcli_ctx *ctx, char const *owner,
-                       char const *repo, gcli_id job_id, FILE *stream);
+int gitlab_job_get_log(struct  gcli_ctx *ctx, struct gcli_path const *job_path,
+                       FILE *stream);
 
-int gitlab_job_cancel(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                      gcli_id job_id);
+int gitlab_job_cancel(struct gcli_ctx *ctx, struct gcli_path const *job_path);
 
-int gitlab_job_retry(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                     gcli_id job_id);
+int gitlab_job_retry(struct gcli_ctx *ctx, struct gcli_path const *job_path);
 
-int gitlab_job_download_artifacts(struct gcli_ctx *ctx, char const *owner,
-                                  char const *repo, gcli_id jid,
+int gitlab_job_download_artifacts(struct gcli_ctx *ctx,
+                                  struct gcli_path const *job_path,
                                   char const *outfile);
 
 int gitlab_get_mr_pipelines(struct gcli_ctx *ctx, struct gcli_path const *path,
                             struct gitlab_pipeline_list *list);
 
-int gitlab_get_job(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   gcli_id const jid, struct gitlab_job *const out);
+int gitlab_get_job(struct gcli_ctx *ctx, struct gcli_path const *job_path,
+                   struct gitlab_job *const out);
 
 #endif /* GITLAB_PIPELINES_H */

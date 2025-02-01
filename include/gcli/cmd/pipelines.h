@@ -38,8 +38,8 @@ void gitlab_print_pipelines(struct gitlab_pipeline_list const *const list);
 
 int gitlab_mr_pipelines(struct gcli_path const *const path);
 
-int gitlab_pipeline_jobs(char const *owner, char const *repo, long pipeline,
-                         int count);
+int gitlab_pipeline_jobs(struct gcli_path const *const path, int count);
+
 void gitlab_print_jobs(struct gitlab_job_list const *const list);
 
 void gitlab_print_job_status(struct gitlab_job const *const job);

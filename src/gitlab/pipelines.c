@@ -34,6 +34,7 @@
 #include <gcli/gitlab/config.h>
 #include <gcli/gitlab/merge_requests.h>
 #include <gcli/gitlab/pipelines.h>
+#include <gcli/gitlab/repos.h>
 #include <gcli/json_util.h>
 #include <gcli/pulls.h>
 
@@ -59,38 +60,74 @@ fetch_pipelines(struct gcli_ctx *ctx, char *url, int const max,
 }
 
 int
-gitlab_get_pipelines(struct gcli_ctx *ctx, char const *owner, char const *repo,
+gitlab_get_pipelines(struct gcli_ctx *ctx, struct gcli_path const *const path,
                      int const max, struct gitlab_pipeline_list *const list)
 {
 	char *url = NULL;
-	char *e_owner = gcli_urlencode(owner);
-	char *e_repo = gcli_urlencode(repo);
+	int rc = 0;
 
-	url = sn_asprintf("%s/projects/%s%%2F%s/pipelines", gcli_get_apibase(ctx),
-	                  e_owner, e_repo);
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_repo_make_url(ctx, path, &url, "/pipelines");
+	if (rc < 0)
+		return rc;
 
 	return fetch_pipelines(ctx, url, max, list);
 }
 
+static int
+gitlab_pipeline_make_url(struct gcli_ctx *ctx,
+                         struct gcli_path const *const path,
+                         char **url,
+                         char const *const suffix_fmt, ...)
+{
+	char *suffix = NULL;
+	int rc = 0;
+	va_list vp;
+
+	va_start(vp, suffix_fmt);
+	suffix = sn_vasprintf(suffix_fmt, vp);
+	va_end(vp);
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner, *e_repo = NULL;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo = gcli_urlencode(path->data.as_default.repo);
+
+		*url = sn_asprintf("%s/projects/%s%%2F%s/pipelines/%"PRIid"%s",
+		                   gcli_get_apibase(ctx), e_owner, e_repo,
+		                   path->data.as_default.id,
+		                   suffix);
+
+		free(e_owner);
+		free(e_repo);
+	} break;
+	case GCLI_PATH_URL: {
+		*url = sn_asprintf("%s%s", path->data.as_url, suffix);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "unsupported path type for gitlab pipelines");
+	} break;
+	}
+
+	free(suffix);
+
+	return rc;
+}
+
 int
-gitlab_get_pipeline(struct gcli_ctx *ctx, char const *owner,
-                    char const *repo, gcli_id pipeline_id,
+gitlab_get_pipeline(struct gcli_ctx *ctx,
+                    struct gcli_path const *const pipeline_path,
                     struct gitlab_pipeline *out)
 {
-	char *e_owner = gcli_urlencode(owner);
-	char *e_repo = gcli_urlencode(repo);
 	char *url = NULL;
 	int rc = 0;
 	struct gcli_fetch_buffer buffer = {0};
 	struct json_stream stream = {0};
 
-	url = sn_asprintf("%s/projects/%s%%2F%s/pipelines/%"PRIid,
-	                  gcli_get_apibase(ctx), e_owner, e_repo, pipeline_id);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_pipeline_make_url(ctx, pipeline_path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch(ctx, url, NULL, &buffer);
 	if (rc == 0) {
@@ -145,11 +182,12 @@ gitlab_pipelines_free(struct gitlab_pipeline_list *const list)
 }
 
 int
-gitlab_get_pipeline_jobs(struct gcli_ctx *ctx, char const *owner,
-                         char const *repo, gcli_id const pipeline,
+gitlab_get_pipeline_jobs(struct gcli_ctx *ctx,
+                         struct gcli_path const *const pipeline_path,
                          int const max, struct gitlab_job_list *const out)
 {
-	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *url = NULL;
+	int rc = 0;
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &out->jobs,
 		.sizep = &out->jobs_size,
@@ -157,24 +195,21 @@ gitlab_get_pipeline_jobs(struct gcli_ctx *ctx, char const *owner,
 		.parse = (parsefn)(parse_gitlab_jobs),
 	};
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/pipelines/%"PRIid"/jobs",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, pipeline);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_pipeline_make_url(ctx, pipeline_path, &url, "/jobs");
+	if (rc < 0)
+		return rc;
 
 	return gcli_fetch_list(ctx, url, &fl);
 }
 
 int
-gitlab_get_pipeline_children(struct gcli_ctx *ctx, char const *owner,
-                             char const *repo, gcli_id pipeline, int count,
+gitlab_get_pipeline_children(struct gcli_ctx *ctx,
+                             struct gcli_path const *const pipeline_path,
+                             int count,
                              struct gitlab_pipeline_list *out)
 {
-	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *url = NULL;
+	int rc = 0;
 	struct gcli_fetch_list_ctx fl = {
 		.listp = &out->pipelines,
 		.sizep = &out->pipelines_size,
@@ -182,14 +217,9 @@ gitlab_get_pipeline_children(struct gcli_ctx *ctx, char const *owner,
 		.parse = (parsefn)(parse_gitlab_pipeline_children),
 	};
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/pipelines/%"PRIid"/bridges",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, pipeline);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_pipeline_make_url(ctx, pipeline_path, &url, "/bridges");
+	if (rc < 0)
+		return rc;
 
 	return gcli_fetch_list(ctx, url, &fl);
 }
@@ -217,21 +247,58 @@ gitlab_free_jobs(struct gitlab_job_list *list)
 	list->jobs_size = 0;
 }
 
-int
-gitlab_job_get_log(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                   gcli_id const job_id, FILE *stream)
+static int
+gitlab_job_make_url(struct gcli_ctx *ctx,
+                    struct gcli_path const *const path,
+                    char **url,
+                    char const *const suffix_fmt, ...)
 {
-	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *suffix = NULL;
+	int rc = 0;
+	va_list vp;
+
+	va_start(vp, suffix_fmt);
+	suffix = sn_vasprintf(suffix_fmt, vp);
+	va_end(vp);
+
+	switch (path->kind) {
+	case GCLI_PATH_DEFAULT: {
+		char *e_owner, *e_repo = NULL;
+
+		e_owner = gcli_urlencode(path->data.as_default.owner);
+		e_repo = gcli_urlencode(path->data.as_default.repo);
+
+		*url = sn_asprintf("%s/projects/%s%%2F%s/jobs/%"PRIid"%s",
+		                   gcli_get_apibase(ctx), e_owner, e_repo,
+		                   path->data.as_default.id,
+		                   suffix);
+
+		free(e_owner);
+		free(e_repo);
+	} break;
+	case GCLI_PATH_URL: {
+		*url = sn_asprintf("%s%s", path->data.as_url, suffix);
+	} break;
+	default: {
+		rc = gcli_error(ctx, "unsupported path type for gitlab jobs");
+	} break;
+	}
+
+	free(suffix);
+
+	return rc;
+}
+
+int
+gitlab_job_get_log(struct gcli_ctx *ctx, struct gcli_path const *const job_path,
+                   FILE *stream)
+{
+	char *url = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/jobs/%"PRIid"/trace",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, job_id);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_job_make_url(ctx, job_path, &url, "/trace");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_curl(ctx, stream, url, NULL);
 
@@ -241,21 +308,16 @@ gitlab_job_get_log(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 int
-gitlab_get_job(struct gcli_ctx *ctx, char const *owner, char const *repo,
-               gcli_id const jid, struct gitlab_job *const out)
+gitlab_get_job(struct gcli_ctx *ctx, struct gcli_path const *const job_path,
+               struct gitlab_job *const out)
 {
 	struct gcli_fetch_buffer buffer = {0};
-	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *url = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/jobs/%"PRIid, gcli_get_apibase(ctx),
-	                  e_owner, e_repo, jid);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_job_make_url(ctx, job_path, &url, "");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch(ctx, url, NULL, &buffer);
 	if (rc == 0) {
@@ -274,20 +336,14 @@ gitlab_get_job(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 int
-gitlab_job_cancel(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                  gcli_id const jid)
+gitlab_job_cancel(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
-	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *url = NULL;
 	int rc = 0;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/jobs/%"PRIid"/cancel",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, jid);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_job_make_url(ctx, path, &url, "/cancel");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, NULL, NULL, NULL);
 
@@ -297,20 +353,14 @@ gitlab_job_cancel(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 int
-gitlab_job_retry(struct gcli_ctx *ctx, char const *owner, char const *repo,
-                 gcli_id const jid)
+gitlab_job_retry(struct gcli_ctx *ctx, struct gcli_path const *const path)
 {
 	int rc = 0;
-	char *url = NULL, *e_owner = NULL, *e_repo = NULL;
+	char *url = NULL;
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
-
-	url = sn_asprintf("%s/projects/%s%%2F%s/jobs/%"PRIid"/retry", gcli_get_apibase(ctx),
-	                  e_owner, e_repo, jid);
-
-	free(e_owner);
-	free(e_repo);
+	rc = gitlab_job_make_url(ctx, path, &url, "/retry");
+	if (rc < 0)
+		return rc;
 
 	rc = gcli_fetch_with_method(ctx, "POST", url, NULL, NULL, NULL);
 
@@ -320,31 +370,27 @@ gitlab_job_retry(struct gcli_ctx *ctx, char const *owner, char const *repo,
 }
 
 int
-gitlab_job_download_artifacts(struct gcli_ctx *ctx, char const *owner,
-                              char const *repo, gcli_id const jid,
+gitlab_job_download_artifacts(struct gcli_ctx *ctx,
+                              struct gcli_path const *const job_path,
                               char const *const outfile)
 {
-	char *url;
-	char *e_owner, *e_repo;
-	FILE *f;
+	FILE *f = NULL;
+	char *url = NULL;
 	int rc = 0;
 
 	f = fopen(outfile, "wb");
 	if (f == NULL)
-		return -1;
+		rc = gcli_error(ctx, "failed to open output file %s", outfile);
 
-	e_owner = gcli_urlencode(owner);
-	e_repo = gcli_urlencode(repo);
+	if (rc == 0)
+		rc = gitlab_job_make_url(ctx, job_path, &url, "/artifacts");
 
-	url = sn_asprintf("%s/projects/%s%%2F%s/jobs/%"PRIid"/artifacts",
-	                  gcli_get_apibase(ctx), e_owner, e_repo, jid);
+	if (rc == 0)
+		rc = gcli_curl(ctx, f, url, "application/zip");
 
-	free(e_owner);
-	free(e_repo);
+	if (f)
+		fclose(f);
 
-	rc = gcli_curl(ctx, f, url, "application/zip");
-
-	fclose(f);
 	free(url);
 
 	return rc;

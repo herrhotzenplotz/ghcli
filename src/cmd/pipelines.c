@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,7 @@
 
 #include <config.h>
 
+#include <gcli/cmd/actions.h>
 #include <gcli/cmd/cmd.h>
 #include <gcli/cmd/cmdconfig.h>
 #include <gcli/cmd/colour.h>
@@ -189,254 +190,253 @@ gitlab_print_pipeline(struct gitlab_pipeline const *const pipeline)
 	gcli_dict_end(printer);
 }
 
-/* Pipeline actions */
-struct pipeline_action_ctx {
-	char const *const owner;
-	char const *const repo;
-	long const pipeline_id;
-
-	int argc;
-	char **argv;
-};
-
 static int
-action_pipeline_status(struct pipeline_action_ctx *ctx)
+action_pipeline_status(struct gcli_path const *path,
+                       struct gitlab_pipeline *pipeline,
+                       int *argc, char **argv[])
 {
-	int rc = 0;
-	struct gitlab_pipeline pipeline = {0};
+	(void) path;
+	(void) argc;
+	(void) argv;
 
-	rc = gitlab_get_pipeline(g_clictx, ctx->owner, ctx->repo,
-	                         ctx->pipeline_id, &pipeline);
-	if (rc < 0) {
-		fprintf(stderr, "gcli: error: failed to get pipeline: %s\n",
-		        gcli_get_error(g_clictx));
-
-		return EXIT_FAILURE;
-	}
-
-	gitlab_print_pipeline(&pipeline);
-	gitlab_pipeline_free(&pipeline);
-
-	return EXIT_SUCCESS;
+	gitlab_print_pipeline(pipeline);
+	return GCLI_EX_OK;
 }
 
 static int
-action_pipeline_jobs(struct pipeline_action_ctx *ctx)
+action_pipeline_jobs(struct gcli_path const *path,
+                     struct gitlab_pipeline *pipeline,
+                     int *argc, char **argv[])
 {
 	int rc = 0;
 	struct gitlab_job_list jobs = {0};
 
-	rc = gitlab_get_pipeline_jobs(g_clictx, ctx->owner, ctx->repo,
-	                              ctx->pipeline_id, -1, &jobs);
+	(void) pipeline;
+	(void) argc;
+	(void) argv;
+
+	rc = gitlab_get_pipeline_jobs(g_clictx, path, -1, &jobs);
 
 	if (rc < 0) {
 		fprintf(stderr, "gcli: error: failed to get pipeline jobs: %s\n",
 		        gcli_get_error(g_clictx));
 
-		return EXIT_FAILURE;
+		return GCLI_EX_DATAERR;
 	}
 
 	gitlab_print_jobs(&jobs);
 	gitlab_free_jobs(&jobs);
 
-	return EXIT_SUCCESS;
+	return GCLI_EX_OK;
 }
 
 static int
-action_pipeline_children(struct pipeline_action_ctx *ctx)
+action_pipeline_children(struct gcli_path const *path,
+                         struct gitlab_pipeline *pipeline,
+                         int *argc, char **argv[])
 {
 	int rc = 0;
 	struct gitlab_pipeline_list children = {0};
 
-	rc = gitlab_get_pipeline_children(g_clictx, ctx->owner, ctx->repo,
-	                                  ctx->pipeline_id, -1, &children);
+	(void) pipeline;
+	(void) argc;
+	(void) argv;
+
+	rc = gitlab_get_pipeline_children(g_clictx, path, -1, &children);
 	if (rc < 0) {
 		fprintf(stderr, "gcli: error: failed to get pipeline children: %s\n",
 		        gcli_get_error(g_clictx));
 
-		return EXIT_FAILURE;
+		return GCLI_EX_DATAERR;
 	}
 
 	gitlab_print_pipelines(&children);
 	gitlab_pipelines_free(&children);
 
-	return EXIT_SUCCESS;
+	return GCLI_EX_OK;
 }
 
 static int
-action_pipeline_all(struct pipeline_action_ctx *ctx)
+action_pipeline_all(struct gcli_path const *path,
+                    struct gitlab_pipeline *pipeline,
+                    int *argc, char **argv[])
 {
-	int exit_code = 0;
+	int rc = 0;
 
-	exit_code = action_pipeline_status(ctx);
-	if (exit_code)
-		return exit_code;
+	rc = action_pipeline_status(path, pipeline, argc, argv);
+	if (rc)
+		return rc;
 
 	fprintf(stdout, "\n");
 
 	fprintf(stdout, "JOBS\n");
-	exit_code = action_pipeline_jobs(ctx);
-	if (exit_code)
-		return exit_code;
+	rc = action_pipeline_jobs(path, pipeline, argc, argv);
+	if (rc)
+		return rc;
 
 	fprintf(stdout, "\n");
 
 	fprintf(stdout, "CHILDREN\n");
-	exit_code = action_pipeline_children(ctx);
-	if (exit_code)
-		return exit_code;
+	rc = action_pipeline_children(path, pipeline, argc, argv);
 
-	return EXIT_SUCCESS;
+	return rc;
 }
 
-static struct pipeline_action {
-	char const *const name;
-	int (*fn)(struct pipeline_action_ctx *ctx);
-} const pipeline_actions[] = {
-	{ .name = "all",      .fn = action_pipeline_all      },
-	{ .name = "status",   .fn = action_pipeline_status   },
-	{ .name = "jobs",     .fn = action_pipeline_jobs     },
-	{ .name = "children", .fn = action_pipeline_children },
+static struct gcli_cmd_actions const pipeline_actions = {
+	.fetch_item = (gcli_cmd_action_fetcher)gitlab_get_pipeline,
+	.free_item = (gcli_cmd_action_freeer)gitlab_pipeline_free,
+	.item_size = sizeof(struct gitlab_pipeline),
+
+	.defs = {
+		{
+			.name = "all",
+			.needs_item = true,
+			.handler = (gcli_cmd_action_handler)action_pipeline_all
+		},
+		{
+			.name = "status",
+			.needs_item = true,
+			.handler = (gcli_cmd_action_handler)action_pipeline_status
+		},
+		{
+			.name = "jobs",
+			.needs_item = false,
+			.handler = (gcli_cmd_action_handler)action_pipeline_jobs
+		},
+		{
+			.name = "children",
+			.needs_item = false,
+			.handler = (gcli_cmd_action_handler)action_pipeline_children
+		},
+		{0},
+	},
 };
 
-static struct pipeline_action const *
-find_pipeline_action(char const *const name)
-{
-	for (size_t i = 0; i < ARRAY_SIZE(pipeline_actions); ++i) {
-		if (strcmp(name, pipeline_actions[i].name) == 0)
-			return &pipeline_actions[i];
-	}
-
-	return NULL;
-}
-
 static int
-handle_pipeline_actions(char const *const owner, char const *const repo,
-                        long const pipeline_id, int argc, char *argv[])
+handle_pipeline_actions(struct gcli_path const *const pipeline_path,
+                        int argc, char *argv[])
 {
-	struct pipeline_action_ctx ctx = {
-		.owner = owner,
-		.repo = repo,
-		.pipeline_id = pipeline_id,
-		.argc = argc,
-		.argv = argv,
-	};
+	int rc = 0;
 
-	if (!ctx.argc) {
+	if (argc == 0) {
 		fprintf(stderr, "gcli: error: missing pipeline actions\n");
 		usage();
 		return EXIT_FAILURE;
 	}
 
-	while (ctx.argc) {
-		char const *action_name;
-		int exit_code;
-		struct pipeline_action const *action;
+	rc = gcli_cmd_actions_handle(&pipeline_actions, pipeline_path, &argc, &argv);
+	if (rc == GCLI_EX_USAGE)
+		usage();
 
-		action_name = shift(&ctx.argc, &ctx.argv);
-		action = find_pipeline_action(action_name);
-		if (!action) {
-			fprintf(stderr, "gcli: error: no such pipeline action: %s\n",
-			        action_name);
-			usage();
-			return EXIT_FAILURE;
-		}
-
-		exit_code = action->fn(&ctx);
-		if (exit_code)
-			return exit_code;
-	}
-
-	return EXIT_SUCCESS;
+	return !!rc;
 }
 
-/* Job related actions */
-struct job_action_ctx {
-	char const *owner, *repo;
-	long const job_id;
+/* *****************************
+ * Gitlab Jobs
+ * *****************************/
+static int
+action_job_status(struct gcli_path const *const path,
+                  struct gitlab_job const *const job,
+                  int *argc, char **argv[])
+{
+	(void) path;
+	(void) argc;
+	(void) argv;
 
-	int argc;
-	char **argv;
-};
+	gitlab_print_job_status(job);
+
+	return GCLI_EX_OK;
+}
 
 static int
-action_job_status(struct job_action_ctx *ctx)
+action_job_log(struct gcli_path const *const path,
+               struct gitlab_job const *const job,
+               int *argc, char **argv[])
 {
-	struct gitlab_job job = {0};
 	int rc = 0;
 
-	rc = gitlab_get_job(g_clictx, ctx->owner, ctx->repo, ctx->job_id, &job);
-	if (rc < 0) {
-		fprintf(stderr, "gcli: error: failed to get job status: %s\n",
-		        gcli_get_error(g_clictx));
-		return EXIT_FAILURE;
-	}
+	(void) job;
+	(void) argc;
+	(void) argv;
 
-	gitlab_print_job_status(&job);
-	gitlab_free_job(&job);
-
-	return EXIT_SUCCESS;
-}
-
-static int
-action_job_log(struct job_action_ctx *ctx)
-{
-	int rc = gitlab_job_get_log(g_clictx, ctx->owner, ctx->repo, ctx->job_id, stdout);
+	rc = gitlab_job_get_log(g_clictx, path, stdout);
 	if (rc < 0) {
 		fprintf(stderr, "gcli: error: failed to get job log: %s\n",
 		        gcli_get_error(g_clictx));
-		return EXIT_FAILURE;
+
+		return GCLI_EX_DATAERR;
 	}
 
-	return EXIT_SUCCESS;
+	return GCLI_EX_OK;
 }
 
 static int
-action_job_cancel(struct job_action_ctx *ctx)
+action_job_cancel(struct gcli_path const *const path,
+                  struct gitlab_job const *const job,
+                  int *argc, char **argv[])
 {
-	int rc = gitlab_job_cancel(g_clictx, ctx->owner, ctx->repo, ctx->job_id);
+	int rc = 0;
+
+	(void) job;
+	(void) argc;
+	(void) argv;
+
+	rc = gitlab_job_cancel(g_clictx, path);
 	if (rc < 0) {
 		fprintf(stderr, "gcli: error: failed to cancel the job: %s\n",
 		        gcli_get_error(g_clictx));
-		return EXIT_FAILURE;
+
+		return GCLI_EX_DATAERR;
 	}
 
-	return EXIT_SUCCESS;
+	return GCLI_EX_OK;
 }
 
 static int
-action_job_retry(struct job_action_ctx *ctx)
+action_job_retry(struct gcli_path const *const path,
+                 struct gitlab_job const *const job,
+                 int *argc, char **argv[])
 {
-	int rc = gitlab_job_retry(g_clictx, ctx->owner, ctx->repo, ctx->job_id);
+	int rc = 0;
+
+	(void) job;
+	(void) argc;
+	(void) argv;
+
+	rc = gitlab_job_retry(g_clictx, path);
 	if (rc < 0) {
 		fprintf(stderr, "gcli: error: failed to retry the job: %s\n",
 		        gcli_get_error(g_clictx));
-		return EXIT_FAILURE;
+
+		return GCLI_EX_DATAERR;
 	}
 
-	return EXIT_SUCCESS;
+	return GCLI_EX_OK;
 }
 
 static int
-action_job_artifacts(struct job_action_ctx *ctx)
+action_job_artifacts(struct gcli_path const *const path,
+                     struct gitlab_job const *const job,
+                     int *argc, char **argv[])
 {
 	int rc = 0;
 	char const *outfile = "artifacts.zip";
 
-	if (ctx->argc && strcmp(ctx->argv[0], "-o") == 0) {
-		if (ctx->argc < 2) {
+	(void) job;
+
+	if (*argc > 2 && strcmp((*argv)[1], "-o") == 0) {
+		if (*argc < 3) {
 			fprintf(stderr, "gcli: error: -o is missing the output filename\n");
 			usage();
 			return EXIT_FAILURE;
 		}
 
-		outfile = ctx->argv[1];
-		ctx->argc -= 2;
-		ctx->argv += 2;
+		outfile = (*argv)[2];
+		*argc -= 2;
+		*argv += 2;
 	}
 
-	rc = gitlab_job_download_artifacts(g_clictx, ctx->owner, ctx->repo,
-	                                   ctx->job_id, outfile);
+	rc = gitlab_job_download_artifacts(g_clictx, path, outfile);
 	if (rc < 0) {
 		fprintf(stderr, "gcli: error: failed to download file: %s\n",
 		        gcli_get_error(g_clictx));
@@ -447,97 +447,85 @@ action_job_artifacts(struct job_action_ctx *ctx)
 	return EXIT_SUCCESS;
 }
 
-static struct job_action {
-	char const *const name;                 /* Name on the cli */
-	int (*fn)(struct job_action_ctx *ctx);  /* Function to be invoked for this action */
-} const job_actions[] = {
-	{ .name = "log",       .fn = action_job_log       },
-	{ .name = "status",    .fn = action_job_status    },
-	{ .name = "cancel",    .fn = action_job_cancel    },
-	{ .name = "retry",     .fn = action_job_retry     },
-	{ .name = "artifacts", .fn = action_job_artifacts },
+static struct gcli_cmd_actions job_actions = {
+	.fetch_item = (gcli_cmd_action_fetcher)gitlab_get_job,
+	.free_item = (gcli_cmd_action_freeer)gitlab_free_job,
+	.item_size = sizeof(struct gitlab_job),
+
+	.defs = {
+		{
+			.name = "log",
+			.needs_item = false,
+			.handler = (gcli_cmd_action_handler)action_job_log,
+		},
+		{
+			.name = "status",
+			.needs_item = true,
+			.handler = (gcli_cmd_action_handler)action_job_status,
+		},
+		{
+			.name = "cancel",
+			.needs_item = false,
+			.handler = (gcli_cmd_action_handler)action_job_cancel,
+		},
+		{
+			.name = "retry",
+			.needs_item = false,
+			.handler = (gcli_cmd_action_handler)action_job_retry,
+		},
+		{
+			.name = "artifacts",
+			.needs_item = false,
+			.handler = (gcli_cmd_action_handler)action_job_artifacts,
+		},
+	},
 };
 
-static struct job_action const *
-find_job_action(char const *const name)
-{
-	for (size_t i = 0; i < ARRAY_SIZE(job_actions); ++i) {
-		if (strcmp(name, job_actions[i].name) == 0)
-			return &job_actions[i];
-	}
-
-	return NULL;
-}
-
 static int
-handle_job_actions(char const *const owner, char const *const repo,
-                   long const job_id, int argc, char *argv[])
+handle_job_actions(struct gcli_path const *const job_path,
+                   int argc, char *argv[])
 {
-	struct job_action_ctx ctx = {
-		.owner = owner,
-		.repo = repo,
-		.job_id = job_id,
-		.argc = argc,
-		.argv = argv,
-	};
+	int rc = 0;
 
 	/* Check if the user missed out on supplying actions */
-	if (ctx.argc == 0) {
+	if (argc == 0) {
 		fprintf(stderr, "gcli: error: no actions supplied\n");
 		usage();
-		exit(EXIT_FAILURE);
+		return GCLI_EX_USAGE;
 	}
 
-	/* Parse and execute all the actions */
-	while (ctx.argc) {
-		int exit_code = 0;
-		char const *action_name;
-		struct job_action const *action;
+	rc = gcli_cmd_actions_handle(&job_actions, job_path, &argc, &argv);
+	if (rc == GCLI_EX_USAGE)
+		usage();
 
-		action_name = shift(&ctx.argc, &ctx.argv);
-		action = find_job_action(action_name);
-
-		if (!action) {
-			fprintf(stderr, "gcli: error: unknown action '%s'\n", action_name);
-			usage();
-			return EXIT_FAILURE;
-		}
-
-		exit_code = action->fn(&ctx);
-		if (exit_code)
-			return exit_code;
-	}
-
-	return EXIT_SUCCESS;
+	return !!rc;
 }
 
 static int
-list_pipelines(char const *const owner, char const *const repo, int max)
+list_pipelines(struct gcli_path const *const path, int max)
 {
 	struct gitlab_pipeline_list list = {0};
 	int rc = 0;
 
-	rc = gitlab_get_pipelines(g_clictx, owner, repo, max, &list);
+	rc = gitlab_get_pipelines(g_clictx, path, max, &list);
 	if (rc < 0) {
 		fprintf(stderr, "gcli: failed to get pipelines: %s\n",
 		        gcli_get_error(g_clictx));
-		return EXIT_FAILURE;
+
+		return GCLI_EX_DATAERR;
 	}
 
 	gitlab_print_pipelines(&list);
 	gitlab_pipelines_free(&list);
 
-	return EXIT_SUCCESS;
+	return GCLI_EX_OK;
 }
 
 int
 subcommand_pipelines(int argc, char *argv[])
 {
-	int ch = 0;
-	char const *owner = NULL, *repo = NULL;
-	int count = 30;
-	long pipeline_id = -1;              /* pipeline id                           */
-	long job_id = -1;              /* job id. these are mutually exclusive. */
+	int ch = 0, count = 30, pflag = 0, jflag = 0;
+	struct gcli_path path = {0};
 
 	/* Parse options */
 	const struct option options[] = {
@@ -552,34 +540,38 @@ subcommand_pipelines(int argc, char *argv[])
 	while ((ch = getopt_long(argc, argv, "+n:o:r:p:j:", options, NULL)) != -1) {
 		switch (ch) {
 		case 'o':
-			owner = optarg;
+			path.data.as_default.owner = optarg;
 			break;
 		case 'r':
-			repo = optarg;
+			path.data.as_default.owner = optarg;
 			break;
 		case 'n': {
 			char *endptr = NULL;
 			count = strtol(optarg, &endptr, 10);
-			if (endptr != (optarg + strlen(optarg)))
-				err(1, "gcli: error: cannot parse argument to -n");
+			if (endptr != (optarg + strlen(optarg))) {
+				fprintf(stderr, "gcli: error: cannot parse argument to -n\n");
+				return EXIT_FAILURE;
+			}
 		} break;
 		case 'p': {
 			char *endptr = NULL;
-			pipeline_id = strtol(optarg, &endptr, 10);
-			if (endptr != (optarg + strlen(optarg)))
-				err(1, "gcli: error: cannot parse argument to -p");
-			if (pipeline_id < 0) {
-				errx(1, "gcli: error: pipeline id must be a positive number");
+			path.data.as_default.id = strtoul(optarg, &endptr, 10);
+			if (endptr != (optarg + strlen(optarg))) {
+				fprintf(stderr, "gcli: error: cannot parse argument to -p\n");
+				return EXIT_FAILURE;
 			}
+
+			pflag = 1;
 		} break;
 		case 'j': {
 			char *endptr = NULL;
-			job_id = strtol(optarg, &endptr, 10);
-			if (endptr != (optarg + strlen(optarg)))
-				err(1, "gcli: error: cannot parse argument to -j");
-			if (job_id < 0) {
-				errx(1, "gcli: error: job id must be a positive number");
+			path.data.as_default.id = strtoul(optarg, &endptr, 10);
+			if (endptr != (optarg + strlen(optarg))) {
+				fprintf(stderr, "gcli: error: cannot parse argument to -j\n");
+				return EXIT_FAILURE;
 			}
+
+			jflag = 1;
 		} break;
 		case '?':
 		default:
@@ -591,27 +583,30 @@ subcommand_pipelines(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (pipeline_id > 0 && job_id > 0) {
+	if (pflag && jflag) {
 		fprintf(stderr, "gcli: error: -p and -j are mutually exclusive\n");
 		usage();
 		return EXIT_FAILURE;
 	}
 
-	check_owner_and_repo(&owner, &repo);
+	check_path(&path);
 
 	/* Make sure we are actually talking about a gitlab remote because
 	 * we might be incorrectly inferring it */
-	if (gcli_config_get_forge_type(g_clictx) != GCLI_FORGE_GITLAB)
-		errx(1, "gcli: error: The pipelines subcommand only works for GitLab. "
-		     "Use gcli -t gitlab ... to force a GitLab remote.");
+	if (gcli_config_get_forge_type(g_clictx) != GCLI_FORGE_GITLAB) {
+		fprintf(stderr, "gcli: error: The pipelines subcommand only works for GitLab. "
+		     "Use gcli -t gitlab ... to force a GitLab remote.\n");
+
+		return EXIT_FAILURE;
+	}
 
 	/* In case a Pipeline ID was specified handle its actions */
-	if (pipeline_id >= 0)
-		return handle_pipeline_actions(owner, repo, pipeline_id, argc, argv);
+	if (pflag)
+		return handle_pipeline_actions(&path, argc, argv);
 
 	/* A Job ID was specified */
-	if (job_id >= 0)
-		return handle_job_actions(owner, repo, job_id, argc, argv);
+	if (jflag)
+		return handle_job_actions(&path, argc, argv);
 
 	/* Neither a Job id nor a pipeline ID was specified - list all
 	 * pipelines instead */
@@ -621,5 +616,5 @@ subcommand_pipelines(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	return list_pipelines(owner, repo, count);
+	return list_pipelines(&path, count);
 }
