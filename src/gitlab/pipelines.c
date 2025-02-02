@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Nico Sonack <nsonack@herrhotzenplotz.de>
+ * Copyright 2022-2025 Nico Sonack <nsonack@herrhotzenplotz.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -167,6 +167,7 @@ gitlab_pipeline_free(struct gitlab_pipeline *pipeline)
 	free(pipeline->ref);
 	free(pipeline->sha);
 	free(pipeline->source);
+	free(pipeline->web_url);
 }
 
 void

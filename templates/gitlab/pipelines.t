@@ -8,7 +8,8 @@ object of struct gitlab_pipeline with
 	 "ref"        => ref as string,
 	 "sha"        => sha as string,
 	 "source"     => source as string,
-	 "id"         => id as id);
+	 "id"         => id as id,
+	 "web_url"    => web_url as string);
 
 parser gitlab_pipelines is
 array of struct gitlab_pipeline use parse_gitlab_pipeline;
