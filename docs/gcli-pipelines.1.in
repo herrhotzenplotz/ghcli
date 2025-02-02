@@ -43,7 +43,7 @@ and may result in rate limiting by the GitLab API.
 .It Fl p , -pipeline Ar pipeline-id
 Execute the given actions for the specified
 .Ar pipeline-id .
-.It Fl j , -jobs Ar job
+.It Fl j , -job Ar job
 execute the given
 .Ar actions
 for the specified
