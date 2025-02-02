@@ -73,6 +73,7 @@ usage(void)
 	fprintf(stderr, "  log                      Display job log\n");
 	fprintf(stderr, "  cancel                   Cancel the job\n");
 	fprintf(stderr, "  retry                    Retry the given job\n");
+	fprintf(stderr, "  open                     Open the job in a web browser\n");
 	fprintf(stderr, "\n");
 	version();
 	copyright();
@@ -474,6 +475,26 @@ action_job_artifacts(struct gcli_path const *const path,
 	return EXIT_SUCCESS;
 }
 
+static int
+action_job_open(struct gcli_path const *path,
+                struct gitlab_job *job,
+                int *argc, char **argv[])
+{
+	int rc;
+
+	(void) path;
+	(void) argc;
+	(void) argv;
+
+	rc = gcli_cmd_open_url(job->web_url);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to open url\n");
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
 static struct gcli_cmd_actions job_actions = {
 	.fetch_item = (gcli_cmd_action_fetcher)gitlab_get_job,
 	.free_item = (gcli_cmd_action_freeer)gitlab_free_job,
@@ -505,6 +526,12 @@ static struct gcli_cmd_actions job_actions = {
 			.needs_item = false,
 			.handler = (gcli_cmd_action_handler)action_job_artifacts,
 		},
+		{
+			.name = "open",
+			.needs_item = true,
+			.handler = (gcli_cmd_action_handler)action_job_open,
+		},
+		{0},
 	},
 };
 
