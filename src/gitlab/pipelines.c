@@ -234,6 +234,7 @@ gitlab_free_job(struct gitlab_job *const job)
 	free(job->ref);
 	free(job->runner_name);
 	free(job->runner_description);
+	free(job->web_url);
 }
 
 void

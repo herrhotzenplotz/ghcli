@@ -66,6 +66,7 @@ struct gitlab_job {
 	char *runner_name;
 	char *runner_description;
 	double coverage;
+	char *web_url;
 };
 
 struct gitlab_job_list {
