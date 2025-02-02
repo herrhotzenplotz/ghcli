@@ -33,6 +33,7 @@
 #include <gcli/cmd/cmd.h>
 #include <gcli/cmd/cmdconfig.h>
 #include <gcli/cmd/colour.h>
+#include <gcli/cmd/open.h>
 #include <gcli/cmd/pipelines.h>
 #include <gcli/cmd/table.h>
 
@@ -63,6 +64,7 @@ usage(void)
 	fprintf(stderr, "  all                      Show status of this pipeline (including jobs and children)\n");
 	fprintf(stderr, "  children                 Print the list of child pipelines\n");
 	fprintf(stderr, "  jobs                     Print the list of jobs of this pipeline\n");
+	fprintf(stderr, "  open                     Open the pipeline in a web browser\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "JOB ACTIONS:\n");
 	fprintf(stderr, "  status                   Display status information\n");
@@ -282,6 +284,26 @@ action_pipeline_all(struct gcli_path const *path,
 	return rc;
 }
 
+static int
+action_pipeline_open(struct gcli_path const *path,
+                     struct gitlab_pipeline *pipeline,
+                     int *argc, char **argv[])
+{
+	int rc;
+
+	(void) path;
+	(void) argc;
+	(void) argv;
+
+	rc = gcli_cmd_open_url(pipeline->web_url);
+	if (rc < 0) {
+		fprintf(stderr, "gcli: error: failed to open url\n");
+		return GCLI_EX_DATAERR;
+	}
+
+	return GCLI_EX_OK;
+}
+
 static struct gcli_cmd_actions const pipeline_actions = {
 	.fetch_item = (gcli_cmd_action_fetcher)gitlab_get_pipeline,
 	.free_item = (gcli_cmd_action_freeer)gitlab_pipeline_free,
@@ -307,6 +329,11 @@ static struct gcli_cmd_actions const pipeline_actions = {
 			.name = "children",
 			.needs_item = false,
 			.handler = (gcli_cmd_action_handler)action_pipeline_children
+		},
+		{
+			.name = "open",
+			.needs_item = true,
+			.handler = (gcli_cmd_action_handler)action_pipeline_open
 		},
 		{0},
 	},

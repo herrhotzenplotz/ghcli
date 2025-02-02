@@ -81,6 +81,8 @@ Print a short status summary of the pipeline.
 Print a list of jobs running in the pipeline.
 .It Cm children
 Print a list of child pipelines triggered by this pipeline.
+.It Cm open
+Opens the pipeline in a web browser.
 .El
 .Sh EXAMPLES
 Print a list of the last 30 pipelines in the current project:

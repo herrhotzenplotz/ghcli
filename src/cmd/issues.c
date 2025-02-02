@@ -862,19 +862,19 @@ action_open(struct gcli_path const *const path,
             struct gcli_issue const *const issue,
             int *argc, char **argv[])
 {
-	int rc;
+        int rc;
 
-	(void) path;
-	(void) argc;
-	(void) argv;
+        (void) path;
+        (void) argc;
+        (void) argv;
 
-	rc = gcli_cmd_open_url(issue->web_url);
-	if (rc < 0) {
-		fprintf(stderr, "gcli: error: failed to open url\n");
-		return GCLI_EX_DATAERR;
-	}
+        rc = gcli_cmd_open_url(issue->web_url);
+        if (rc < 0) {
+                fprintf(stderr, "gcli: error: failed to open url\n");
+                return GCLI_EX_DATAERR;
+        }
 
-	return GCLI_EX_OK;
+        return GCLI_EX_OK;
 }
 
 struct gcli_cmd_actions issue_actions = {
