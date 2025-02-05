@@ -68,6 +68,14 @@ Disable the progress spinner in the ui.
 uses this when making requests. This can also be set, and overridden with the
 .Ev GCLI_NOSPINNER
 environment variable.
+.It url-open-program
+Name of a program in the
+.Ev PATH
+to open URLs with. Defaults to
+.Cm xdg-open
+which uses your default web browser. Note that the program name may
+not contain any arguments. If you need to pass any arguments to the
+program you must write a wrapper script.
 .El
 .Pp
 All other sections define accounts for forges. Each of these account
@@ -181,7 +189,8 @@ pr.inhibit-delete-source-branch=yes
 .Sh SEE ALSO
 .Xr git 1 ,
 .Xr gcli 1 ,
-.Xr less 1
+.Xr less 1 ,
+.Xr xdg-open 1
 .Sh AUTHORS
 .An Nico Sonack aka. herrhotzenplotz Aq Mt nsonack@herrhotzenplotz.de
 and contributors.
