@@ -6,6 +6,20 @@ This changelog does not follow semantic versioning.
 
 ### Added
 
+- A `open` action has been added to various subcommand actions.
+  This action allows you to open the item in a web browser.
+
+  The URL to open is passed to the configured program in
+  `url-open-program` in the global section. If this option
+  is not set it defaults to `xdg-open` which uses your default
+  browser.
+
+  This feature currently works for Github, Gitlab and Bugzilla.
+  I'm planning on implementing this for Gitea as well however some
+  considerations have to be taken into account first.
+
+  Requested by: Baptiste Daroussin <bapt@FreeBSD.org>
+
 ### Fixed
 
 - Fixed a printf formatting bug on 32-bit platforms in review tool.
